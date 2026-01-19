@@ -70,6 +70,8 @@ const scheduleByDate = {
     { start:"14:00", end:"15:00", title:"XP News", videoId:"DWcJFNfaw9c" },
     { start:"18:00", end:"19:00", title:"XP Show", videoId:"dQw4w9WgXcQ" },
     { start:"21:00", end:"22:00", title:"XP Night", videoId:"hHW1oY26kxQ" }
+  "2026-01-20
+    { start:"00:00", end:"23:59", title:"null", videoId:"jhhhhhhjj" }
   ]
 };
 
