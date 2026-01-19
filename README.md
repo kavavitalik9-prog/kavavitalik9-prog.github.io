@@ -42,22 +42,30 @@ font-size: 22px;
 }
 
 /* ТАБЛИЦА РАСПИСАНИЯ /
-table {
+#schedule {
 width: 92%;
 max-width: 800px;
 margin: 20px auto;
 border-collapse: collapse;
-background-color: #000; / чёрный фон /
-color: #fff; / белый текст /
-}
-th, td {
-border: 1px solid #333;
-padding: 8px;
-color: #fff; / белый текст ячеек /
-}
-th {
-background-color: #111; / тёмный фон заголовка */
+background-color: #000;
 color: #fff;
+font-size: 18px;
+}
+#schedule th, #schedule td {
+border: 1px solid #333;
+padding: 10px;
+text-align: center;
+}
+#schedule th {
+background-color: #111;
+}
+#schedule tr:nth-child(even) {
+background-color: #1a1a1a;
+}
+#schedule tr.current {
+background-color: #2222aa; / подсветка текущей передачи */
+color: #fff;
+font-weight: bold;
 }
 
 footer {
@@ -71,21 +79,21 @@ margin: 20px 0;
 XP TV <span id="liveText"></span>
 </div><div id="player">
   <div id="offline">⏸ Эфир не идёт</div>
-</div><h2>📅 Программа передач</h2><table>
+</div><h2>📅 Программа передач</h2><table id="schedule">
 <tr><th>Время</th><th>Передача</th></tr>
-<tr><td>00:00 – 07:00</td><td>ночной эфир</td></tr>
-<tr><td>07:00 – 07:40</td><td>БАТЕК И ПОСЛЕДНИЙ НОВЫЙ ГОД!?</td></tr>
-<tr><td>10:00 – 14:15</td><td>сборник белуги</td></tr>
+<tr><td>10:00 – 11:00</td><td>XP Morning</td></tr>
+<tr><td>14:00 – 15:00</td><td>XP News</td></tr>
+<tr><td>18:00 – 19:00</td><td>XP Show</td></tr>
 <tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
 </table><footer>
 © XP TV — выдуманный телеканал
 </footer><script>
 // ===== РАСПИСАНИЕ + YOUTUBE =====
 const schedule = [
-  { start: "00:00", end: "07:00", videoId: "https://www.youtube.com/live/jfKfPfyJRdk?si=zf9IEh7vudH_qOSD" }, // Lo-fi радио
-  { start: "07:00", end: "07:40", videoId: "https://youtu.be/7lnO0vwetqM?si=ok55lw59zulmkw4S" }, // Новости (демо)
-  { start: "07:40", end: "10:00", videoId: "https://youtu.be/-bFmefxYvhE?si=VBVxFyCtXiCaw_mG" }, // XP Show 🙂
-  { start: "10:00", end: "14:15", videoId: "https://youtu.be/sacbceIhLIs?si=oYv0nsvAVi0tfSH-" }  // Ночной эфир
+  { start: "10:00", end: "11:00", videoId: "5qap5aO4i9A" }, // Lo-fi радио
+  { start: "14:00", end: "15:00", videoId: "DWcJFNfaw9c" }, // Новости (демо)
+  { start: "18:00", end: "19:00", videoId: "dQw4w9WgXcQ" }, // XP Show 🙂
+  { start: "21:00", end: "22:00", videoId: "hHW1oY26kxQ" }  // Ночной эфир
 ];
 
 function toMinutes(t) {
@@ -93,6 +101,7 @@ function toMinutes(t) {
   return h * 60 + m;
 }
 
+// ===== Автоэфир =====
 function checkLive() {
   const now = new Date();
   const current = now.getHours() * 60 + now.getMinutes();
@@ -122,8 +131,35 @@ function checkLive() {
   }
 }
 
-// Проверка каждые 30 секунд
+// ===== Подсветка текущей передачи =====
+const scheduleTimes = [
+  { start: "10:00", end: "11:00", row: 1 },
+  { start: "14:00", end: "15:00", row: 2 },
+  { start: "18:00", end: "19:00", row: 3 },
+  { start: "21:00", end: "22:00", row: 4 }
+];
+
+function highlightCurrent() {
+  const now = new Date();
+  const current = now.getHours() * 60 + now.getMinutes();
+  const table = document.getElementById("schedule");
+  
+  for (let i = 1; i < table.rows.length; i++) {
+    table.rows[i].classList.remove("current");
+  }
+
+  for (let s of scheduleTimes) {
+    if (current >= toMinutes(s.start) && current < toMinutes(s.end)) {
+      table.rows[s.row].classList.add("current");
+      break;
+    }
+  }
+}
+
+// Запуск и интервал проверки
 checkLive();
+highlightCurrent();
 setInterval(checkLive, 30000);
+setInterval(highlightCurrent, 30000);
 </script></body>
 </html>
