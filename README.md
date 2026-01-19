@@ -57,7 +57,7 @@ const scheduleByDate = {
     { start:"21:00", end:"23:00", title:"XP Night", videoId:"https://www.youtube.com/live/4xDzrJKXOOY?si=RHM1bXxPLiuMAUwB" }
   ],
   "2026-01-20":[
-    { start:"09:00", end:"10:00", title:"XP Morning Special", videoId:"tAGnKpE4NCI" },
+    { start:"00:00", end:"10:00", title:"эфира нет", videoId:"tAGnKpE4NCI" },
     { start:"13:00", end:"14:00", title:"XP News Extra", videoId:"DWcJFNfaw9c" },
     { start:"17:00", end:"18:00", title:"XP Show 2", videoId:"dQw4w9WgXcQ" },
     { start:"20:00", end:"21:00", title:"XP Night Live", videoId:"hHW1oY26kxQ" }
