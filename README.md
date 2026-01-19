@@ -51,7 +51,7 @@ footer { opacity:0.6; margin:20px 0; }
 <tr><td>00:45 – 05:30</td><td>фиксики 1 сезон</td></td></tr>
 <tr><td>06:00 – 07:30</td><td>фиксики БОЛЬШОЙ СЕКРЕТ</td></tr>
 <tr><td>07:30 – 13:00</td><td>перерыв</td></tr>
-<tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
+<tr><td>13:00 – 18:00</td><td>фиксики 4 сезон</td></tr>
 </table>
 
 <div id="viewerCounter">Зрителей сейчас: 0</div>
@@ -80,7 +80,7 @@ const scheduleData = [
   { start:"00:00", end:"05:30", videoId:"https://youtu.be/V8Er1uk4fcw?feature=shared" },
   { start:"06:00", end:"07:30", videoId:"https://youtu.be/ic2QiuUfm3M?feature=shared" },
   { start:"07:30", end:"13:00", videoId:"dQw4w9WgXcQ" },
-  { start:"21:00", end:"22:00", videoId:"hHW1oY26kxQ" }
+  { start:"13:00", end:"18:00", videoId:"https://youtu.be/MeA5ak-EYew?feature=shared" }
 ];
 
 function toMinutes(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
