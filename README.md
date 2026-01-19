@@ -76,7 +76,7 @@ XP TV <span id="liveText"></span>
 <tr><td>10:00 – 11:00</td><td>XP Morning</td></tr>
 <tr><td>14:00 – 15:00</td><td>XP News</td></tr>
 <tr><td>18:00 – 19:00</td><td>XP Show</td></tr>
-<tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
+<tr><td>20:00 – 22:00</td><td>XP Night</td></tr>
 </table><footer>
 © XP TV — выдуманный телеканал
 </footer><script>
@@ -85,7 +85,7 @@ const schedule = [
   { start: "10:00", end: "11:00", videoId: "5qap5aO4i9A" }, // Lo-fi радио
   { start: "14:00", end: "15:00", videoId: "DWcJFNfaw9c" }, // Новости (демо)
   { start: "18:00", end: "19:00", videoId: "dQw4w9WgXcQ" }, // XP Show 🙂
-  { start: "21:00", end: "22:00", videoId: "hHW1oY26kxQ" }  // Ночной эфир
+  { start: "20:00", end: "22:00", videoId: "https://www.youtube.com/live/jfKfPfyJRdk?si=zf9IEh7vudH_qOSD" }  // Ночной эфир
 ];
 
 function toMinutes(t) {
