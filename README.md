@@ -10,16 +10,29 @@ body { margin:0; background:#070707; color:#fff; font-family:Arial,sans-serif; t
 #player { width:92%; max-width:800px; height:360px; margin:20px auto; background:#000; border-radius:14px; display:flex; align-items:center; justify-content:center; }
 #offline { color:#777; font-size:22px; }
 
-/* НОВАЯ ТАБЛИЦА РАСПИСАНИЯ */
-#schedule { width:92%; max-width:800px; margin:20px auto; border-collapse:separate; border-spacing:0; border-radius:12px; overflow:hidden; background:#000; color:#fff; font-size:18px; box-shadow:0 0 10px rgba(0,0,0,0.5); }
-#schedule th, #schedule td { padding:12px; text-align:center; }
-#schedule th { background:#111; }
-#schedule tr:nth-child(even) td { background:#1a1a1a; }
-#schedule tr.current td { background:#2222aa; font-weight:bold; }
-#schedule th:first-child { border-top-left-radius:12px; }
-#schedule th:last-child { border-top-right-radius:12px; }
-#schedule tr:last-child td:first-child { border-bottom-left-radius:12px; }
-#schedule tr:last-child td:last-child { border-bottom-right-radius:12px; }
+/* ЧЁРНАЯ ТАБЛИЦА РАСПИСАНИЯ */
+#schedule {
+  width:92%;
+  max-width:800px;
+  margin:20px auto;
+  border-collapse:collapse;
+  background:#000; /* полностью чёрный фон */
+  color:#fff; /* белый текст */
+  font-size:18px;
+  border-radius:12px;
+  overflow:hidden;
+}
+#schedule th, #schedule td {
+  padding:12px;
+  text-align:center;
+  border:1px solid #111; /* тёмная рамка */
+  color:#fff; /* белый текст */
+  background:#000; /* чёрный фон всех ячеек */
+}
+#schedule tr.current td {
+  background-color:#2222aa; /* подсветка текущей передачи */
+  font-weight:bold;
+}
 
 #viewerCounter { font-size:18px; margin:10px 0; color:#0f0; }
 
