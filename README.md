@@ -75,7 +75,7 @@ XP TV <span id="liveText"></span>
 <tr><th>Время</th><th>Передача</th></tr>
 <tr><td>00:00 – 07:00</td><td>ночной эфир</td></tr>
 <tr><td>07:00 – 07:40</td><td>БАТЕК И ПОСЛЕДНИЙ НОВЫЙ ГОД!?</td></tr>
-<tr><td>08:00 – 09:00</td><td>XP Show</td></tr>
+<tr><td>10:00 – 14:15</td><td>сборник белуги</td></tr>
 <tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
 </table><footer>
 © XP TV — выдуманный телеканал
@@ -84,8 +84,8 @@ XP TV <span id="liveText"></span>
 const schedule = [
   { start: "00:00", end: "07:00", videoId: "https://www.youtube.com/live/jfKfPfyJRdk?si=zf9IEh7vudH_qOSD" }, // Lo-fi радио
   { start: "07:00", end: "07:40", videoId: "https://youtu.be/7lnO0vwetqM?si=ok55lw59zulmkw4S" }, // Новости (демо)
-  { start: "18:00", end: "19:00", videoId: "dQw4w9WgXcQ" }, // XP Show 🙂
-  { start: "21:00", end: "22:00", videoId: ". " }  // Ночной эфир
+  { start: "07:40", end: "10:00", videoId: "https://youtu.be/-bFmefxYvhE?si=VBVxFyCtXiCaw_mG" }, // XP Show 🙂
+  { start: "10:00", end: "14:15", videoId: "https://youtu.be/sacbceIhLIs?si=oYv0nsvAVi0tfSH-" }  // Ночной эфир
 ];
 
 function toMinutes(t) {
