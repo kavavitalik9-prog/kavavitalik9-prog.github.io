@@ -51,10 +51,10 @@ const db = firebase.database();
 // ===== Расписание по дням =====
 const scheduleByDate = {
   "2026-01-19":[
-    { start:"10:00", end:"11:00", title:"XP Morning", videoId:"5qap5aO4i9A" },
+    { start:"00:00", end:"14:00", title:"XP Morning", videoId:"5qap5aO4i9A" },
     { start:"14:00", end:"15:00", title:"XP News", videoId:"DWcJFNfaw9c" },
     { start:"18:00", end:"19:00", title:"XP Show", videoId:"dQw4w9WgXcQ" },
-    { start:"21:00", end:"22:00", title:"XP Night", videoId:"hHW1oY26kxQ" }
+    { start:"21:00", end:"00:00", title:"XP Night", videoId:"https://www.youtube.com/live/4xDzrJKXOOY?si=RHM1bXxPLiuMAUwB" }
   ],
   "2026-01-20":[
     { start:"09:00", end:"10:00", title:"XP Morning Special", videoId:"tAGnKpE4NCI" },
