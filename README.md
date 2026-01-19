@@ -48,8 +48,8 @@ footer { opacity:0.6; margin:20px 0; }
 <h2>📅 Программа передач</h2>
 <table id="schedule">
 <tr><th>Время</th><th>Передача</th></tr>
-<tr><td>10:00 – 11:00</td><td>XP Morning</td></tr>
-<tr><td>14:00 – 15:00</td><td>XP News</td></tr>
+<tr><td>00:45 – 05:30</td><td>фиксики 1 сезон</td></td></tr>
+<tr><td>06:00 – 15:00</td><td>XP News</td></tr>
 <tr><td>18:00 – 19:00</td><td>XP Show</td></tr>
 <tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
 </table>
@@ -77,7 +77,7 @@ const db = firebase.database();
 
 // ===== Автоэфир =====
 const scheduleData = [
-  { start:"10:00", end:"11:00", videoId:"5qap5aO4i9A" },
+  { start:"00:00", end:"05:30", videoId:"https://youtu.be/V8Er1uk4fcw?feature=shared" },
   { start:"14:00", end:"15:00", videoId:"DWcJFNfaw9c" },
   { start:"18:00", end:"19:00", videoId:"dQw4w9WgXcQ" },
   { start:"21:00", end:"22:00", videoId:"hHW1oY26kxQ" }
