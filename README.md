@@ -73,19 +73,19 @@ XP TV <span id="liveText"></span>
   <div id="offline">⏸ Эфир не идёт</div>
 </div><h2>📅 Программа передач</h2><table>
 <tr><th>Время</th><th>Передача</th></tr>
-<tr><td>10:00 – 11:00</td><td>XP Morning</td></tr>
-<tr><td>14:00 – 15:00</td><td>XP News</td></tr>
-<tr><td>18:00 – 19:00</td><td>XP Show</td></tr>
+<tr><td>00:00 – 07:00</td><td>ночной эфир</td></tr>
+<tr><td>07:00 – 07:30</td><td>БАТЕК И ПОСЛЕДНИЙ НОВЫЙ ГОД!?</td></tr>
+<tr><td>08:00 – 09:00</td><td>XP Show</td></tr>
 <tr><td>21:00 – 22:00</td><td>XP Night</td></tr>
 </table><footer>
 © XP TV — выдуманный телеканал
 </footer><script>
 // ===== РАСПИСАНИЕ + YOUTUBE =====
 const schedule = [
-  { start: "10:00", end: "11:00", videoId: "5qap5aO4i9A" }, // Lo-fi радио
-  { start: "14:00", end: "15:00", videoId: "DWcJFNfaw9c" }, // Новости (демо)
+  { start: "00:00", end: "07:00", videoId: "https://www.youtube.com/live/jfKfPfyJRdk?si=zf9IEh7vudH_qOSD" }, // Lo-fi радио
+  { start: "07:00", end: "07:30", videoId: "https://youtu.be/7lnO0vwetqM?si=ok55lw59zulmkw4S" }, // Новости (демо)
   { start: "18:00", end: "19:00", videoId: "dQw4w9WgXcQ" }, // XP Show 🙂
-  { start: "21:00", end: "22:00", videoId: "https://www.youtube.com/live/jfKfPfyJRdk?si=zf9IEh7vudH_qOSD" }  // Ночной эфир
+  { start: "21:00", end: "22:00", videoId: ". " }  // Ночной эфир
 ];
 
 function toMinutes(t) {
