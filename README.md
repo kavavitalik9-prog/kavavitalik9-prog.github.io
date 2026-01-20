@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Графики отключения света — Львовская область</title>
+<title>Графіки відключення світла — Львівська область</title>
 
 <style>
 body{
   margin:0;
   background:#0b0b0b;
-  color:#fff;
+  color:#ffffff;
   font-family:Arial, sans-serif;
 }
 .container{
@@ -21,7 +21,7 @@ h1{
 }
 .days{
   display:flex;
-  gap:5px;
+  gap:6px;
   overflow-x:auto;
   margin-bottom:15px;
 }
@@ -53,10 +53,19 @@ h1{
 }
 .off{ color:#ff4d4d; }
 .on{ color:#4dff88; }
+
+.empty{
+  text-align:center;
+  padding:30px;
+  font-size:18px;
+  opacity:0.8;
+}
+
 .footer{
   margin-top:20px;
   opacity:.6;
   text-align:center;
+  font-size:14px;
 }
 </style>
 </head>
@@ -64,50 +73,49 @@ h1{
 <body>
 
 <div class="container">
-  <h1>⚡ Графики отключения света<br>Львовская область</h1>
+  <h1>⚡ Графіки відключення світла<br>Львівська область</h1>
 
   <div class="days" id="days"></div>
   <div id="schedule"></div>
 
   <div class="footer">
-    Данные ознакомительные • Львовская область
+    Інформація має ознайомчий характер
   </div>
 </div>
 
 <script>
-// ===== ГРУППЫ =====
+// ===== ГРУПИ =====
 const groups = [
   "1.1","1.2","2.1","2.2",
   "3.1","3.2","4.1","4.2",
   "5.1","5.2","6.1","6.2"
 ];
 
-// ===== ДАННЫЕ (ШАБЛОН) =====
+// ===== ГРАФІКИ =====
+// Якщо день порожній {} → буде "Графік ще формується"
 const week = {
-  "Понедельник": {},
-  "Вторник": {},
-  "Среда": {},
-  "Четверг": {},
-  "Пятница": {},
-  "Суббота": {},
-  "Воскресенье": {}
+  "Понеділок": {},
+  "Вівторок": {},
+  "Середа": {},
+  "Четвер": {},
+  "Пʼятниця": {},
+  "Субота": {},
+  "Неділя": {}
 };
 
-// заполняем одинаковым шаблоном все группы
-for(const day in week){
-  groups.forEach(g=>{
-    week[day][`Группа ${g}`] = [
-      ["00:00–04:00","off"],
-      ["04:00–08:00","on"],
-      ["08:00–12:00","off"],
-      ["12:00–16:00","on"],
-      ["16:00–20:00","off"],
-      ["20:00–24:00","on"]
-    ];
-  });
-}
+// приклад: заповнимо ПОНЕДІЛОК
+groups.forEach(g=>{
+  week["Понеділок"][`Група ${g}`] = [
+    ["00:00–04:00","off"],
+    ["04:00–08:00","on"],
+    ["08:00–12:00","off"],
+    ["12:00–16:00","on"],
+    ["16:00–20:00","off"],
+    ["20:00–24:00","on"]
+  ];
+});
 
-// ===== ЛОГИКА =====
+// ===== ЛОГІКА =====
 const daysDiv = document.getElementById("days");
 const scheduleDiv = document.getElementById("schedule");
 
@@ -132,6 +140,13 @@ function render(){
   scheduleDiv.innerHTML = "";
   const dayData = week[currentDay];
 
+  // ❗ якщо графіків немає
+  if(Object.keys(dayData).length === 0){
+    scheduleDiv.innerHTML =
+      `<div class="empty">⏳ Графік ще формується</div>`;
+    return;
+  }
+
   for(const group in dayData){
     const box = document.createElement("div");
     box.className = "group";
@@ -142,7 +157,7 @@ function render(){
       row.className = "slot " + (s[1]==="off"?"off":"on");
       row.innerHTML =
         `<span>${s[0]}</span>
-         <span>${s[1]==="off"?"Нет света":"Есть свет"}</span>`;
+         <span>${s[1]==="off"?"Немає світла":"Є світло"}</span>`;
       box.appendChild(row);
     });
 
