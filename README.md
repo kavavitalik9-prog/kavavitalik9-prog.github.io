@@ -83,13 +83,6 @@ body{
   cursor:pointer;
 }
 
-/* ВРЕМЯ */
-#clock{
-  color:#0f0;
-  margin:10px 0;
-  font-size:18px;
-}
-
 /* СТАТУС */
 #status{
   font-size:20px;
@@ -128,6 +121,12 @@ progress{
 #schedule th{
   background:#111 !important;
 }
+/* Внизу текст "Время МСК" */
+#timeLabel{
+  color:#aaa;
+  margin-bottom:30px;
+  font-size:14px;
+}
 
 /* ЗРИТЕЛИ */
 #viewers{
@@ -157,7 +156,6 @@ progress{
   <div id="noLive">⏳ Подождите немного, расписание ещё формируется</div>
 </div>
 
-<div id="clock"></div>
 <div id="status">⏳ Подождите немного, расписание ещё формируется</div>
 
 <div id="progressWrap">
@@ -171,17 +169,18 @@ progress{
 </thead>
 <tbody id="scheduleBody"></tbody>
 </table>
+<div id="timeLabel">Время МСК</div>
 
 <div id="viewers">Зрителей сейчас: 1</div>
 
 <script>
 // ===== РАСПИСАНИЕ =====
 const schedule = [
-  {start:"2026-01-20T01:00", end:"2026-01-20T13:00", title:null, video:""},
-  {start:"2026-01-20T13:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"https://youtu.be/V8Er1uk4fcw?feature=shared"},
-  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"https://youtu.be/YHZ-owb5nvo?feature=shared"},
-  {start:"2026-01-20T22:00", end:"2026-01-21T02:40", title:"Фиксики - 3 сезон", video:"https://youtu.be/ODqtRzkk5kE?feature=shared"},
-  {start:"2026-01-21T02:40", end:"2026-01-21T07:40", title:"Фиксики - 4 сезон", video:"https://youtu.be/MeA5ak-EYew?feature=shared"}
+  {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
+  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"}
 ];
 
 // ===== ВРЕМЯ МСК =====
@@ -192,8 +191,6 @@ function nowMSK(){
 // ===== ОБНОВЛЕНИЕ =====
 function update(){
   const now = nowMSK();
-  document.getElementById("clock").textContent=
-    "МСК: "+now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 
   let current=null;
   let upcoming=[];
@@ -208,10 +205,8 @@ function update(){
   const noLive=document.getElementById("noLive");
 
   if(current && current.title){
-    // 🔴 Эфир идёт
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
     noLive.style.display="none";
-    // Запрет перемотки (у YouTube это примерно через &controls=0)
     player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1";
 
     const percent=((now-current.s)/(current.e-current.s))*100;
@@ -222,7 +217,6 @@ function update(){
       " — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
   } else {
-    // ❌ Эфира нет
     document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
     player.src="";
     noLive.style.display="flex";
