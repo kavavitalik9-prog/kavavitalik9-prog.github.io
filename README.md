@@ -12,8 +12,7 @@ body{
   color:#fff;
   text-align:center;
 }
-
-/* ЭКРАН ЭФИРА (16:9) */
+/* ЭКРАН ЭФИРА */
 #playerWrap{
   width:100%;
   max-width:960px;
@@ -140,10 +139,8 @@ progress{
 </head>
 <body>
 
-<!-- КНОПКА ПОЛНОЕ РАСПИСАНИЕ -->
 <button id="fullScheduleBtn">📅 Полное расписание</button>
 
-<!-- МОДАЛЬНОЕ ОКНО -->
 <div id="modal">
   <span id="modalClose">✖</span>
   <h2>Полное расписание</h2>
@@ -155,14 +152,13 @@ progress{
   </table>
 </div>
 
-<!-- ЭФИР -->
 <div id="playerWrap">
   <iframe id="player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-  <div id="noLive">⏸ Эфир не идёт</div>
+  <div id="noLive">⏳ Подождите немного, расписание ещё формируется</div>
 </div>
 
 <div id="clock"></div>
-<div id="status">⏸ Эфир не идёт</div>
+<div id="status">⏳ Подождите немного, расписание ещё формируется</div>
 
 <div id="progressWrap">
   <div id="progressTime"></div>
@@ -179,12 +175,13 @@ progress{
 <div id="viewers">Зрителей сейчас: 1</div>
 
 <script>
-// ===== НАСТРОЙКИ =====
+// ===== РАСПИСАНИЕ =====
 const schedule = [
-  {start:"2026-01-20T11:00", end:"2026-01-20T15:30", title:"Фиксики — 1 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T15:30", end:"2026-01-20T20:00", title:"Фиксики — 2 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T20:00", end:"2026-01-21T00:40", title:"Фиксики — 3 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики — 4 сезон", video:"dQw4w9WgXcQ"}
+  {start:"2026-01-20T00:00", end:"2026-01-20T10:00", title:null, video:""},
+  {start:"2026-01-20T10:00", end:"2026-01-20T14:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T14:30", end:"2026-01-20T19:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T19:00", end:"2026-01-20T23:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T23:40", end:"2026-01-21T04:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"}
 ];
 
 // ===== ВРЕМЯ МСК =====
@@ -195,12 +192,11 @@ function nowMSK(){
 // ===== ОБНОВЛЕНИЕ =====
 function update(){
   const now = nowMSK();
-  document.getElementById("clock").textContent =
+  document.getElementById("clock").textContent=
     "МСК: "+now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
   let current=null;
   let upcoming=[];
-
   schedule.forEach(p=>{
     const s=new Date(p.start+"+03:00");
     const e=new Date(p.end+"+03:00");
@@ -208,11 +204,13 @@ function update(){
     if(now<e) upcoming.push({...p,s,e});
   });
 
-  // ЭФИР
-  if(current){
+  const player=document.getElementById("player");
+  const noLive=document.getElementById("noLive");
+
+  if(current && current.title){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
-    document.getElementById("noLive").style.display="none";
-    document.getElementById("player").src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1";
+    noLive.style.display="none";
+    player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1";
 
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
@@ -221,22 +219,28 @@ function update(){
       current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
       " — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+  } else if(current && !current.title){
+    document.getElementById("status").textContent="⏳ Подождите немного, эфир ещё не начался";
+    player.src="";
+    noLive.style.display="flex";
+    document.getElementById("progress").value=0;
+    document.getElementById("progressTime").textContent="";
   } else {
-    document.getElementById("status").textContent="⏸ Эфир не идёт";
-    document.getElementById("player").src="";
-    document.getElementById("noLive").style.display="flex";
+    document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
+    player.src="";
+    noLive.style.display="flex";
     document.getElementById("progress").value=0;
     document.getElementById("progressTime").textContent="";
   }
 
-  // таблица (текущая + 3 следующих)
+  // таблица текущие + 3 следующих
   const body=document.getElementById("scheduleBody");
   body.innerHTML="";
   upcoming.slice(0,4).forEach(p=>{
     const tr=document.createElement("tr");
     tr.innerHTML=
       `<td>${p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})} – ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td>
-       <td>${p.title}</td>`;
+       <td>${p.title ?? "—"}</td>`;
     body.appendChild(tr);
   });
 }
@@ -260,7 +264,7 @@ modalBtn.onclick=function(){
   modalBody.innerHTML="";
   schedule.forEach(p=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td>${p.start.split("T")[0]}</td><td>${p.start.split("T")[1]} – ${p.end.split("T")[1]}</td><td>${p.title}</td>`;
+    tr.innerHTML=`<td>${p.start.split("T")[0]}</td><td>${p.start.split("T")[1]} – ${p.end.split("T")[1]}</td><td>${p.title ?? "—"}</td>`;
     modalBody.appendChild(tr);
   });
 };
@@ -271,5 +275,6 @@ window.onclick=function(e){if(e.target==modal) modal.style.display="none";};
 setInterval(update,1000);
 update();
 </script>
+
 </body>
 </html>
