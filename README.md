@@ -17,10 +17,17 @@ body{
 .logo{
   font-size:36px;
   font-weight:bold;
-  padding:15px;
+  padding:10px;
   background:linear-gradient(90deg,#00ffcc,#00aaff);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
+}
+
+/* ===== ВРЕМЯ МСК ===== */
+#mskTime{
+  font-size:18px;
+  color:#aaa;
+  margin-bottom:5px;
 }
 
 /* ===== ПЛЕЕР ===== */
@@ -28,7 +35,7 @@ body{
   width:92%;
   max-width:900px;
   height:360px;
-  margin:20px auto;
+  margin:15px auto;
   background:#000;
   border-radius:14px;
 }
@@ -70,7 +77,7 @@ body{
   color:#ccc;
 }
 
-/* ===== ТАБЛИЦА (ФИКС БЕЛОГО ФОНА) ===== */
+/* ===== ТАБЛИЦА ===== */
 table{
   width:92%;
   max-width:900px;
@@ -89,7 +96,6 @@ th, td{
 
 tr.current td{
   background:#2222aa !important;
-  color:#fff !important;
   font-weight:bold;
 }
 
@@ -105,6 +111,7 @@ tr.current td{
 <body>
 
 <div class="logo">XP TV 🔴 LIVE</div>
+<div id="mskTime">МСК: --:--:--</div>
 
 <div id="player">
   <div id="offline">⏸ Эфир не идёт</div>
@@ -132,16 +139,32 @@ tr.current td{
 <div id="viewers">Зрителей сейчас: 0</div>
 
 <script>
+/* ===== МОСКОВСКОЕ ВРЕМЯ (UTC+3) ===== */
+function updateMSK(){
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset()*60000;
+  const msk = new Date(utc + 3*3600000);
+
+  const h = msk.getHours().toString().padStart(2,"0");
+  const m = msk.getMinutes().toString().padStart(2,"0");
+  const s = msk.getSeconds().toString().padStart(2,"0");
+
+  document.getElementById("mskTime").textContent =
+    `МСК: ${h}:${m}:${s}`;
+}
+setInterval(updateMSK,1000);
+updateMSK();
+
 /* ===== РАСПИСАНИЕ ===== */
 const scheduleByDate = {
   "2026-01-20":[
-    {start:"11:00",end:"15:30",title:"Фиксики — 1 сезон",video:"https://youtu.be/V8Er1uk4fcw?feature=shared"},
-    {start:"15:30",end:"20:00",title:"Фиксики — 2 сезон",video:"https://youtu.be/YHZ-owb5nvo?feature=shared"},
-    {start:"20:00",end:"24:00",title:"Фиксики — 3 сезон",video:"https://youtu.be/ODqtRzkk5kE?feature=shared"}
+    {start:"11:00",end:"15:30",title:"Фиксики — 1 сезон",video:"dQw4w9WgXcQ"},
+    {start:"15:30",end:"20:00",title:"Фиксики — 2 сезон",video:"dQw4w9WgXcQ"},
+    {start:"20:00",end:"24:00",title:"Фиксики — 3 сезон",video:"dQw4w9WgXcQ"}
   ],
   "2026-01-21":[
-    {start:"00:00",end:"00:40",title:"Фиксики — 3 сезон",video:"https://youtu.be/ODqtRzkk5kE?feature=shared"},
-    {start:"00:40",end:"05:40",title:"Фиксики — 4 сезон",video:"https://youtu.be/MeA5ak-EYew?feature=shared"},
+    {start:"00:00",end:"00:40",title:"Фиксики — 3 сезон",video:"dQw4w9WgXcQ"},
+    {start:"00:40",end:"05:40",title:"Фиксики — 4 сезон",video:"dQw4w9WgXcQ"},
     {start:"05:40",end:"23:59",title:null}
   ]
 };
