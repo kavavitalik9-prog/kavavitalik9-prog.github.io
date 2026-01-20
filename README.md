@@ -66,7 +66,7 @@ th{
 
 <div id="status">📴 Эфир сейчас не идёт</div>
 
-<h2>Следующие передачи</h2>
+<h2>Расписание (следующие)</h2>
 <table>
 <thead>
 <tr>
@@ -85,7 +85,7 @@ const schedule = [
   { start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
   { start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:null },
 
-  // 21 января 2026 (ЗАВТРА)
+  // 21 января 2026
   { start:"2026-01-21T00:59", end:"2026-01-21T05:00", title:null },
   { start:"2026-01-21T05:00", end:"2026-01-21T09:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
   { start:"2026-01-21T09:30", end:"2026-01-21T14:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ" },
@@ -124,7 +124,7 @@ function update(){
   const status=document.getElementById("status");
 
   // ===== ТЕКУЩИЙ ЭФИР =====
-  if(!current || !current.title){
+  if(!current || current.title===null){
     player.src="";
     noLive.style.display="flex";
     status.textContent="📴 Эфир сейчас не идёт";
@@ -140,16 +140,15 @@ function update(){
     }
   }
 
-  // ===== СЛЕДУЮЩИЕ ПЕРЕДАЧИ =====
+  // ===== РАСПИСАНИЕ (NULL ВИДНО) =====
   const body=document.getElementById("nextBody");
   body.innerHTML="";
   next.forEach(p=>{
-    if(!p.title) return;
     const tr=document.createElement("tr");
     tr.innerHTML=
       "<td>"+p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
       " — "+p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-      "</td><td>"+p.title+"</td>";
+      "</td><td>"+(p.title===null ? "null" : p.title)+"</td>";
     body.appendChild(tr);
   });
 }
