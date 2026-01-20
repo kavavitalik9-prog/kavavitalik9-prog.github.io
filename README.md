@@ -35,12 +35,7 @@ progress{width:100%;height:16px;}
   <h2>Полное расписание</h2>
   <table id="modalTable">
     <thead>
-      <tr>
-        <th>Дата</th>
-        <th>Время МСК</th>
-        <th>Ваше время</th>
-        <th>Передача</th>
-      </tr>
+      <tr><th>Дата</th><th>Время</th><th>Передача</th></tr>
     </thead>
     <tbody></tbody>
   </table>
@@ -70,7 +65,6 @@ progress{width:100%;height:16px;}
 
 <script>
 // ===== РАСПИСАНИЕ =====
-// Видео: подставь свои ссылки YouTube, здесь пример "dQw4w9WgXcQ"
 const schedule = [
   {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
   {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
@@ -86,6 +80,7 @@ const schedule = [
   {start:"2026-01-21T09:40", end:"2026-01-21T10:00", title:null, video:""},
   {start:"2026-01-21T10:00", end:"2026-01-21T10:10", title:"Жену укусили за лицо... (Анимация)", video:"dQw4w9WgXcQ"},
 
+  // Новый блок 10:10+
   {start:"2026-01-21T10:10", end:"2026-01-21T10:30", title:"25-ЛЕТНИЙ СЫНОЧКА КОРЗИНОЧКА УЧИТСЯ В НАШЕМ КЛАССЕ", video:"dQw4w9WgXcQ"},
   {start:"2026-01-21T10:30", end:"2026-01-21T12:30", title:"музыка", video:"dQw4w9WgXcQ"},
   {start:"2026-01-21T12:30", end:"2026-01-21T13:00", title:null, video:""},
@@ -148,6 +143,7 @@ function update(){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
     noLive.style.display="none";
 
+    // Авто-переключение без перезапуска
     if(currentVideo!==current.video){
       player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&start="+Math.floor((now-current.s)/1000);
       currentVideo=current.video;
