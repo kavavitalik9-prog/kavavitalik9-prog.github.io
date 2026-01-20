@@ -2,237 +2,186 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>XP TV — Прямой эфир</title>
+<title>XP tv — эфир</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body{
   margin:0;
+  font-family:Arial, sans-serif;
   background:#000;
   color:#fff;
-  font-family:Arial,sans-serif;
   text-align:center;
 }
 
-/* ===== ЛОГО ===== */
-.logo{
-  font-size:36px;
-  font-weight:bold;
-  padding:10px;
-  background:linear-gradient(90deg,#00ffcc,#00aaff);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
+/* ЛОГО */
+#logoBlock{
+  margin:20px 0;
+}
+#logoBlock img{
+  width:260px;
+  max-width:90%;
+  image-rendering: pixelated;
 }
 
-/* ===== ВРЕМЯ МСК ===== */
-#mskTime{
+/* ВРЕМЯ */
+#clock{
   font-size:18px;
-  color:#aaa;
+  margin-bottom:10px;
+  color:#0f0;
+}
+
+/* ЭФИР */
+#status{
+  font-size:20px;
+  margin:10px 0;
+}
+
+/* ПОЛЗУНОК */
+#progressWrap{
+  width:90%;
+  margin:10px auto;
+}
+#progressTime{
+  font-size:14px;
   margin-bottom:5px;
 }
-
-/* ===== ПЛЕЕР ===== */
-#player{
-  width:92%;
-  max-width:900px;
-  height:360px;
-  margin:15px auto;
-  background:#000;
-  border-radius:14px;
+progress{
+  width:100%;
+  height:16px;
 }
 
-#offline{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100%;
-  color:#666;
-  font-size:22px;
-}
-
-/* ===== ПРОГРЕСС ===== */
-#progressContainer{
-  width:92%;
-  max-width:900px;
-  height:14px;
-  background:#111;
-  border-radius:6px;
-  margin:10px auto;
-  overflow:hidden;
-}
-
-#progressBar{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#00aaff,#00ffcc);
-  transition:width 0.3s linear;
-}
-
-#progressTimes{
-  width:92%;
-  max-width:900px;
-  margin:auto;
-  display:flex;
-  justify-content:space-between;
-  font-size:14px;
-  color:#ccc;
-}
-
-/* ===== ТАБЛИЦА ===== */
-table{
-  width:92%;
-  max-width:900px;
+/* РАСПИСАНИЕ */
+#schedule{
+  width:90%;
   margin:20px auto;
   border-collapse:collapse;
-  background:#000 !important;
+  background:#000;
+}
+#schedule th,#schedule td{
+  border:1px solid #333;
+  padding:10px;
+  color:#fff;
+}
+#schedule th{
+  background:#111;
 }
 
-th, td{
-  background:#000 !important;
-  color:#fff !important;
-  border:1px solid #111;
-  padding:12px;
-  text-align:center;
-}
-
-tr.current td{
-  background:#2222aa !important;
-  font-weight:bold;
-}
-
-/* ===== ЗРИТЕЛИ ===== */
+/* ЗРИТЕЛИ */
 #viewers{
-  color:#0f0;
+  margin:20px 0;
   font-size:18px;
-  margin:10px;
+  color:#0f0;
 }
 </style>
 </head>
 
 <body>
 
-<div class="logo">XP TV 🔴 LIVE</div>
-<div id="mskTime">МСК: --:--:--</div>
-
-<div id="player">
-  <div id="offline">⏸ Эфир не идёт</div>
+<!-- ЛОГОТИП -->
+<div id="logoBlock">
+  <img src="img/xptv.png" alt="XP tv">
 </div>
 
-<div id="progressContainer">
-  <div id="progressBar"></div>
+<!-- ВРЕМЯ МСК -->
+<div id="clock"></div>
+
+<!-- СТАТУС -->
+<div id="status">⏸ Эфир не идёт</div>
+
+<!-- ПОЛЗУНОК -->
+<div id="progressWrap">
+  <div id="progressTime"></div>
+  <progress id="progress" value="0" max="100"></progress>
 </div>
 
-<div id="progressTimes">
-  <span id="startTime">--:--</span>
-  <span id="nowTime">--:--</span>
-  <span id="endTime">--:--</span>
-</div>
-
-<h2>📅 Сейчас в эфире и далее</h2>
-
+<!-- РАСПИСАНИЕ -->
 <table id="schedule">
-<tr>
-  <th>Время</th>
-  <th>Передача</th>
-</tr>
+<thead>
+<tr><th>Время (МСК)</th><th>Передача</th></tr>
+</thead>
+<tbody id="scheduleBody"></tbody>
 </table>
 
-<div id="viewers">Зрителей сейчас: 0</div>
+<!-- ЗРИТЕЛИ -->
+<div id="viewers">Зрителей сейчас: 1</div>
 
 <script>
-/* ===== МОСКОВСКОЕ ВРЕМЯ (UTC+3) ===== */
-function updateMSK(){
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset()*60000;
-  const msk = new Date(utc + 3*3600000);
-
-  const h = msk.getHours().toString().padStart(2,"0");
-  const m = msk.getMinutes().toString().padStart(2,"0");
-  const s = msk.getSeconds().toString().padStart(2,"0");
-
-  document.getElementById("mskTime").textContent =
-    `МСК: ${h}:${m}:${s}`;
-}
-setInterval(updateMSK,1000);
-updateMSK();
-
-/* ===== РАСПИСАНИЕ ===== */
-const scheduleByDate = {
-  "2026-01-20":[
-    {start:"11:00",end:"15:30",title:"Фиксики — 1 сезон",video:"dQw4w9WgXcQ"},
-    {start:"15:30",end:"20:00",title:"Фиксики — 2 сезон",video:"dQw4w9WgXcQ"},
-    {start:"20:00",end:"24:00",title:"Фиксики — 3 сезон",video:"dQw4w9WgXcQ"}
-  ],
-  "2026-01-21":[
-    {start:"00:00",end:"00:40",title:"Фиксики — 3 сезон",video:"dQw4w9WgXcQ"},
-    {start:"00:40",end:"05:40",title:"Фиксики — 4 сезон",video:"dQw4w9WgXcQ"},
-    {start:"05:40",end:"23:59",title:null}
-  ]
-};
-
-function toMin(t){
-  const [h,m]=t.split(":").map(Number);
-  return h*60+m;
+// ===== ВРЕМЯ МСК =====
+function updateClock(){
+  const now = new Date(
+    new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"})
+  );
+  document.getElementById("clock").textContent =
+    "МСК: " + now.toLocaleTimeString();
+  return now;
 }
 
-function nowMin(){
-  const d=new Date();
-  return d.getHours()*60+d.getMinutes();
-}
+// ===== РАСПИСАНИЕ =====
+const schedule = [
+  {start:"2026-01-20T11:00", end:"2026-01-20T15:30", title:"Фиксики — 1 сезон"},
+  {start:"2026-01-20T15:30", end:"2026-01-20T20:00", title:"Фиксики — 2 сезон"},
+  {start:"2026-01-20T20:00", end:"2026-01-21T00:40", title:"Фиксики — 3 сезон"},
+  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики — 4 сезон"}
+];
 
-const today=new Date().toISOString().split("T")[0];
-const shows=scheduleByDate[today]||[];
-
+// ===== ОБНОВЛЕНИЕ =====
 function update(){
-  const table=document.getElementById("schedule");
-  while(table.rows.length>1)table.deleteRow(1);
+  const now = updateClock();
+  let current=null;
+  let upcoming=[];
 
-  const now=nowMin();
-  let currentIndex=shows.findIndex(s=>now>=toMin(s.start)&&now<toMin(s.end));
-  let startIndex=currentIndex>=0?currentIndex:shows.findIndex(s=>now<toMin(s.start));
-  if(startIndex<0)return;
+  schedule.forEach(p=>{
+    const s=new Date(p.start+"+03:00");
+    const e=new Date(p.end+"+03:00");
+    if(now>=s && now<e) current={...p,s,e};
+    if(now<e) upcoming.push({...p,s,e});
+  });
 
-  for(let i=startIndex;i<Math.min(startIndex+4,shows.length);i++){
-    const s=shows[i];
-    const r=table.insertRow();
-    r.insertCell().textContent=s.start+" – "+s.end;
-    r.insertCell().textContent=s.title??"Эфир выключен";
-    if(i===currentIndex)r.classList.add("current");
-  }
+  // статус
+  if(current){
+    document.getElementById("status").textContent =
+      "🔴 Сейчас в эфире: " + current.title;
 
-  const player=document.getElementById("player");
-  const bar=document.getElementById("progressBar");
+    const percent = ((now-current.s)/(current.e-current.s))*100;
+    document.getElementById("progress").value = percent;
 
-  if(currentIndex>=0 && shows[currentIndex].title){
-    const s=shows[currentIndex];
-    player.innerHTML=`<iframe width="100%" height="360"
-      src="https://www.youtube.com/embed/${s.video}?autoplay=1"
-      allow="autoplay" frameborder="0"></iframe>`;
-
-    bar.style.width=((now-toMin(s.start))/(toMin(s.end)-toMin(s.start))*100)+"%";
-
-    document.getElementById("startTime").textContent=s.start;
-    document.getElementById("endTime").textContent=s.end;
-
-    const d=new Date();
-    document.getElementById("nowTime").textContent=
-      d.getHours().toString().padStart(2,"0")+":"+
-      d.getMinutes().toString().padStart(2,"0");
+    document.getElementById("progressTime").textContent =
+      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) +
+      " — " +
+      current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
   }else{
-    player.innerHTML=`<div id="offline">⏸ Эфир не идёт</div>`;
-    bar.style.width="0%";
+    document.getElementById("status").textContent="⏸ Эфир не идёт";
+    document.getElementById("progress").value=0;
+    document.getElementById("progressTime").textContent="";
   }
+
+  // таблица (только сейчас + 3 следующих)
+  const body=document.getElementById("scheduleBody");
+  body.innerHTML="";
+  upcoming.slice(0,4).forEach(p=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=
+      `<td>${p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}
+      –
+      ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td>
+       <td>${p.title}</td>`;
+    body.appendChild(tr);
+  });
 }
 
-update();
-setInterval(update,1000);
-
-/* ===== ФЕЙК СЧЁТЧИК ===== */
-let viewers=1;
+// ===== СЧЁТЧИК ЗРИТЕЛЕЙ (ФЕЙК, НО РАБОТАЕТ) =====
+let viewers = Math.floor(Math.random()*5)+1;
 setInterval(()=>{
-  viewers+=Math.random()>0.5?1:-1;
-  if(viewers<1)viewers=1;
-  document.getElementById("viewers").textContent="Зрителей сейчас: "+viewers;
-},3000);
+  viewers += Math.random()>0.5 ? 1 : -1;
+  if(viewers<1) viewers=1;
+  document.getElementById("viewers").textContent =
+    "Зрителей сейчас: " + viewers;
+},4000);
+
+// старт
+setInterval(update,1000);
+update();
 </script>
 
 </body>
