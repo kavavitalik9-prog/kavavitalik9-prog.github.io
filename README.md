@@ -67,19 +67,19 @@ progress{width:100%;height:16px;}
 // ===== РАСПИСАНИЕ =====
 const schedule = [
   {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
-  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"https://youtu.be/V8Er1uk4fcw?feature=shared"},
+  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"https://youtu.be/YHZ-owb5nvo?feature=shared"},
+  {start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"https://youtu.be/ODqtRzkk5kE?feature=shared"},
+  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"https://youtu.be/MeA5ak-EYew?feature=shared"},
 
   // Новый блок после 05:40 21 января
-  {start:"2026-01-21T05:40", end:"2026-01-21T05:50", title:"КОРОЧЕ ГОВОРЯ, ОСТАЛСЯ ОДИН НА ЗЕМЛЕ", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-21T05:40", end:"2026-01-21T05:50", title:"КОРОЧЕ ГОВОРЯ, ОСТАЛСЯ ОДИН НА ЗЕМЛЕ", video:"https://youtu.be/Q2Q5yNpAhpE?si=fDy54UCrZ7FX88Om"},
   {start:"2026-01-21T05:50", end:"2026-01-21T06:00", title:null, video:""},
-  {start:"2026-01-21T06:00", end:"2026-01-21T06:30", title:"Мама Читера ИЗДЕВАЛАСЬ надо Мной на этом Сервере в Майнкрафт", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-21T06:00", end:"2026-01-21T06:30", title:"Мама Читера ИЗДЕВАЛАСЬ надо Мной на этом Сервере в Майнкрафт", video:"https://youtu.be/p-aql7iXdvs?si=ZwJLvAp4vgnw3iHi"},
   {start:"2026-01-21T06:30", end:"2026-01-21T08:20", title:"Я ОТОМСТИЛ ХЕЙТЕРШЕ Моей Девушки! ЭТО КОНЕЦ...", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T08:20", end:"2026-01-21T09:40", title:"Фиксики БОЛЬШОЙ СЕКРЕТ", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-21T08:20", end:"2026-01-21T09:40", title:"Фиксики БОЛЬШОЙ СЕКРЕТ", video:"https://youtu.be/ic2QiuUfm3M?feature=shared"},
   {start:"2026-01-21T09:40", end:"2026-01-21T10:00", title:null, video:""},
-  {start:"2026-01-21T10:00", end:"2026-01-21T10:10", title:"Жену укусили за лицо... (Анимация)", video:"dQw4w9WgXcQ"}
+  {start:"2026-01-21T10:00", end:"2026-01-21T10:10", title:"Жену укусили за лицо... (Анимация)", video:"https://youtu.be/20qwtMvyjeg?si=Oyf0PSg8NHJ0ztoe"}
 ];
 
 // ===== ВРЕМЯ МСК =====
