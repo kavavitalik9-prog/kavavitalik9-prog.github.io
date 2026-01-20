@@ -12,7 +12,7 @@ body{
   color:#fff;
   text-align:center;
 }
-/* ЭКРАН ЭФИРА */
+/* ЭКРАН ЭФИРА (16:9) */
 #playerWrap{
   width:100%;
   max-width:960px;
@@ -22,7 +22,7 @@ body{
   background:#000;
   border:1px solid #222;
 }
-#playerWrap iframe{
+#playerWrap iframe, #playerWrap video{
   width:100%;
   height:100%;
   border:0;
@@ -177,11 +177,11 @@ progress{
 <script>
 // ===== РАСПИСАНИЕ =====
 const schedule = [
-  {start:"2026-01-20T00:00", end:"2026-01-20T10:00", title:null, video:""},
-  {start:"2026-01-20T10:00", end:"2026-01-20T14:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T14:30", end:"2026-01-20T19:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T19:00", end:"2026-01-20T23:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T23:40", end:"2026-01-21T04:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"}
+  {start:"2026-01-20T01:00", end:"2026-01-20T13:00", title:null, video:""},
+  {start:"2026-01-20T13:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"https://youtu.be/V8Er1uk4fcw?feature=shared"},
+  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"https://youtu.be/YHZ-owb5nvo?feature=shared"},
+  {start:"2026-01-20T22:00", end:"2026-01-21T02:40", title:"Фиксики - 3 сезон", video:"https://youtu.be/ODqtRzkk5kE?feature=shared"},
+  {start:"2026-01-21T02:40", end:"2026-01-21T07:40", title:"Фиксики - 4 сезон", video:"https://youtu.be/MeA5ak-EYew?feature=shared"}
 ];
 
 // ===== ВРЕМЯ МСК =====
@@ -193,7 +193,7 @@ function nowMSK(){
 function update(){
   const now = nowMSK();
   document.getElementById("clock").textContent=
-    "МСК: "+now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    "МСК: "+now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 
   let current=null;
   let upcoming=[];
@@ -208,9 +208,11 @@ function update(){
   const noLive=document.getElementById("noLive");
 
   if(current && current.title){
+    // 🔴 Эфир идёт
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
     noLive.style.display="none";
-    player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1";
+    // Запрет перемотки (у YouTube это примерно через &controls=0)
+    player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1";
 
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
@@ -219,13 +221,8 @@ function update(){
       current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
       " — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-  } else if(current && !current.title){
-    document.getElementById("status").textContent="⏳ Подождите немного, эфир ещё не начался";
-    player.src="";
-    noLive.style.display="flex";
-    document.getElementById("progress").value=0;
-    document.getElementById("progressTime").textContent="";
   } else {
+    // ❌ Эфира нет
     document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
     player.src="";
     noLive.style.display="flex";
