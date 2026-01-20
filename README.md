@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+/* ОСНОВА */
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -14,24 +15,14 @@ body{
   text-align:center;
 }
 
-/* ЛОГО */
-#logoBlock{
-  margin:20px 0;
-}
-#logoBlock img{
-  width:260px;
-  max-width:90%;
-  image-rendering: pixelated;
-}
-
 /* ВРЕМЯ */
 #clock{
   font-size:18px;
-  margin-bottom:10px;
+  margin:15px 0;
   color:#0f0;
 }
 
-/* ЭФИР */
+/* СТАТУС */
 #status{
   font-size:20px;
   margin:10px 0;
@@ -51,20 +42,22 @@ progress{
   height:16px;
 }
 
-/* РАСПИСАНИЕ */
+/* РАСПИСАНИЕ — ЧЁРНОЕ */
 #schedule{
   width:90%;
   margin:20px auto;
   border-collapse:collapse;
-  background:#000;
+  background:#000 !important;
 }
-#schedule th,#schedule td{
+#schedule th,
+#schedule td{
   border:1px solid #333;
-  padding:10px;
-  color:#fff;
+  padding:12px;
+  color:#fff !important;
+  background:#000 !important;
 }
 #schedule th{
-  background:#111;
+  background:#111 !important;
 }
 
 /* ЗРИТЕЛИ */
@@ -78,12 +71,7 @@ progress{
 
 <body>
 
-<!-- ЛОГОТИП -->
-<div id="logoBlock">
-  <img src="img/xptv.png" alt="XP tv">
-</div>
-
-<!-- ВРЕМЯ МСК -->
+<!-- ВРЕМЯ -->
 <div id="clock"></div>
 
 <!-- СТАТУС -->
@@ -98,7 +86,10 @@ progress{
 <!-- РАСПИСАНИЕ -->
 <table id="schedule">
 <thead>
-<tr><th>Время (МСК)</th><th>Передача</th></tr>
+<tr>
+  <th>Время (МСК)</th>
+  <th>Передача</th>
+</tr>
 </thead>
 <tbody id="scheduleBody"></tbody>
 </table>
@@ -113,7 +104,7 @@ function updateClock(){
     new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"})
   );
   document.getElementById("clock").textContent =
-    "МСК: " + now.toLocaleTimeString();
+    "МСК: " + now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
   return now;
 }
 
@@ -143,8 +134,8 @@ function update(){
     document.getElementById("status").textContent =
       "🔴 Сейчас в эфире: " + current.title;
 
-    const percent = ((now-current.s)/(current.e-current.s))*100;
-    document.getElementById("progress").value = percent;
+    const percent=((now-current.s)/(current.e-current.s))*100;
+    document.getElementById("progress").value=percent;
 
     document.getElementById("progressTime").textContent =
       current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) +
@@ -156,24 +147,24 @@ function update(){
     document.getElementById("progressTime").textContent="";
   }
 
-  // таблица (только сейчас + 3 следующих)
+  // таблица (сейчас + 3 следующих)
   const body=document.getElementById("scheduleBody");
   body.innerHTML="";
   upcoming.slice(0,4).forEach(p=>{
     const tr=document.createElement("tr");
     tr.innerHTML=
       `<td>${p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}
-      –
-      ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td>
+       –
+       ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td>
        <td>${p.title}</td>`;
     body.appendChild(tr);
   });
 }
 
-// ===== СЧЁТЧИК ЗРИТЕЛЕЙ (ФЕЙК, НО РАБОТАЕТ) =====
-let viewers = Math.floor(Math.random()*5)+1;
+// ===== СЧЁТЧИК ЗРИТЕЛЕЙ =====
+let viewers=Math.floor(Math.random()*5)+1;
 setInterval(()=>{
-  viewers += Math.random()>0.5 ? 1 : -1;
+  viewers+=Math.random()>0.5?1:-1;
   if(viewers<1) viewers=1;
   document.getElementById("viewers").textContent =
     "Зрителей сейчас: " + viewers;
