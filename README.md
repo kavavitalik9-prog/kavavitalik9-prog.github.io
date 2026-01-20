@@ -78,14 +78,23 @@ th{
 </table>
 
 <script>
-// ===== РАСПИСАНИЕ (РОВНО КАК ТЫ СКАЗАЛ) =====
+// ================== РАСПИСАНИЕ ==================
 const schedule = [
+  // 20 января 2026
   { start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null },
   { start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:null }
+  { start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:null },
+
+  // 21 января 2026 (ЗАВТРА)
+  { start:"2026-01-21T00:59", end:"2026-01-21T05:00", title:null },
+  { start:"2026-01-21T05:00", end:"2026-01-21T09:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
+  { start:"2026-01-21T09:30", end:"2026-01-21T14:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ" },
+  { start:"2026-01-21T14:00", end:"2026-01-21T18:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ" },
+  { start:"2026-01-21T18:40", end:"2026-01-21T23:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ" },
+  { start:"2026-01-21T23:40", end:"2026-01-22T00:59", title:null }
 ];
 
-// ===== ВРЕМЯ МСК =====
+// ================== ВРЕМЯ МСК ==================
 function parseMSK(t){
   const [d,h]=t.split("T");
   const [y,m,da]=d.split("-");
@@ -114,7 +123,7 @@ function update(){
   const noLive=document.getElementById("noLive");
   const status=document.getElementById("status");
 
-  // ===== ЕСЛИ СЕЙЧАС NULL =====
+  // ===== ТЕКУЩИЙ ЭФИР =====
   if(!current || !current.title){
     player.src="";
     noLive.style.display="flex";
@@ -134,7 +143,7 @@ function update(){
   // ===== СЛЕДУЮЩИЕ ПЕРЕДАЧИ =====
   const body=document.getElementById("nextBody");
   body.innerHTML="";
-  next.slice(0,4).forEach(p=>{
+  next.forEach(p=>{
     if(!p.title) return;
     const tr=document.createElement("tr");
     tr.innerHTML=
