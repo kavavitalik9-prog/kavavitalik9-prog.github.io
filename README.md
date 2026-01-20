@@ -2,154 +2,155 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>XP TV</title>
+<title>Графики отключения света — Львовская область</title>
+
 <style>
 body{
   margin:0;
-  background:#000;
+  background:#0b0b0b;
   color:#fff;
   font-family:Arial, sans-serif;
 }
 .container{
-  max-width:900px;
+  max-width:1000px;
   margin:auto;
   padding:15px;
 }
-.player-wrap{
-  position:relative;
-  width:100%;
-  aspect-ratio:16/9;
+h1{
+  text-align:center;
+}
+.days{
+  display:flex;
+  gap:5px;
+  overflow-x:auto;
+  margin-bottom:15px;
+}
+.days button{
   background:#111;
-  margin-bottom:10px;
-}
-iframe{
-  width:100%;
-  height:100%;
-  border:none;
-}
-.status{
-  margin:10px 0;
-  font-size:18px;
-}
-.progress{
-  width:100%;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:#000;
-}
-td{
+  color:#fff;
   border:1px solid #333;
-  padding:8px;
-  color:#fff;
+  padding:8px 12px;
+  cursor:pointer;
 }
-.onair{
-  position:fixed;
-  bottom:10px;
-  right:10px;
-  background:#000;
-  color:#fff;
-  padding:8px 14px;
-  border-radius:8px;
+.days button.active{
+  background:#fff;
+  color:#000;
   font-weight:bold;
 }
-.small{
-  opacity:.7;
-  margin-top:8px;
+.group{
+  margin-bottom:15px;
+  border:1px solid #333;
+  padding:10px;
+}
+.group h3{
+  margin:0 0 8px 0;
+}
+.slot{
+  display:flex;
+  justify-content:space-between;
+  padding:6px;
+  border-bottom:1px solid #222;
+}
+.off{ color:#ff4d4d; }
+.on{ color:#4dff88; }
+.footer{
+  margin-top:20px;
+  opacity:.6;
+  text-align:center;
 }
 </style>
 </head>
+
 <body>
 
 <div class="container">
+  <h1>⚡ Графики отключения света<br>Львовская область</h1>
 
-  <div class="player-wrap">
-    <iframe id="player" allow="autoplay"></iframe>
+  <div class="days" id="days"></div>
+  <div id="schedule"></div>
+
+  <div class="footer">
+    Данные ознакомительные • Львовская область
   </div>
-
-  <div class="status" id="nowText">Сейчас идёт:</div>
-
-  <input type="range" class="progress" id="progress" min="0" max="100" value="0" disabled>
-
-  <h3>Ближайшие программы</h3>
-  <table>
-    <tbody id="nextList"></tbody>
-  </table>
-
-  <div class="small">время МСК</div>
-
 </div>
 
-<div class="onair" id="onair">⚫ ВНЕ ЭФИРА</div>
-
 <script>
-// ===== РАСПИСАНИЕ =====
-const schedule = [
-  {s:"2026-01-20T00:59", e:"2026-01-20T14:00", title:null},
-  {s:"2026-01-20T14:00", e:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
-  {s:"2026-01-20T17:30", e:"2026-01-20T18:30", title:null},
-  {s:"2026-01-20T18:30", e:"2026-01-21T00:30", title:"тест эфир", video:"dQw4w9WgXcQ"},
-  {s:"2026-01-21T00:30", e:"2026-01-21T00:59", title:null}
-].map(p=>({
-  ...p,
-  s:new Date(p.s),
-  e:new Date(p.e)
-}));
+// ===== ГРУППЫ =====
+const groups = [
+  "1.1","1.2","2.1","2.2",
+  "3.1","3.2","4.1","4.2",
+  "5.1","5.2","6.1","6.2"
+];
 
-const player = document.getElementById("player");
-const nowText = document.getElementById("nowText");
-const progress = document.getElementById("progress");
-const nextList = document.getElementById("nextList");
-const onair = document.getElementById("onair");
+// ===== ДАННЫЕ (ШАБЛОН) =====
+const week = {
+  "Понедельник": {},
+  "Вторник": {},
+  "Среда": {},
+  "Четверг": {},
+  "Пятница": {},
+  "Суббота": {},
+  "Воскресенье": {}
+};
 
-let currentId = null;
+// заполняем одинаковым шаблоном все группы
+for(const day in week){
+  groups.forEach(g=>{
+    week[day][`Группа ${g}`] = [
+      ["00:00–04:00","off"],
+      ["04:00–08:00","on"],
+      ["08:00–12:00","off"],
+      ["12:00–16:00","on"],
+      ["16:00–20:00","off"],
+      ["20:00–24:00","on"]
+    ];
+  });
+}
 
-function update(){
-  const now = new Date();
-  const current = schedule.find(p=>now>=p.s && now<p.e);
+// ===== ЛОГИКА =====
+const daysDiv = document.getElementById("days");
+const scheduleDiv = document.getElementById("schedule");
 
-  nextList.innerHTML = "";
+const days = Object.keys(week);
+let currentDay = days[0];
 
-  if(current){
-    const total = current.e - current.s;
-    const passed = now - current.s;
-    progress.value = Math.min(100, (passed/total)*100);
+days.forEach(day=>{
+  const btn = document.createElement("button");
+  btn.textContent = day;
+  btn.onclick = ()=>{
+    currentDay = day;
+    document.querySelectorAll(".days button")
+      .forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    render();
+  };
+  if(day === currentDay) btn.classList.add("active");
+  daysDiv.appendChild(btn);
+});
 
-    nowText.textContent = "Сейчас идёт: " + (current.title ?? "null");
+function render(){
+  scheduleDiv.innerHTML = "";
+  const dayData = week[currentDay];
 
-    if(current.title && current.video){
-      onair.textContent = "🔴 В ЭФИРЕ";
-      if(currentId !== current.video){
-        const start = Math.floor(passed/1000);
-        player.src =
-          "https://www.youtube.com/embed/" + current.video +
-          "?autoplay=1&controls=0&disablekb=1&start=" + start;
-        currentId = current.video;
-      }
-    }else{
-      onair.textContent = "⚫ ВНЕ ЭФИРА";
-      player.src = "";
-      currentId = null;
-    }
+  for(const group in dayData){
+    const box = document.createElement("div");
+    box.className = "group";
+    box.innerHTML = `<h3>${group}</h3>`;
 
-    const upcoming = schedule
-      .filter(p=>p.s > current.s)
-      .slice(0,3);
-
-    upcoming.forEach(p=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML =
-        "<td>"+p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-        " — "+p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-        "</td><td>"+(p.title ?? "null")+"</td>";
-      nextList.appendChild(tr);
+    dayData[group].forEach(s=>{
+      const row = document.createElement("div");
+      row.className = "slot " + (s[1]==="off"?"off":"on");
+      row.innerHTML =
+        `<span>${s[0]}</span>
+         <span>${s[1]==="off"?"Нет света":"Есть свет"}</span>`;
+      box.appendChild(row);
     });
+
+    scheduleDiv.appendChild(box);
   }
 }
 
-setInterval(update,1000);
-update();
+render();
 </script>
 
 </body>
