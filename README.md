@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-/* ОСНОВА */
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -15,11 +14,37 @@ body{
   text-align:center;
 }
 
+/* ЭКРАН ЭФИРА (16:9 как YouTube) */
+#playerWrap{
+  width:100%;
+  max-width:960px;
+  margin:20px auto;
+  position:relative;
+  aspect-ratio:16/9;
+  background:#000;
+  border:1px solid #222;
+}
+#playerWrap iframe{
+  width:100%;
+  height:100%;
+  border:0;
+}
+#noLive{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  color:#aaa;
+  background:#000;
+}
+
 /* ВРЕМЯ */
 #clock{
-  font-size:18px;
-  margin:15px 0;
   color:#0f0;
+  margin:10px 0;
+  font-size:18px;
 }
 
 /* СТАТУС */
@@ -31,6 +56,7 @@ body{
 /* ПОЛЗУНОК */
 #progressWrap{
   width:90%;
+  max-width:960px;
   margin:10px auto;
 }
 #progressTime{
@@ -45,12 +71,12 @@ progress{
 /* РАСПИСАНИЕ — ЧЁРНОЕ */
 #schedule{
   width:90%;
+  max-width:960px;
   margin:20px auto;
   border-collapse:collapse;
   background:#000 !important;
 }
-#schedule th,
-#schedule td{
+#schedule th,#schedule td{
   border:1px solid #333;
   padding:12px;
   color:#fff !important;
@@ -71,19 +97,24 @@ progress{
 
 <body>
 
-<!-- ВРЕМЯ -->
-<div id="clock"></div>
+<!-- ЭКРАН ЭФИРА -->
+<div id="playerWrap">
+  <iframe id="player"
+    src=""
+    allow="autoplay; encrypted-media"
+    allowfullscreen>
+  </iframe>
+  <div id="noLive">⏸ Эфир не идёт</div>
+</div>
 
-<!-- СТАТУС -->
+<div id="clock"></div>
 <div id="status">⏸ Эфир не идёт</div>
 
-<!-- ПОЛЗУНОК -->
 <div id="progressWrap">
   <div id="progressTime"></div>
   <progress id="progress" value="0" max="100"></progress>
 </div>
 
-<!-- РАСПИСАНИЕ -->
 <table id="schedule">
 <thead>
 <tr>
@@ -94,18 +125,18 @@ progress{
 <tbody id="scheduleBody"></tbody>
 </table>
 
-<!-- ЗРИТЕЛИ -->
 <div id="viewers">Зрителей сейчас: 1</div>
 
 <script>
+// ===== НАСТРОЙКА ЭФИРА =====
+// ВСТАВЬ ID ВИДЕО С YOUTUBE
+const YT_VIDEO_ID = "dQw4w9WgXcQ"; // ← замени при желании
+
 // ===== ВРЕМЯ МСК =====
-function updateClock(){
-  const now = new Date(
+function nowMSK(){
+  return new Date(
     new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"})
   );
-  document.getElementById("clock").textContent =
-    "МСК: " + now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  return now;
 }
 
 // ===== РАСПИСАНИЕ =====
@@ -116,9 +147,12 @@ const schedule = [
   {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики — 4 сезон"}
 ];
 
-// ===== ОБНОВЛЕНИЕ =====
 function update(){
-  const now = updateClock();
+  const now = nowMSK();
+
+  document.getElementById("clock").textContent =
+    "МСК: " + now.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+
   let current=null;
   let upcoming=[];
 
@@ -129,25 +163,31 @@ function update(){
     if(now<e) upcoming.push({...p,s,e});
   });
 
-  // статус
+  // ЭФИР
   if(current){
     document.getElementById("status").textContent =
       "🔴 Сейчас в эфире: " + current.title;
+
+    document.getElementById("noLive").style.display="none";
+    document.getElementById("player").src =
+      "https://www.youtube.com/embed/"+YT_VIDEO_ID+"?autoplay=1&mute=1";
 
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
 
     document.getElementById("progressTime").textContent =
-      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}) +
-      " — " +
+      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
+      " — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
   }else{
     document.getElementById("status").textContent="⏸ Эфир не идёт";
+    document.getElementById("player").src="";
+    document.getElementById("noLive").style.display="flex";
     document.getElementById("progress").value=0;
     document.getElementById("progressTime").textContent="";
   }
 
-  // таблица (сейчас + 3 следующих)
+  // РАСПИСАНИЕ (сейчас + 3)
   const body=document.getElementById("scheduleBody");
   body.innerHTML="";
   upcoming.slice(0,4).forEach(p=>{
@@ -161,16 +201,15 @@ function update(){
   });
 }
 
-// ===== СЧЁТЧИК ЗРИТЕЛЕЙ =====
+// ЗРИТЕЛИ
 let viewers=Math.floor(Math.random()*5)+1;
 setInterval(()=>{
   viewers+=Math.random()>0.5?1:-1;
   if(viewers<1) viewers=1;
   document.getElementById("viewers").textContent =
-    "Зрителей сейчас: " + viewers;
+    "Зрителей сейчас: "+viewers;
 },4000);
 
-// старт
 setInterval(update,1000);
 update();
 </script>
