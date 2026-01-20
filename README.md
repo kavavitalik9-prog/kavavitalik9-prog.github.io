@@ -67,7 +67,7 @@ progress{width:100%;height:16px;}
 // ===== РАСПИСАНИЕ =====
 const schedule = [
   {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
-  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"https://youtu.be/V8Er1uk4fcw?feature=shared"},
   {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
   {start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
   {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"}
