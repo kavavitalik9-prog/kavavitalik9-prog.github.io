@@ -5,135 +5,25 @@
 <title>XP tv — эфир</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#000;
-  color:#fff;
-  text-align:center;
-}
-/* ЭКРАН ЭФИРА (16:9) */
-#playerWrap{
-  width:100%;
-  max-width:960px;
-  margin:20px auto;
-  position:relative;
-  aspect-ratio:16/9;
-  background:#000;
-  border:1px solid #222;
-}
-#playerWrap iframe, #playerWrap video{
-  width:100%;
-  height:100%;
-  border:0;
-}
-#noLive{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-  color:#aaa;
-  background:#000;
-}
-
-/* КНОПКА ПОЛНОЕ РАСПИСАНИЕ */
-#fullScheduleBtn{
-  position:fixed;
-  top:10px;
-  right:10px;
-  background:#222;
-  color:#fff;
-  border:none;
-  padding:10px 12px;
-  cursor:pointer;
-  z-index:1000;
-}
-
-/* МОДАЛЬНОЕ ОКНО */
-#modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.9);
-  color:#fff;
-  overflow:auto;
-  z-index:1001;
-  padding:20px;
-}
-#modal table{
-  width:100%;
-  border-collapse:collapse;
-}
-#modal th,#modal td{
-  border:1px solid #333;
-  padding:8px;
-  color:#fff;
-  background:#000;
-}
-#modal th{
-  background:#111;
-}
-#modalClose{
-  position:absolute;
-  top:10px;
-  right:20px;
-  font-size:24px;
-  cursor:pointer;
-}
-
-/* СТАТУС */
-#status{
-  font-size:20px;
-  margin:10px 0;
-}
-
-/* ПОЛЗУНОК */
-#progressWrap{
-  width:90%;
-  max-width:960px;
-  margin:10px auto;
-}
-#progressTime{
-  font-size:14px;
-  margin-bottom:5px;
-}
-progress{
-  width:100%;
-  height:16px;
-}
-
-/* РАСПИСАНИЕ */
-#schedule{
-  width:90%;
-  max-width:960px;
-  margin:20px auto;
-  border-collapse:collapse;
-  background:#000 !important;
-}
-#schedule th,#schedule td{
-  border:1px solid #333;
-  padding:12px;
-  color:#fff !important;
-  background:#000 !important;
-}
-#schedule th{
-  background:#111 !important;
-}
-/* Внизу текст "Время МСК" */
-#timeLabel{
-  color:#aaa;
-  margin-bottom:30px;
-  font-size:14px;
-}
-
-/* ЗРИТЕЛИ */
-#viewers{
-  margin:20px 0;
-  font-size:18px;
-  color:#0f0;
-}
+body{margin:0;font-family:Arial,sans-serif;background:#000;color:#fff;text-align:center;}
+#playerWrap{width:100%;max-width:960px;margin:20px auto;position:relative;aspect-ratio:16/9;background:#000;border:1px solid #222;}
+#playerWrap iframe{width:100%;height:100%;border:0;}
+#noLive{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#aaa;background:#000;}
+#fullScheduleBtn{position:fixed;top:10px;right:10px;background:#222;color:#fff;border:none;padding:10px 12px;cursor:pointer;z-index:1000;}
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);color:#fff;overflow:auto;z-index:1001;padding:20px;}
+#modal table{width:100%;border-collapse:collapse;}
+#modal th,#modal td{border:1px solid #333;padding:8px;color:#fff;background:#000;}
+#modal th{background:#111;}
+#modalClose{position:absolute;top:10px;right:20px;font-size:24px;cursor:pointer;}
+#status{font-size:20px;margin:10px 0;}
+#progressWrap{width:90%;max-width:960px;margin:10px auto;}
+#progressTime{font-size:14px;margin-bottom:5px;}
+progress{width:100%;height:16px;}
+#schedule{width:90%;max-width:960px;margin:20px auto;border-collapse:collapse;background:#000 !important;}
+#schedule th,#schedule td{border:1px solid #333;padding:12px;color:#fff !important;background:#000 !important;}
+#schedule th{background:#111 !important;}
+#timeLabel{color:#aaa;margin-bottom:30px;font-size:14px;}
+#viewers{margin:20px 0;font-size:18px;color:#0f0;}
 </style>
 </head>
 <body>
@@ -184,14 +74,14 @@ const schedule = [
 ];
 
 // ===== ВРЕМЯ МСК =====
-function nowMSK(){
-  return new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"}));
-}
+function nowMSK(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"}));}
+
+// ===== ТЕКУЩИЙ ВИДЕО =====
+let currentVideo=null;
 
 // ===== ОБНОВЛЕНИЕ =====
 function update(){
-  const now = nowMSK();
-
+  const now=nowMSK();
   let current=null;
   let upcoming=[];
   schedule.forEach(p=>{
@@ -207,31 +97,33 @@ function update(){
   if(current && current.title){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
     noLive.style.display="none";
-    player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1";
+
+    // Автопереключение без перезапуска
+    if(currentVideo!==current.video){
+      player.src="https://www.youtube.com/embed/"+current.video+"?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&start="+Math.floor((now-current.s)/1000);
+      currentVideo=current.video;
+    }
 
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
-
     document.getElementById("progressTime").textContent=
-      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-      " — "+
+      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+
   } else {
     document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
-    player.src="";
+    player.src=""; currentVideo=null;
     noLive.style.display="flex";
     document.getElementById("progress").value=0;
     document.getElementById("progressTime").textContent="";
   }
 
-  // таблица текущие + 3 следующих
+  // Таблица текущие + 3 следующих
   const body=document.getElementById("scheduleBody");
   body.innerHTML="";
   upcoming.slice(0,4).forEach(p=>{
     const tr=document.createElement("tr");
-    tr.innerHTML=
-      `<td>${p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})} – ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td>
-       <td>${p.title ?? "—"}</td>`;
+    tr.innerHTML=`<td>${p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})} – ${p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})}</td><td>${p.title ?? "—"}</td>`;
     body.appendChild(tr);
   });
 }
@@ -244,7 +136,7 @@ setInterval(()=>{
   document.getElementById("viewers").textContent="Зрителей сейчас: "+viewers;
 },4000);
 
-// ===== ПОЛНОЕ РАСПИСАНИЕ В МОДАЛЬНОМ ОКНЕ =====
+// ===== МОДАЛЬНОЕ ПОЛНОЕ РАСПИСАНИЕ =====
 const modal=document.getElementById("modal");
 const modalBtn=document.getElementById("fullScheduleBtn");
 const modalClose=document.getElementById("modalClose");
