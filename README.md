@@ -3,154 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <title>XP TV</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{
   margin:0;
   background:#000;
   color:#fff;
-  font-family:Arial,sans-serif;
-  text-align:center;
+  font-family:Arial, sans-serif;
 }
-#playerWrap{
-  max-width:960px;
-  margin:20px auto;
-  aspect-ratio:16/9;
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:15px;
+}
+.player-wrap{
   position:relative;
-  border:1px solid #222;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#111;
+  margin-bottom:10px;
 }
-#playerWrap iframe{
+iframe{
   width:100%;
   height:100%;
-  border:0;
+  border:none;
 }
-#noLive{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#000;
-  color:#aaa;
-  font-size:22px;
-}
-#status{
-  font-size:20px;
+.status{
   margin:10px 0;
+  font-size:18px;
+}
+.progress{
+  width:100%;
 }
 table{
-  width:90%;
-  max-width:960px;
-  margin:20px auto;
+  width:100%;
   border-collapse:collapse;
-}
-th,td{
-  border:1px solid #333;
-  padding:12px;
   background:#000;
+}
+td{
+  border:1px solid #333;
+  padding:8px;
   color:#fff;
 }
-th{
-  background:#111;
+.onair{
+  position:fixed;
+  bottom:10px;
+  right:10px;
+  background:#000;
+  color:#fff;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:bold;
+}
+.small{
+  opacity:.7;
+  margin-top:8px;
 }
 </style>
 </head>
 <body>
 
-<h1>XP TV</h1>
+<div class="container">
 
-<div id="playerWrap">
-  <iframe id="player" allow="autoplay; encrypted-media"></iframe>
-  <div id="noLive">📴 Эфир сейчас не идёт</div>
+  <div class="player-wrap">
+    <iframe id="player" allow="autoplay"></iframe>
+  </div>
+
+  <div class="status" id="nowText">Сейчас идёт:</div>
+
+  <input type="range" class="progress" id="progress" min="0" max="100" value="0" disabled>
+
+  <h3>Ближайшие программы</h3>
+  <table>
+    <tbody id="nextList"></tbody>
+  </table>
+
+  <div class="small">время МСК</div>
+
 </div>
 
-<div id="status">📴 Эфир сейчас не идёт</div>
-
-<h2>Расписание (следующие)</h2>
-<table>
-<thead>
-<tr>
-  <th>Время (МСК)</th>
-  <th>Передача</th>
-</tr>
-</thead>
-<tbody id="nextBody"></tbody>
-</table>
+<div class="onair" id="onair">⚫ ВНЕ ЭФИРА</div>
 
 <script>
-// ================== РАСПИСАНИЕ ==================
+// ===== РАСПИСАНИЕ =====
 const schedule = [
-  // 20 января 2026
-  { start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null },
-  { start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:null },
+  {s:"2026-01-20T00:59", e:"2026-01-20T14:00", title:null},
+  {s:"2026-01-20T14:00", e:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+  {s:"2026-01-20T17:30", e:"2026-01-20T18:30", title:null},
+  {s:"2026-01-20T18:30", e:"2026-01-21T00:30", title:"тест эфир", video:"dQw4w9WgXcQ"},
+  {s:"2026-01-21T00:30", e:"2026-01-21T00:59", title:null}
+].map(p=>({
+  ...p,
+  s:new Date(p.s),
+  e:new Date(p.e)
+}));
 
-  // 21 января 2026
-  { start:"2026-01-21T00:59", end:"2026-01-21T05:00", title:null },
-  { start:"2026-01-21T05:00", end:"2026-01-21T09:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-21T09:30", end:"2026-01-21T14:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-21T14:00", end:"2026-01-21T18:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-21T18:40", end:"2026-01-21T23:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ" },
-  { start:"2026-01-21T23:40", end:"2026-01-22T00:59", title:null }
-];
+const player = document.getElementById("player");
+const nowText = document.getElementById("nowText");
+const progress = document.getElementById("progress");
+const nextList = document.getElementById("nextList");
+const onair = document.getElementById("onair");
 
-// ================== ВРЕМЯ МСК ==================
-function parseMSK(t){
-  const [d,h]=t.split("T");
-  const [y,m,da]=d.split("-");
-  const [hh,mm]=h.split(":");
-  return new Date(Date.UTC(y,m-1,da,hh-3,mm));
-}
-function nowMSK(){
-  return new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"}));
-}
-
-let currentVideo=null;
+let currentId = null;
 
 function update(){
-  const now=nowMSK();
-  let current=null;
-  let next=[];
+  const now = new Date();
+  const current = schedule.find(p=>now>=p.s && now<p.e);
 
-  schedule.forEach(p=>{
-    const s=parseMSK(p.start);
-    const e=parseMSK(p.end);
-    if(now>=s && now<e) current={...p,s,e};
-    if(s>now) next.push({...p,s,e});
-  });
+  nextList.innerHTML = "";
 
-  const player=document.getElementById("player");
-  const noLive=document.getElementById("noLive");
-  const status=document.getElementById("status");
+  if(current){
+    const total = current.e - current.s;
+    const passed = now - current.s;
+    progress.value = Math.min(100, (passed/total)*100);
 
-  // ===== ТЕКУЩИЙ ЭФИР =====
-  if(!current || current.title===null){
-    player.src="";
-    noLive.style.display="flex";
-    status.textContent="📴 Эфир сейчас не идёт";
-  } else {
-    noLive.style.display="none";
-    status.textContent="🔴 Сейчас в эфире: "+current.title;
+    nowText.textContent = "Сейчас идёт: " + (current.title ?? "null");
 
-    if(currentVideo!==current.video){
-      const startSec=Math.floor((now-current.s)/1000);
-      player.src="https://www.youtube.com/embed/"+current.video+
-        "?autoplay=1&mute=1&controls=0&disablekb=1&start="+startSec;
-      currentVideo=current.video;
+    if(current.title && current.video){
+      onair.textContent = "🔴 В ЭФИРЕ";
+      if(currentId !== current.video){
+        const start = Math.floor(passed/1000);
+        player.src =
+          "https://www.youtube.com/embed/" + current.video +
+          "?autoplay=1&controls=0&disablekb=1&start=" + start;
+        currentId = current.video;
+      }
+    }else{
+      onair.textContent = "⚫ ВНЕ ЭФИРА";
+      player.src = "";
+      currentId = null;
     }
-  }
 
-  // ===== РАСПИСАНИЕ (NULL ВИДНО) =====
-  const body=document.getElementById("nextBody");
-  body.innerHTML="";
-  next.forEach(p=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=
-      "<td>"+p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-      " — "+p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
-      "</td><td>"+(p.title===null ? "null" : p.title)+"</td>";
-    body.appendChild(tr);
-  });
+    const upcoming = schedule
+      .filter(p=>p.s > current.s)
+      .slice(0,3);
+
+    upcoming.forEach(p=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>"+p.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
+        " — "+p.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+
+        "</td><td>"+(p.title ?? "null")+"</td>";
+      nextList.appendChild(tr);
+    });
+  }
 }
 
 setInterval(update,1000);
