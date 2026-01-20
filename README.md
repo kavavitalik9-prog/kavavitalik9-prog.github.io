@@ -70,6 +70,7 @@ progress{width:100%;height:16px;}
 
 <script>
 // ===== РАСПИСАНИЕ =====
+// Видео вставь свои ссылки YouTube вместо "dQw4w9WgXcQ"
 const schedule = [
   {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
   {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
@@ -119,8 +120,8 @@ const schedule = [
   {start:"2026-01-21T22:20", end:"2026-01-21T22:40", title:"MetalFamily 2 сезон 6 серия", video:"dQw4w9WgXcQ"}
 ];
 
-// ===== Функции =====
-function parseMSK(dateStr){
+// ===== ФУНКЦИИ =====
+function parseMSK(dateStr){ // парсинг МСК
   const [y,m,dT] = dateStr.split("-");
   const [d, hm] = dT.split("T");
   const [h,min] = hm.split(":");
@@ -140,7 +141,7 @@ function update(){
     const s=parseMSK(p.start);
     const e=parseMSK(p.end);
     if(now>=s && now<e && p.title) current={...p,s,e};
-    if(p.title) upcoming.push({...p,s,e});
+    if(p.title && e>now) upcoming.push({...p,s,e});
   });
 
   const player=document.getElementById("player");
@@ -158,4 +159,5 @@ function update(){
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
     document.getElementById("progressTime").textContent=
-      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2
+      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" — "+
+      current.e.to
