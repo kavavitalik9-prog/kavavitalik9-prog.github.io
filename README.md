@@ -70,7 +70,6 @@ progress{width:100%;height:16px;}
 
 <script>
 // ===== РАСПИСАНИЕ =====
-// Видео: подставь свои ссылки YouTube
 const schedule = [
   {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
   {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
@@ -140,14 +139,14 @@ function update(){
   schedule.forEach(p=>{
     const s=parseMSK(p.start);
     const e=parseMSK(p.end);
-    if(now>=s && now<e) current={...p,s,e};
-    if(now<e) upcoming.push({...p,s,e});
+    if(now>=s && now<e && p.title) current={...p,s,e};
+    if(p.title) upcoming.push({...p,s,e});
   });
 
   const player=document.getElementById("player");
   const noLive=document.getElementById("noLive");
 
-  if(current && current.title){
+  if(current){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
     noLive.style.display="none";
 
@@ -159,8 +158,4 @@ function update(){
     const percent=((now-current.s)/(current.e-current.s))*100;
     document.getElementById("progress").value=percent;
     document.getElementById("progressTime").textContent=
-      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" — "+
-      current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
-
-  } else {
-    document.getElementById("status").text
+      current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2
