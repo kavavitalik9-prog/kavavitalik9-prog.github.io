@@ -74,10 +74,10 @@ progress{width:100%;height:16px;}
 const schedule = [
 {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
 {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
-{start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:"технические роботы", video:"dQw4w9WgXcQ"}
+{start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:null, video:"dQw4w9WgXcQ"}
 ];
 
-// ===== ФУНКЦИИ =====
+// ===== ФУНКЦИИ =====хх
 function parseMSK(dateStr){
   const [y,m,dT]=dateStr.split("-");
   const [d,hm]=dT.split("T");
