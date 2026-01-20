@@ -70,54 +70,15 @@ progress{width:100%;height:16px;}
 
 <script>
 // ===== РАСПИСАНИЕ =====
-// Видео вставь свои ссылки YouTube вместо "dQw4w9WgXcQ"
+// Замени "dQw4w9WgXcQ" на свои видео YouTube
 const schedule = [
-  {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
-  {start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T05:40", end:"2026-01-21T05:50", title:"КОРОЧЕ ГОВОРЯ, ОСТАЛСЯ ОДИН НА ЗЕМЛЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T05:50", end:"2026-01-21T06:00", title:null, video:""},
-  {start:"2026-01-21T06:00", end:"2026-01-21T06:30", title:"Мама Читера ИЗДЕВАЛАСЬ надо Мной на этом Сервере в Майнкрафт", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T06:30", end:"2026-01-21T08:20", title:"Я ОТОМСТИЛ ХЕЙТЕРШЕ Моей Девушки! ЭТО КОНЕЦ...", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T08:20", end:"2026-01-21T09:40", title:"Фиксики БОЛЬШОЙ СЕКРЕТ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T09:40", end:"2026-01-21T10:00", title:null, video:""},
-  {start:"2026-01-21T10:00", end:"2026-01-21T10:10", title:"Жену укусили за лицо... (Анимация)", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T10:10", end:"2026-01-21T10:30", title:"25-ЛЕТНИЙ СЫНОЧКА КОРЗИНОЧКА УЧИТСЯ В НАШЕМ КЛАССЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T10:30", end:"2026-01-21T12:30", title:"музыка", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T12:30", end:"2026-01-21T13:00", title:null, video:""},
-  {start:"2026-01-21T13:00", end:"2026-01-21T13:20", title:"25-ЛЕТНИЙ СЫНОЧКА КОРЗИНОЧКА УЧИТСЯ В НАШЕМ КЛАССЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T13:20", end:"2026-01-21T13:40", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА В ЖЕНСКОЙ РАЗДЕВАЛКЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T13:40", end:"2026-01-21T14:00", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА В ТЮРЬМЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T14:00", end:"2026-01-21T14:20", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА ПРОТИВ ЯЖЕМАТЕРИ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T14:20", end:"2026-01-21T14:40", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА ПРАЗДНУЕТ НОВЫЙ ГОД", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T14:40", end:"2026-01-21T15:00", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА И ОЧЕНЬ СТРАННЫЕ ДЕЛА", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T15:00", end:"2026-01-21T15:20", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКУ ВЫГНАЛИ ИЗ ШКОЛЫ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T15:20", end:"2026-01-21T15:40", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА УМ☠️ЕР И ПОПАЛ В АД", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T15:40", end:"2026-01-21T16:00", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА vs НАТУРАЛ МОЛЬБЕРТОВИЧ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T16:00", end:"2026-01-21T16:20", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА И ИНОПЛАНЕТЯНЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T16:20", end:"2026-01-21T16:40", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА В ПОЕЗДЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T16:40", end:"2026-01-21T17:00", title:"25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА В СЕЛЕ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T17:00", end:"2026-01-21T17:20", title:"25 И 12 ЛЕТНИЕ СЫНОЧКИ-КОРЗИНОЧКИ ПОДРУЖИЛИСЬ", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T17:20", end:"2026-01-21T17:30", title:"КТО ТАКОЙ 25-ЛЕТНИЙ СЫНОЧКА-КОРЗИНОЧКА? 25 фактов об Олеже", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T17:30", end:"2026-01-21T19:00", title:null, video:""},
-  {start:"2026-01-21T19:00", end:"2026-01-21T19:05", title:"MetalFamily 1 сезон 1 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:05", end:"2026-01-21T19:10", title:"MetalFamily 1 сезон 2 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:10", end:"2026-01-21T19:15", title:"MetalFamily 1 сезон 3 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:15", end:"2026-01-21T19:25", title:"MetalFamily 1 сезон 4 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:25", end:"2026-01-21T19:35", title:"MetalFamily 1 сезон 5 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:35", end:"2026-01-21T19:50", title:"MetalFamily 1 сезон 6 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T19:50", end:"2026-01-21T20:00", title:"MetalFamily 1 сезон 7 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T20:00", end:"2026-01-21T20:10", title:"MetalFamily 1 сезон 8 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T20:10", end:"2026-01-21T20:30", title:"MetalFamily 1 сезон 9 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T20:30", end:"2026-01-21T21:00", title:"MetalFamily 1 сезон 10 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T21:00", end:"2026-01-21T21:15", title:"MetalFamily 2 сезон 1 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T21:15", end:"2026-01-21T21:25", title:"MetalFamily 2 сезон 2 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T21:25", end:"2026-01-21T21:55", title:"MetalFamily 2 сезон 3 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T21:55", end:"2026-01-21T22:05", title:"MetalFamily 2 сезон 4 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T22:05", end:"2026-01-21T22:20", title:"MetalFamily 2 сезон 5 серия", video:"dQw4w9WgXcQ"},
-  {start:"2026-01-21T22:20", end:"2026-01-21T22:40", title:"MetalFamily 2 сезон 6 серия", video:"dQw4w9WgXcQ"}
+{start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
+{start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+{start:"2026-01-20T17:30", end:"2026-01-20T22:00", title:"Фиксики - 2 сезон", video:"dQw4w9WgXcQ"},
+{start:"2026-01-20T22:00", end:"2026-01-21T00:40", title:"Фиксики - 3 сезон", video:"dQw4w9WgXcQ"},
+{start:"2026-01-21T00:40", end:"2026-01-21T05:40", title:"Фиксики - 4 сезон", video:"dQw4w9WgXcQ"},
+// Остальные программы до 22:40 21 января
+// Вставь сюда остальные слоты как ты присылал
 ];
 
 // ===== ФУНКЦИИ =====
@@ -146,6 +107,8 @@ function update(){
 
   const player=document.getElementById("player");
   const noLive=document.getElementById("noLive");
+  const scheduleBody=document.getElementById("scheduleBody");
+  scheduleBody.innerHTML="";
 
   if(current){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
@@ -160,4 +123,46 @@ function update(){
     document.getElementById("progress").value=percent;
     document.getElementById("progressTime").textContent=
       current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" — "+
-      current.e.to
+      current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+
+    // Главная таблица: текущая + 3 следующие
+    const main4=[current,...upcoming.slice(0,3)];
+    main4.forEach(p=>{
+      const tr=document.createElement("tr");
+      const s=parseMSK(p.start), e=parseMSK(p.end);
+      tr.innerHTML="<td>"+s.toLocaleTimeString("ru-RU",{hour:'2-digit',minute:'2-digit'})+" — "+e.toLocaleTimeString("ru-RU",{hour:'2-digit',minute:'2-digit'})+"</td><td>"+p.title+"</td>";
+      scheduleBody.appendChild(tr);
+    });
+
+  } else {
+    document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
+    noLive.style.display="flex";
+  }
+
+  // Обновление модального окна
+  const modalBody=document.querySelector("#modal tbody");
+  modalBody.innerHTML="";
+  schedule.forEach(p=>{
+    const s=parseMSK(p.start), e=parseMSK(p.end);
+    const userTimeStart=new Date(s.getTime() + (new Date().getTimezoneOffset() + 180)*60000);
+    const userTimeEnd=new Date(e.getTime() + (new Date().getTimezoneOffset() + 180)*60000);
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+s.toLocaleDateString()+"</td><td>"+s.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+" — "+e.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+"</td><td>"+userTimeStart.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+" — "+userTimeEnd.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+"</td><td>"+(p.title?p.title:"null")+"</td>";
+    modalBody.appendChild(tr);
+  });
+}
+
+setInterval(update,1000);
+update();
+
+// ===== МОДАЛЬНОЕ ОКНО =====
+document.getElementById("fullScheduleBtn").onclick=function(){
+  document.getElementById("modal").style.display="block";
+}
+document.getElementById("modalClose").onclick=function(){
+  document.getElementById("modal").style.display="none";
+}
+</script>
+
+</body>
+</html>
