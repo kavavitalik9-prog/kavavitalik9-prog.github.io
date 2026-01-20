@@ -60,7 +60,7 @@ progress{width:100%;height:16px;}
 
 <table id="schedule">
 <thead>
-<tr><th>Время (МСК)</th><th>Передача</th></tr>
+<tr><th>Следующие передачи</th><th>Время МСК</th></tr>
 </thead>
 <tbody id="scheduleBody"></tbody>
 </table>
@@ -70,19 +70,18 @@ progress{width:100%;height:16px;}
 
 <script>
 // ===== РАСПИСАНИЕ =====
-// Замени "dQw4w9WgXcQ" на свои видео YouTube
+// Видео-заглушки YouTube вставляй свои ссылки
 const schedule = [
 {start:"2026-01-20T01:00", end:"2026-01-20T14:00", title:null, video:""},
-{start:"2026-01-20T14:00", end:"2026-01-21T14:00", title:"технические роботы", video:"dQw4w9WgXcQ"},,
-// Остальные программы до 22:40 21 января
-// Вставь сюда остальные слоты как ты присылал
+{start:"2026-01-20T14:00", end:"2026-01-20T17:30", title:"Фиксики - 1 сезон", video:"dQw4w9WgXcQ"},
+{start:"2026-01-20T17:30", end:"2026-01-21T00:59", title:"технические роботы", video:"dQw4w9WgXcQ"}
 ];
 
 // ===== ФУНКЦИИ =====
-function parseMSK(dateStr){ // парсинг МСК
-  const [y,m,dT] = dateStr.split("-");
-  const [d, hm] = dT.split("T");
-  const [h,min] = hm.split(":");
+function parseMSK(dateStr){
+  const [y,m,dT]=dateStr.split("-");
+  const [d,hm]=dT.split("T");
+  const [h,min]=hm.split(":");
   return new Date(Date.UTC(+y,+m-1,+d,+h-3,+min));
 }
 function nowMSK(){return new Date(new Date().toLocaleString("en-US",{timeZone:"Europe/Moscow"}));}
@@ -99,13 +98,22 @@ function update(){
     const s=parseMSK(p.start);
     const e=parseMSK(p.end);
     if(now>=s && now<e && p.title) current={...p,s,e};
-    if(p.title && e>now) upcoming.push({...p,s,e});
+    if(e>now && p.title) upcoming.push({...p,s,e});
   });
 
   const player=document.getElementById("player");
   const noLive=document.getElementById("noLive");
   const scheduleBody=document.getElementById("scheduleBody");
   scheduleBody.innerHTML="";
+
+  // Главная таблица: следующие 4 передачи
+  const main4 = upcoming.slice(0,4);
+  main4.forEach(p=>{
+    const s=parseMSK(p.start), e=parseMSK(p.end);
+    const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+p.title+"</td><td>"+s.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+" — "+e.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+"</td>";
+    scheduleBody.appendChild(tr);
+  });
 
   if(current){
     document.getElementById("status").textContent="🔴 Сейчас в эфире: "+current.title;
@@ -122,18 +130,11 @@ function update(){
       current.s.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" — "+
       current.e.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 
-    // Главная таблица: текущая + 3 следующие
-    const main4=[current,...upcoming.slice(0,3)];
-    main4.forEach(p=>{
-      const tr=document.createElement("tr");
-      const s=parseMSK(p.start), e=parseMSK(p.end);
-      tr.innerHTML="<td>"+s.toLocaleTimeString("ru-RU",{hour:'2-digit',minute:'2-digit'})+" — "+e.toLocaleTimeString("ru-RU",{hour:'2-digit',minute:'2-digit'})+"</td><td>"+p.title+"</td>";
-      scheduleBody.appendChild(tr);
-    });
-
   } else {
     document.getElementById("status").textContent="⏳ Подождите немного, расписание ещё формируется";
     noLive.style.display="flex";
+    document.getElementById("progress").value=0;
+    document.getElementById("progressTime").textContent="";
   }
 
   // Обновление модального окна
@@ -141,8 +142,8 @@ function update(){
   modalBody.innerHTML="";
   schedule.forEach(p=>{
     const s=parseMSK(p.start), e=parseMSK(p.end);
-    const userTimeStart=new Date(s.getTime() + (new Date().getTimezoneOffset() + 180)*60000);
-    const userTimeEnd=new Date(e.getTime() + (new Date().getTimezoneOffset() + 180)*60000);
+    const userTimeStart=new Date(s.getTime() + (new Date().getTimezoneOffset()+180)*60000);
+    const userTimeEnd=new Date(e.getTime() + (new Date().getTimezoneOffset()+180)*60000);
     const tr=document.createElement("tr");
     tr.innerHTML="<td>"+s.toLocaleDateString()+"</td><td>"+s.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+" — "+e.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+"</td><td>"+userTimeStart.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+" — "+userTimeEnd.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+"</td><td>"+(p.title?p.title:"null")+"</td>";
     modalBody.appendChild(tr);
@@ -159,7 +160,15 @@ document.getElementById("fullScheduleBtn").onclick=function(){
 document.getElementById("modalClose").onclick=function(){
   document.getElementById("modal").style.display="none";
 }
-</script>
 
+// ===== СЧЁТЧИК ЗРИТЕЛЕЙ =====
+let viewers=Math.floor(Math.random()*5)+1;
+setInterval(()=>{
+  viewers+=Math.random()>0.5?1:-1;
+  if(viewers<1) viewers=1;
+  document.getElementById("viewers").textContent="Зрителей сейчас: "+viewers;
+},4000);
+
+</script>
 </body>
 </html>
