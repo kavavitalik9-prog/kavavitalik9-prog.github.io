@@ -6,24 +6,24 @@
 <title>⚡ Графік світла — Львівська область</title>
 <style>
 body{margin:0;font-family:system-ui,Arial;background:#0f0f0f;color:#fff;}
-.container{width:100%;padding:12px;}
-.header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
-h2{font-size:18px;margin:0;}
-.viewers{border:1px solid #ffd000;padding:6px 10px;border-radius:10px;background:#111;font-size:13px;}
-select,button{width:100%;padding:12px;border-radius:10px;border:none;margin:6px 0;font-size:16px;background:#1c1c1c;color:#fff;}
+.container{width:100%;padding:8px;}
+.header{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;}
+h2{font-size:16px;margin:0;}
+.viewers{border:1px solid #ffd000;padding:4px 8px;border-radius:8px;background:#111;font-size:12px;}
+select,button{width:100%;padding:8px;border-radius:8px;border:none;margin:4px 0;font-size:14px;background:#1c1c1c;color:#fff;}
 button{background:#222;}
-.card{background:#151515;border-radius:14px;padding:12px;margin-top:10px;}
-.groupCard{border:1px solid #222;border-radius:12px;padding:10px;margin-bottom:12px;}
-.row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;padding:8px 0;font-size:14px;}
+.card{background:#151515;border-radius:12px;padding:8px;margin-top:8px;}
+.groupCard{border:1px solid #222;border-radius:10px;padding:6px;margin-bottom:6px;}
+.row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;padding:4px 0;font-size:13px;}
 .row:last-child{border:none;}
 .on{color:#4cff4c;}
 .off{color:#ff4c4c;}
-.now{background:#222;border-radius:8px;padding:6px;}
-.timer{margin-top:4px;font-size:13px;opacity:.9;}
-.pin{color:#ffd000;font-size:14px;}
-.status{font-size:20px;font-weight:bold;text-align:center;margin:12px 0;padding:8px;border-radius:12px;}
-footer{text-align:center;opacity:.5;margin:20px 0 10px;font-size:12px;}
-@media(min-width:768px){.groupCard{font-size:16px;}}
+.now{background:#222;border-radius:6px;padding:4px;}
+.timer{margin-top:2px;font-size:12px;opacity:.9;}
+.pin{color:#ffd000;font-size:12px;}
+.status{font-size:18px;font-weight:bold;text-align:center;margin:8px 0;padding:6px;border-radius:10px;}
+footer{text-align:center;opacity:.5;margin:10px 0 6px;font-size:11px;}
+@media(min-width:768px){.groupCard{font-size:14px;}}
 </style>
 </head>
 <body>
@@ -81,7 +81,7 @@ const schedule={
 "6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
 "6.2":[["00:00","23:59","on"]],
 }
-// інші дні поки що порожні, графік формується
+// Інші дні поки що порожні, графік формується
 };
 
 // =================== Функції ===================
@@ -152,7 +152,7 @@ groupSelect.onchange=render;
 
 autoSelectDay();
 render();
-setInterval(render,1000); // щосекунди
+setInterval(render,1000);
 </script>
 </body>
 </html>
