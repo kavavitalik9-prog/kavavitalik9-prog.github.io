@@ -7,7 +7,7 @@
 <style>
 body {
   margin:0;
-  background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  background: linear-gradient(135deg, #0f1115, #1c1f28);
   color:#fff;
   font-family:'Segoe UI', system-ui, sans-serif;
 }
@@ -52,17 +52,17 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
   margin-top:14px;
 }
 .group-card{
-  background:#222;
+  background:#1b1d24;
   border-radius:16px;
   padding:14px;
   margin:8px 0;
   transition:all 0.3s ease;
-  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
   position:relative;
 }
 .group-card.current-group{
   border:2px solid #00ff00;
-  background:#1f3311;
+  background:#122011;
   box-shadow:0 0 15px #00ff00;
 }
 .group-name{
@@ -76,17 +76,26 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
   margin:4px 0;
   justify-content:space-between;
   font-size:16px;
+  padding:6px 10px;
+  border-radius:12px;
+}
+.status-line.on{
+  background: rgba(0,255,0,0.15);
+}
+.status-line.off{
+  background: rgba(255,0,0,0.15);
 }
 .status-line span.status-indicator{
   width:28px;
   text-align:center;
   margin-right:6px;
-  font-size:28px;
+  font-size:22px;
 }
 .timer{
   font-size:15px;
   margin-top:6px;
   font-weight:600;
+  text-align:center;
 }
 .progress-bar{
   height:8px;
@@ -108,12 +117,6 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
   font-size:14px;
   opacity:0.8;
 }
-.likes{
-  margin-top:12px;
-  font-size:16px;
-  font-weight:600;
-  text-align:center;
-}
 .lastUpdate{
   margin-top:6px;
   font-size:14px;
@@ -125,7 +128,7 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
 }
 @media(max-width:480px){
   .group-name{font-size:16px;}
-  .status-line span.status-indicator{font-size:22px;}
+  .status-line span.status-indicator{font-size:20px;}
   .timer{font-size:14px;}
 }
 </style>
@@ -145,8 +148,6 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
 <button class="showAllBtn" onclick="showAll()">📄 Переглянути усі групи</button>
 <button onclick="pinGroup()">📌 Закріпити мою групу</button>
 
-<div class="likes">👍 Лайки: <span id="likes">0</span></div>
-
 <div class="statusCard" id="statusCard"></div>
 <div class="footer">Автооновлення • Демо</div>
 </div>
@@ -156,7 +157,7 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
 const days = ["mon","tue","wed","thu","fri","sat","sun"];
 const dayNames = {mon:"Понеділок",tue:"Вівторок",wed:"Середа",thu:"Четвер",fri:"Пʼятниця",sat:"Субота",sun:"Неділя"};
 let now = new Date();
-let today = days[now.getDay()===0?6:now.getDay()-1]; // В неділю getDay()=0
+let today = days[now.getDay()===0?6:now.getDay()-1];
 
 // ==== Графіки (приклад) ====
 const schedules = {
@@ -199,22 +200,16 @@ const groupSel = document.getElementById("group");
 for(let g=1;g<=6;g++){["1","2"].forEach(s=>groupSel.innerHTML+=`<option value="${g}.${s}">${g}.${s}</option>`);}
 groupSel.value = localStorage.getItem("group") || "1.1";
 
-// ==== Лайки ====
-let startLikeTime = new Date("2026-01-21T20:40:00");
-let likes = 0;
-
 // ==== Фейкові глядачі ====
 const viewsEl = document.getElementById("views");
 function updateViews(){viewsEl.textContent = Math.floor(975+Math.random()*700000);}
 
-// ==== Функції часу ====
+// ==== Час ====
 function nowMin(){let d=new Date();return d.getHours()*60+d.getMinutes();}
 function toMin(t){let[h,m]=t.split(":");return +h*60+ +m;}
 
 // ==== Рендер ====
 const statusCard = document.getElementById("statusCard");
-const likesEl = document.getElementById("likes");
-const lastUpdateEl = document.getElementById("lastUpdate");
 let showAllGroups=false;
 
 function render(){
@@ -224,7 +219,6 @@ function render(){
 
   let html="";
   const groups = showAllGroups?Object.keys(daySchedule):[groupSel.value];
-
   const n = nowMin();
 
   groups.forEach(group=>{
@@ -242,7 +236,7 @@ function render(){
 
     gSched.forEach(s=>{
       const indicator = s[2]==="on"?"🟢":"⚫";
-      html+=`<div class="status-line"><span class="status-indicator">${indicator}</span>${s[0]}-${s[1]}</div>`;
+      html+=`<div class="status-line ${s[2]}"><span class="status-indicator">${indicator}</span>${s[0]}-${s[1]}</div>`;
     });
 
     if(current){
@@ -267,19 +261,12 @@ function render(){
   if(diff<60) text="Останнє оновлення: щойно";
   else if(diff<3600) text=`Останнє оновлення: ${Math.floor(diff/60)} хв тому`;
   else text=`Останнє оновлення: ${Math.floor(diff/3600)} год ${Math.floor(diff/60%60)} хв тому`;
-  lastUpdateEl.textContent=text;
+  document.getElementById("lastUpdate").textContent=text;
 }
 
 // ==== Закріпити групу ====
 function pinGroup(){localStorage.setItem("group",groupSel.value); render();}
 function showAll(){showAllGroups=true;render();}
-
-// ==== Лайки +1 щосекунди від 20:40 ====
-setInterval(()=>{
-  const nowTime = new Date();
-  if(nowTime>=startLikeTime) likes++;
-  likesEl.textContent = likes;
-},1000);
 
 // ==== Автооновлення і перегляди ====
 setInterval(()=>{render();updateViews();},1000);
