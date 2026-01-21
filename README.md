@@ -36,21 +36,28 @@ footer{text-align:center;opacity:.5;margin:20px 0 10px;font-size:12px;}
 
 <div id="status" class="status">Завантаження...</div>
 
+<select id="day"></select>
 <select id="group"></select>
+
 <button onclick="pinGroup()">📌 Закріпити мою групу</button>
 <button onclick="toggleAll()">📊 Показати всі групи</button>
 
 <div id="content" class="card"></div>
 
 <footer>Оновлюється автоматично • Демонстрація</footer>
+
 <script>
-// ========== Глядачі ==========
+// =================== Глядачі ===================
 let viewers=Math.floor(Math.random()*(700000-975)+975);
 const v=document.getElementById("viewers");
 function updView(){viewers+=Math.floor(Math.random()*4000-2000);viewers=Math.max(975,Math.min(700000,viewers));v.textContent=viewers.toLocaleString("uk-UA");}
 updView(); setInterval(updView,3000);
 
-// ========== Групи ==========
+// =================== Дні та групи ===================
+const days=["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
+const daySelect=document.getElementById("day");
+days.forEach(d=>{let o=document.createElement("option");o.textContent=d;o.value=d;daySelect.appendChild(o);});
+
 const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
 const groupSelect=document.getElementById("group");
 groups.forEach(g=>{let o=document.createElement("option");o.textContent=g;groupSelect.appendChild(o);});
@@ -58,8 +65,9 @@ if(localStorage.group) groupSelect.value=localStorage.group;
 
 let showAll=true;
 
-// ========== Графік середа ==========
+// =================== Графіки ===================
 const schedule={
+"Середа": {
 "1.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
 "1.2":[["00:00","01:30","off"],["01:30","23:59","on"]],
 "2.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
@@ -72,33 +80,49 @@ const schedule={
 "5.2":[["00:00","23:59","on"]],
 "6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
 "6.2":[["00:00","23:59","on"]],
+}
+// інші дні поки що порожні, графік формується
 };
 
-// ========== Функції ==========
+// =================== Функції ===================
 function min(t){let[a,b]=t.split(":");return +a*60+ +b;}
 function toggleAll(){showAll=!showAll;render();}
 function pinGroup(){localStorage.group=groupSelect.value;alert("Групу закріплено ✅");}
 
-// ========== Основний рендер ==========
+function autoSelectDay(){
+  const today=new Date().getDay();
+  const map={1:"Понеділок",2:"Вівторок",3:"Середа",4:"Четвер",5:"Пʼятниця",6:"Субота",0:"Неділя"};
+  daySelect.value=map[today];
+}
+
+// =================== Рендер ===================
 function render(){
   const box=document.getElementById("content");
   const statusDiv=document.getElementById("status");
   box.innerHTML="";
+  const day=daySelect.value;
   
   const now=new Date();
   const curM=now.getHours()*60+now.getMinutes();
   
+  if(!schedule[day]){
+    statusDiv.textContent="⏳ Графік ще формується";
+    return;
+  }
+  
+  const daySched=schedule[day];
+  let currentStatus;
+  
   function renderGroup(g){
-    const s=schedule[g];
-    if(!s) return;
+    const s=daySched[g]; if(!s) return;
     let html=`<div class="groupCard"><b>Група ${g}</b>${localStorage.group===g?` <span class="pin">📌</span>`:""}`;
-    let found=false, nextStatus="";
+    let nextStatus="";
     s.forEach(r=>{
       const isNow=curM>=min(r[0])&&curM<=min(r[1]);
-      if(isNow){found=true; nextStatus=r[2];}
+      if(isNow) nextStatus=r[2];
       html+=`<div class="row ${isNow?"now":""}"><span>${r[0]}–${r[1]}</span><span class="${r[2]}">${r[2]==="on"?"⚡ світло є":"⛔ немає"}</span></div>`;
     });
-
+    
     // таймер
     let remaining=0;
     for(let r of s){
@@ -112,22 +136,23 @@ function render(){
     box.innerHTML+=html;
     return nextStatus;
   }
-
-  let currentStatus;
-  if(showAll){groups.forEach(g=>currentStatus=renderGroup(g));}
-  else{currentStatus=renderGroup(groupSelect.value);}
   
-  // статус зверху
+  if(showAll){
+    groups.forEach(g=>{currentStatus=renderGroup(g)});
+  }else{
+    currentStatus=renderGroup(groupSelect.value);
+  }
+  
   statusDiv.textContent=currentStatus==="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
 }
 
-// ================== Автооновлення ==================
+// =================== Автооновлення ==================
+daySelect.onchange=render;
 groupSelect.onchange=render;
+
+autoSelectDay();
 render();
-
-// оновлення кожну секунду
-setInterval(render,1000);
-
+setInterval(render,1000); // щосекунди
 </script>
 </body>
 </html>
