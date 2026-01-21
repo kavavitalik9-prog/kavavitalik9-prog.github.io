@@ -49,7 +49,7 @@ footer{text-align:center;opacity:.5;margin:10px 0 6px;font-size:11px;}
 <footer>Оновлюється автоматично • Демонстрація</footer>
 
 <script>
-// =================== Глядачі ===================
+// =================== Фейкові глядачі ===================
 let viewers=Math.floor(Math.random()*(700000-975)+975);
 const v=document.getElementById("viewers");
 function updView(){viewers+=Math.floor(Math.random()*4000-2000);viewers=Math.max(975,Math.min(700000,viewers));v.textContent=viewers.toLocaleString("uk-UA");}
@@ -71,16 +71,16 @@ let showAll=true;
 const schedule={
 "Середа": {
 "1.1":[["00:00","23:59","on"]],
-"1.2":[["00:00","01:30","off"]],
-"2.1":[["22:00","23:59","off"]],
+"1.2":[["00:00","01:30","off"],["01:30","23:59","on"]],
+"2.1":[["00:00","21:59","on"],["22:00","23:59","off"]],
 "2.2":[["00:00","23:59","on"]],
-"3.1":[["22:00","23:59","off"]],
+"3.1":[["00:00","21:59","on"],["22:00","23:59","off"]],
 "3.2":[["00:00","23:59","on"]],
 "4.1":[["00:00","23:59","on"]],
 "4.2":[["00:00","23:59","on"]],
 "5.1":[["00:00","23:59","on"]],
 "5.2":[["00:00","23:59","on"]],
-"6.1":[["00:00","01:30","off"]],
+"6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
 "6.2":[["00:00","23:59","on"]],
 },
 "Четвер": {
@@ -112,12 +112,13 @@ function autoSelectDay(){
 
 // =================== Останнє оновлення ===================
 let lastUpdateTime = new Date();
+lastUpdateTime.setHours(19,50,0); // 19:50 сьогодні
 const lastUpdateEl = document.getElementById("lastUpdate");
 function updateLastTime(){
   const now = new Date();
   let diff = Math.floor((now-lastUpdateTime)/1000/60); // хвилини
   let text="";
-  if(diff===0) text="менше хвилини тому";
+  if(diff<1) text="менше хвилини тому";
   else if(diff===1) text="1 хвилина тому";
   else if(diff<60) text=diff+" хвилин тому";
   else{
