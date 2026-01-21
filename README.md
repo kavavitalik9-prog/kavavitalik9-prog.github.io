@@ -5,25 +5,118 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Графік світла — Львівська область</title>
 <style>
-body {margin:0;background:#0e0e0e;color:#fff;font-family:system-ui,sans-serif;}
-.container{max-width:480px;margin:auto;padding:10px;}
-.header{border:2px solid #ffc400;border-radius:16px;padding:12px;text-align:center;background:#1a1a1a;}
-.header h1{margin:0;font-size:22px;}
-.meta{margin-top:6px;font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;}
-select,button{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:none;background:#1f1f1f;color:#fff;font-size:16px;}
-button{cursor:pointer;}
-.statusCard{margin-top:12px;}
-.group-card{background:#1a1a1a;border-radius:14px;padding:12px;margin:6px 0;transition:all 0.3s ease;position:relative;}
-.group-name{font-weight:700;font-size:18px;margin-bottom:8px;}
-.status-line{display:flex;align-items:center;margin:4px 0;justify-content:space-between;}
-.status-line span.status-indicator{width:28px;text-align:center;margin-right:6px;font-size:28px;}
-.timer{font-size:16px;margin-top:4px;}
-.current-group{border:2px solid #00ff00;background:#262626;}
-.progress-bar{height:6px;background:#555;border-radius:3px;margin-top:4px;position:relative;overflow:hidden;}
-.progress{height:100%;background:#00ff00;width:0%;transition:width 1s linear;}
-.footer{margin-top:14px;text-align:center;font-size:14px;opacity:0.7;}
-.likes{margin-top:8px;font-size:16px;}
-.showAllBtn{margin-top:6px;}
+body {
+  margin:0;
+  background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  color:#fff;
+  font-family:'Segoe UI', system-ui, sans-serif;
+}
+.container{
+  max-width:480px;
+  margin:auto;
+  padding:10px;
+}
+.header{
+  border-radius:16px;
+  padding:16px;
+  text-align:center;
+  background: linear-gradient(90deg,#222,#333);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.header h1{
+  margin:0;
+  font-size:24px;
+  color:#ffc400;
+  text-shadow: 1px 1px 5px #000;
+}
+.meta{
+  margin-top:8px;
+  font-size:14px;
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+}
+select, button{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:12px;
+  border:none;
+  background:#2a2a2a;
+  color:#fff;
+  font-size:16px;
+  transition:0.3s;
+}
+select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
+.statusCard{
+  margin-top:14px;
+}
+.group-card{
+  background:#222;
+  border-radius:16px;
+  padding:14px;
+  margin:8px 0;
+  transition:all 0.3s ease;
+  box-shadow:0 4px 12px rgba(0,0,0,0.4);
+  position:relative;
+}
+.group-card.current-group{
+  border:2px solid #00ff00;
+  background:#1f3311;
+  box-shadow:0 0 15px #00ff00;
+}
+.group-name{
+  font-weight:700;
+  font-size:18px;
+  margin-bottom:10px;
+}
+.status-line{
+  display:flex;
+  align-items:center;
+  margin:4px 0;
+  justify-content:space-between;
+  font-size:16px;
+}
+.status-line span.status-indicator{
+  width:28px;
+  text-align:center;
+  margin-right:6px;
+  font-size:28px;
+}
+.timer{
+  font-size:15px;
+  margin-top:6px;
+  font-weight:600;
+}
+.progress-bar{
+  height:8px;
+  background:#555;
+  border-radius:4px;
+  margin-top:6px;
+  position:relative;
+  overflow:hidden;
+}
+.progress{
+  height:100%;
+  width:0%;
+  background: linear-gradient(90deg,#00ff00,#00aa00);
+  transition:width 1s linear;
+}
+.footer{
+  margin-top:16px;
+  text-align:center;
+  font-size:14px;
+  opacity:0.8;
+}
+.likes{
+  margin-top:12px;
+  font-size:16px;
+  font-weight:600;
+  text-align:center;
+}
+.showAllBtn{
+  margin-top:8px;
+}
 @media(max-width:480px){
   .group-name{font-size:16px;}
   .status-line span.status-indicator{font-size:22px;}
@@ -58,7 +151,7 @@ const dayNames = {mon:"Понеділок",tue:"Вівторок",wed:"Сере�
 let now = new Date();
 let today = days[now.getDay()];
 
-// ==== Графіки (приклад) ====
+// ==== Графіки ====
 const schedules = {};
 
 // ==== Середа ====
@@ -112,7 +205,6 @@ function updateViews(){viewsEl.textContent = Math.floor(975+Math.random()*700000
 // ==== Таймери ====
 function nowMin(){let d=new Date();return d.getHours()*60+d.getMinutes();}
 function toMin(t){let[h,m]=t.split(":");return +h*60+ +m;}
-function pad(n){return n<10?"0"+n:n;}
 
 // ==== Рендер ====
 let showAllGroups = false;
