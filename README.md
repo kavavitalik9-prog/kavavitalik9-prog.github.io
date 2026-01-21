@@ -3,86 +3,131 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡Графік світла — Львівська область</title>
+<title>⚡ Львівська область — графіки світла</title>
+
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#0f0f0f;color:#fff;}
-.container{max-width:480px;margin:auto;padding:10px;}
-.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;}
-.status{font-size:20px;font-weight:bold;margin:8px 0;}
-.timer{font-size:14px;opacity:.8;margin-bottom:10px;}
-select,button{width:100%;padding:8px;border-radius:8px;border:none;margin:6px 0;font-size:15px;background:#1c1c1c;color:#fff;}
-.box{background:#151515;border-radius:12px;padding:10px;margin-top:10px;}
-.group{font-size:14px;border-bottom:1px solid #222;padding:6px 0;}
-.reactions{display:flex;gap:10px;margin-top:10px;}
-.likes,.dislikes{border:1px solid #333;padding:6px 10px;border-radius:8px;font-size:14px;}
-.dislikes{opacity:.5;}
-.footer{margin-top:12px;font-size:12px;opacity:.6;text-align:center;}
+body{
+  margin:0;
+  font-family:system-ui, sans-serif;
+  background:#0f0f0f;
+  color:#fff;
+}
+.container{
+  max-width:480px;
+  margin:auto;
+  padding:14px;
+}
+h1{
+  font-size:20px;
+  margin-bottom:6px;
+}
+select,button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:10px;
+  border:none;
+  background:#1f1f1f;
+  color:#fff;
+  font-size:15px;
+}
+button{
+  cursor:pointer;
+}
+.card{
+  background:#1a1a1a;
+  border-radius:14px;
+  padding:14px;
+  margin-top:10px;
+}
+.big-status{
+  font-size:20px;
+  font-weight:700;
+  text-align:center;
+  margin-bottom:6px;
+}
+.timer{
+  text-align:center;
+  font-size:14px;
+  opacity:.85;
+}
+.group{
+  font-weight:600;
+  margin-bottom:6px;
+}
+.footer{
+  margin-top:16px;
+  font-size:13px;
+  opacity:.6;
+  text-align:center;
+}
+.likes{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-top:10px;
+}
+.like, .dislike{
+  background:#1f1f1f;
+  padding:8px 14px;
+  border-radius:20px;
+}
+.views{
+  float:right;
+  opacity:.7;
+}
+.hidden{
+  display:none;
+}
 </style>
 </head>
+
 <body>
 <div class="container">
 
-<div class="header">
-  <h2>⚡Львівська область</h2>
-  <div>👁 <span id="views">...</span></div>
-</div>
+<h1>⚡ Львівська область <span class="views">👁 <span id="views"></span></span></h1>
 
-<div class="status" id="status">...</div>
-<div class="timer" id="timer">...</div>
+<select id="daySelect">
+  <option value="mon">Понеділок</option>
+  <option value="tue">Вівторок</option>
+  <option value="wed">Середа</option>
+  <option value="thu">Четвер</option>
+  <option value="fri">Пʼятниця</option>
+  <option value="sat">Субота</option>
+  <option value="sun">Неділя</option>
+</select>
 
-<select id="daySelect"></select>
-<select id="groupSelect"></select>
+<select id="groupSelect">
+  <option>1.1</option><option>1.2</option>
+  <option>2.1</option><option>2.2</option>
+  <option>3.1</option><option>3.2</option>
+  <option>4.1</option><option>4.2</option>
+  <option>5.1</option><option>5.2</option>
+  <option>6.1</option><option>6.2</option>
+</select>
 
-<button onclick="pinGroup()">📌 Закріпити групу</button>
+<button onclick="pinGroup()">📌 Закріпити мою групу</button>
 <button onclick="toggleAll()">📊 Показати всі групи</button>
 
-<div class="box" id="myGroup"></div>
-<div class="box" id="allGroups" style="display:none"></div>
+<div id="statusCard" class="card"></div>
+<div id="allGroups" class="hidden"></div>
 
-<div class="reactions">
-  <div class="likes">❤️ Лайки: <span id="likes">0</span></div>
-  <div class="dislikes">👎 Дизлайки: <span>0</span></div>
+<div class="likes">
+  <div class="like">❤️ Лайки: <span id="likes">0</span></div>
+  <div class="dislike">👎 Дизлайки: 0</div>
 </div>
 
-<div class="footer">Графік формується • Автооновлення</div>
+<div class="footer">
+  Останнє оновлення: 21.01.2026 19:50<br>
+  Оновлюється автоматично
+</div>
 
 </div>
 
 <script>
-// ================== Fake Views ==================
-function rand(min,max){return Math.floor(Math.random()*(max-min)+min);}
-document.getElementById("views").textContent = rand(975,700000).toLocaleString("uk-UA");
-
-// ================== Liked Counter ==================
-const startLikes = new Date("2026-01-21T19:40:00");
-function updateLikes(){
-  const diffSec = Math.floor((Date.now()-startLikes)/1000);
-  document.getElementById("likes").textContent = (diffSec>0?diffSec:0).toLocaleString("uk-UA");
-}
-setInterval(updateLikes,1000);
-updateLikes();
-
-// ================== Days & Groups ==================
-const days=["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
-const daySelect = document.getElementById("daySelect");
-days.forEach(d=>{
-  const o=document.createElement("option"); o.value=d; o.textContent=d;
-  daySelect.appendChild(o);
-});
-
-const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
-const groupSelect = document.getElementById("groupSelect");
-groups.forEach(g=>{
-  const o=document.createElement("option"); o.value=g; o.textContent=g;
-  groupSelect.appendChild(o);
-});
-if(localStorage.group) groupSelect.value = localStorage.group;
-
-// ================== Schedules ==================
-// Only “times when NO LIGHT”
 const schedules = {
-  "Середа":{
-    "1.1":[], 
+  wed:{
+    "1.1":[],
     "1.2":[["00:00","01:30"]],
     "2.1":[["22:00","24:00"]],
     "2.2":[],
@@ -95,7 +140,7 @@ const schedules = {
     "6.1":[["00:00","01:30"]],
     "6.2":[]
   },
-  "Четвер":{
+  thu:{
     "1.1":[["00:00","03:00"],["13:30","17:00"]],
     "1.2":[["06:30","10:00"],["13:30","17:00"]],
     "2.1":[["08:00","13:30"]],
@@ -111,88 +156,62 @@ const schedules = {
   }
 };
 
-// ================== Helpers ==================
-function inNoLight(list){
-  const now=new Date();
-  const cur = now.getHours()*60+now.getMinutes();
-  for(const [s,e] of list){
-    const sm=parseInt(s.split(":")[0])*60 + parseInt(s.split(":")[1]);
-    const em = (e==="24:00"?1440:(parseInt(e.split(":")[0])*60 + parseInt(e.split(":")[1])));
-    if(cur>=sm && cur<em) return true;
-  }
-  return false;
+function nowMinutes(){
+  const d=new Date();
+  return d.getHours()*60+d.getMinutes();
+}
+function toMin(t){
+  const [h,m]=t.split(":").map(Number);
+  return h*60+m;
 }
 
-function minutesToNext(list){
-  const now=new Date();
-  const cur = now.getHours()*60 + now.getMinutes();
-  let best=null;
-  // times when light changes
-  const points = [];
+function render(){
+  const day=document.getElementById("daySelect").value;
+  const group=document.getElementById("groupSelect").value;
+  const box=document.getElementById("statusCard");
 
-  // all off intervals
-  list.forEach(([s,e])=>{
-    const sm=parseInt(s.split(":")[0])*60+parseInt(s.split(":")[1]);
-    const em=(e==="24:00"?1440:(parseInt(e.split(":")[0])*60+parseInt(e.split(":")[1]));
-    points.push(sm,em);
+  if(!schedules[day]){
+    box.innerHTML="⏳ Графік ще формується";
+    return;
+  }
+
+  const offs=schedules[day][group]||[];
+  const now=nowMinutes();
+
+  let off=false,next=null;
+
+  offs.forEach(p=>{
+    if(now>=toMin(p[0]) && now<toMin(p[1])) off=true;
+    if(toMin(p[0])>now && (!next || toMin(p[0])<toMin(next[0]))) next=p;
   });
 
-  points.sort((a,b)=>a-b);
-  for(const p of points){
-    if(p>cur){ best=p; break;}
-  }
-  if(best===null) best=1440; // next day
-  return best-cur;
-}
-
-// ================== Render ==================
-function render(){
-  const day = daySelect.value;
-  const group = groupSelect.value;
-  const noLight = (schedules[day] && schedules[day][group])?inNoLight(schedules[day][group]):false;
-  const lightNow = !noLight;
-
-  document.getElementById("status").textContent = lightNow?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
-
-  const minsNext = (schedules[day] && schedules[day][group])?minutesToNext(schedules[day][group]):0;
-  const hrs = Math.floor(minsNext/60), mins = minsNext%60;
-  document.getElementById("timer").textContent =
-    "⏱ До зміни: "+(hrs>0?hrs+"г ":"")+mins+"хв";
-
-  // Show own group
-  document.getElementById("myGroup").innerHTML =
-    `<b>${day} — група ${group}</b><br>`+
-    (lightNow?"Світло є":"Світла нема");
-
-  // All groups
-  if(schedules[day]){
-    document.getElementById("allGroups").innerHTML =
-      Object.entries(schedules[day]).map(([g,list])=>{
-        const noL = inNoLight(list);
-        return `<div class="group">${g}: ${!noL?"🟢 є":"⚫ нема"}</div>`;
-      }).join("");
-  } else {
-    document.getElementById("allGroups").innerHTML="Графік ще формується";
+  if(off){
+    box.innerHTML=`<div class="big-status">⚫ ЗАРАЗ НЕМАЄ СВІТЛА</div>`;
+  }else{
+    box.innerHTML=`<div class="big-status">🟢 ЗАРАЗ Є СВІТЛО</div>`;
   }
 }
 
-function pinGroup(){ localStorage.group=groupSelect.value; }
-function toggleAll(){
-  const el=document.getElementById("allGroups");
-  el.style.display = el.style.display==="none"?"block":"none";
-}
+document.getElementById("daySelect").value=
+["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
 
-daySelect.onchange=render;
-groupSelect.onchange=render;
-
-// init
-days.forEach(d=>{}); // fill days
-daySelect.value = days[new Date().getDay()-1]||"Середа";
 render();
+setInterval(render,60000);
 
-// auto update
-setInterval(render,30000);
+const start=new Date("2026-01-21T19:40:00").getTime();
+setInterval(()=>{
+  const l=Math.max(0,Math.floor((Date.now()-start)/1000));
+  document.getElementById("likes").textContent=l;
+},1000);
 
+document.getElementById("views").textContent=
+Math.floor(975+Math.random()*699000);
+
+function pinGroup(){
+  localStorage.setItem("group",groupSelect.value);
+}
+const g=localStorage.getItem("group");
+if(g) groupSelect.value=g;
 </script>
 </body>
 </html>
