@@ -6,22 +6,27 @@
 <title>Графік світла — Львівська область</title>
 <style>
 body {margin:0;background:#0e0e0e;color:#fff;font-family:system-ui,sans-serif;}
-.container{max-width:480px;margin:auto;padding:12px;}
-.header{border:2px solid #ffc400;border-radius:16px;padding:12px;text-align:center;margin-bottom:10px;background:#1a1a1a;}
+.container{max-width:480px;margin:auto;padding:10px;}
+.header{border:2px solid #ffc400;border-radius:16px;padding:12px;text-align:center;background:#1a1a1a;}
 .header h1{margin:0;font-size:22px;}
-.meta{margin-top:6px;font-size:14px;display:flex;justify-content:space-between;}
-select,button{width:100%;padding:12px;margin-top:8px;border-radius:10px;border:none;background:#1f1f1f;color:#fff;font-size:16px;}
+.meta{margin-top:6px;font-size:14px;display:flex;justify-content:space-between;flex-wrap:wrap;}
+select,button{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:none;background:#1f1f1f;color:#fff;font-size:16px;}
 button{cursor:pointer;}
 .statusCard{margin-top:12px;}
 .group-card{background:#1a1a1a;border-radius:14px;padding:12px;margin:6px 0;transition:all 0.3s ease;position:relative;}
 .group-name{font-weight:700;font-size:18px;margin-bottom:8px;}
-.status-line{display:flex;align-items:center;margin:4px 0;}
+.status-line{display:flex;align-items:center;margin:4px 0;justify-content:space-between;}
 .status-line span.status-indicator{width:28px;text-align:center;margin-right:6px;font-size:28px;}
 .timer{font-size:16px;margin-top:4px;}
 .current-group{border:2px solid #00ff00;background:#262626;}
 .progress-bar{height:6px;background:#555;border-radius:3px;margin-top:4px;position:relative;overflow:hidden;}
 .progress{height:100%;background:#00ff00;width:0%;transition:width 1s linear;}
 .footer{margin-top:14px;text-align:center;font-size:14px;opacity:0.7;}
+@media(max-width:480px){
+  .group-name{font-size:16px;}
+  .status-line span.status-indicator{font-size:22px;}
+  .timer{font-size:14px;}
+}
 </style>
 </head>
 <body>
@@ -52,8 +57,28 @@ const lastUpdate = document.getElementById("lastUpdate");
 const days = ["mon","tue","wed","thu","fri","sat","sun"];
 const dayNames = {mon:"Понеділок",tue:"Вівторок",wed:"Середа",thu:"Четвер",fri:"Пʼятниця",sat:"Субота",sun:"Неділя"};
 
-// ==== Словник графіків ====
-const schedules = {mon:{},tue:{},wed:{},thu:{},fri:{},sat:{},sun:{}};
+// ==== Графіки ====
+const schedules = {};
+days.forEach(d=>schedules[d]={});
+["mon","tue","fri","sat","sun"].forEach(d=>{
+  for(let g=1;g<=6;g++){["1","2"].forEach(s=>schedules[d][`${g}.${s}`]=null);}
+});
+
+// ==== Середа ====
+schedules.wed = {
+"1.1":[["00:00","24:00","on"]],
+"1.2":[["00:00","01:30","off"],["01:30","24:00","on"]],
+"2.1":[["00:00","23:00","on"],["23:00","24:00","off"]],
+"2.2":[["00:00","24:00","on"]],
+"3.1":[["00:00","23:00","on"],["23:00","24:00","off"]],
+"3.2":[["00:00","24:00","on"]],
+"4.1":[["00:00","24:00","on"]],
+"4.2":[["00:00","24:00","on"]],
+"5.1":[["00:00","24:00","on"]],
+"5.2":[["00:00","24:00","on"]],
+"6.1":[["00:00","01:30","off"],["01:30","24:00","on"]],
+"6.2":[["00:00","24:00","on"]]
+};
 
 // ==== Четвер ====
 schedules.thu = {
@@ -70,15 +95,6 @@ schedules.thu = {
 "6.1":[["00:00","03:00","off"],["03:00","06:30","on"],["06:30","13:30","off"],["13:30","17:00","on"],["17:00","20:30","off"],["20:30","24:00","on"]],
 "6.2":[["00:00","08:00","off"],["08:00","13:30","on"],["13:30","17:00","off"],["17:00","20:30","on"],["20:30","24:00","on"]]
 };
-
-// Інші дні графік формується
-["mon","tue","wed","fri","sat","sun"].forEach(d=>{
-  for(let g=1;g<=6;g++){
-    ["1","2"].forEach(s=>{
-      schedules[d][`${g}.${s}`]=null;
-    });
-  }
-});
 
 // ==== Елементи ====
 const daySel = document.getElementById("day");
