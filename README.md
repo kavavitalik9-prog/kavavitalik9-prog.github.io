@@ -20,8 +20,8 @@ body{
 .header{
   display:flex;
   flex-wrap:wrap;
+  justify-content:space-between;
   align-items:center;
-  justify-content:center;
   gap:10px;
 }
 .viewers{
@@ -36,7 +36,7 @@ select{
   padding:10px;
   border-radius:8px;
   border:none;
-  margin:10px 0;
+  margin:8px 0;
   font-size:16px;
 }
 .card{
@@ -45,16 +45,19 @@ select{
   padding:15px;
   margin-top:10px;
 }
-.status-on{color:#4cff4c;}
-.status-off{color:#ff4c4c;}
-.timer{
-  font-size:18px;
-  margin-top:8px;
+.row{
+  display:flex;
+  justify-content:space-between;
+  border-bottom:1px solid #222;
+  padding:6px 0;
+  font-size:15px;
 }
-.fake-ip{
-  font-size:13px;
-  opacity:.7;
-  margin-top:5px;
+.on{color:#4cff4c;}
+.off{color:#ff4c4c;}
+.now{
+  background:#222;
+  border-radius:6px;
+  padding:4px 6px;
 }
 footer{
   text-align:center;
@@ -69,13 +72,11 @@ footer{
 <div class="container">
 
   <div class="header">
-    <h1>⚡ Львівська область</h1>
-    <div class="viewers">
-      👁 <span id="viewers">...</span>
-    </div>
+    <h2>⚡ Львівська область</h2>
+    <div class="viewers">👁 <span id="viewers">...</span></div>
   </div>
 
-  <select id="daySelect">
+  <select id="day">
     <option value="forming">Понеділок</option>
     <option value="forming">Вівторок</option>
     <option value="wednesday">Середа</option>
@@ -85,7 +86,7 @@ footer{
     <option value="forming">Неділя</option>
   </select>
 
-  <select id="groupSelect">
+  <select id="group">
     <option>1.1</option><option>1.2</option>
     <option>2.1</option><option>2.2</option>
     <option>3.1</option><option>3.2</option>
@@ -98,85 +99,67 @@ footer{
 
 </div>
 
-<footer>Дані можуть змінюватись • Демонстраційний проєкт</footer>
+<footer>Демонстраційний графік • Середа</footer>
 
 <script>
 // ===== ФЕЙК ОНЛАЙН =====
-let viewers = Math.floor(Math.random()*(700000-975)+975);
-const viewersEl = document.getElementById("viewers");
-
-function updateViewers(){
-  viewers += Math.floor(Math.random()*6000-3000);
-  if(viewers<975) viewers=975;
-  if(viewers>700000) viewers=700000;
-  viewersEl.textContent = viewers.toLocaleString("uk-UA");
+let viewers=Math.floor(Math.random()*(700000-975)+975);
+const v=document.getElementById("viewers");
+function upd(){
+  viewers+=Math.floor(Math.random()*5000-2500);
+  viewers=Math.max(975,Math.min(700000,viewers));
+  v.textContent=viewers.toLocaleString("uk-UA");
 }
-updateViewers();
-setInterval(updateViewers,3000);
-
-// ===== ФЕЙК IP =====
-function fakeIP(){
-  return `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.*.*`;
-}
+upd(); setInterval(upd,3000);
 
 // ===== ГРАФІК СЕРЕДИ =====
-const schedule = {
- "1.1":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
- "1.2":[["00:00","01:30",0],["01:30","23:59",1]],
- "2.1":[["00:00","20:00",1],["20:00","23:59",0]],
- "2.2":[["00:00","23:59",1]],
- "3.1":[["00:00","20:00",1],["20:00","23:59",0]],
- "3.2":[["00:00","23:59",1]],
- "4.1":[["00:00","20:00",1],["20:00","22:00",0],["22:00","23:59",1]],
- "4.2":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
- "5.1":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
- "5.2":[["00:00","23:59",1]],
- "6.1":[["00:00","01:30",0],["01:30","23:59",1]],
- "6.2":[["00:00","23:59",1]]
+const schedule={
+"1.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+"1.2":[["00:00","01:30","off"],["01:30","23:59","on"]],
+"2.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
+"2.2":[["00:00","23:59","on"]],
+"3.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
+"3.2":[["00:00","23:59","on"]],
+"4.1":[["00:00","20:00","on"],["20:00","22:00","off"],["22:00","23:59","on"]],
+"4.2":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+"5.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+"5.2":[["00:00","23:59","on"]],
+"6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
+"6.2":[["00:00","23:59","on"]]
 };
 
-const content=document.getElementById("content");
+function minutes(t){let[a,b]=t.split(":");return +a*60+ +b;}
 
-function show(){
- const day=daySelect.value;
- const group=groupSelect.value;
+function render(){
+ const day=document.getElementById("day").value;
+ const group=document.getElementById("group").value;
+ const box=document.getElementById("content");
+ box.innerHTML="";
 
  if(day!=="wednesday"){
-   content.innerHTML="⏳ <b>Графік ще формується</b>";
+   box.innerHTML="⏳ <b>Графік ще формується</b>";
    return;
  }
 
  const now=new Date();
  const cur=now.getHours()*60+now.getMinutes();
- let current=null,next=null;
 
- for(let i of schedule[group]){
-  const s=i[0].split(":"), e=i[1].split(":");
-  const sm=+s[0]*60+ +s[1], em=+e[0]*60+ +e[1];
-  if(cur>=sm && cur<=em) current=i;
-  if(cur<sm && !next) next=i;
- }
-
- if(!current){
-   content.innerHTML="⏳ Немає даних";
-   return;
- }
-
- const status=current[2]?
-   "<span class='status-on'>⚡ Світло є</span>":
-   "<span class='status-off'>⛔ Світла нема</span>";
-
- content.innerHTML=`
-   <h3>Група ${group}</h3>
-   ${status}
-   <div class="fake-ip">👤 Глядач: ${fakeIP()}</div>
- `;
+ schedule[group].forEach(i=>{
+   const s=minutes(i[0]), e=minutes(i[1]);
+   const isNow=cur>=s && cur<=e;
+   box.innerHTML+=`
+     <div class="row ${isNow?"now":""}">
+       <span>${i[0]}–${i[1]}</span>
+       <span class="${i[2]}">
+         ${i[2]==="on"?"⚡ світло є":"⛔ світла нема"}
+       </span>
+     </div>`;
+ });
 }
 
-daySelect.onchange=show;
-groupSelect.onchange=show;
-show();
+day.onchange=render;
+group.onchange=render;
+render();
 </script>
-
 </body>
 </html>
