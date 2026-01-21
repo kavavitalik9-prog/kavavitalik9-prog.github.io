@@ -9,7 +9,7 @@ body{margin:0;font-family:system-ui,Arial;background:#0f0f0f;color:#fff;}
 .container{width:100%;padding:8px;}
 .header{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;}
 h2{font-size:16px;margin:0;}
-.viewers{border:1px solid #ffd000;padding:4px 8px;border-radius:8px;background:#111;font-size:12px;}
+.viewers,.likes{border:1px solid #ffd000;padding:4px 8px;border-radius:8px;background:#111;font-size:12px;}
 .lastUpdate{font-size:12px;opacity:.7;margin-top:2px;text-align:right;}
 select,button{width:100%;padding:8px;border-radius:8px;border:none;margin:4px 0;font-size:14px;background:#1c1c1c;color:#fff;}
 button{background:#222;}
@@ -23,6 +23,7 @@ button{background:#222;}
 .timer{margin-top:2px;font-size:12px;opacity:.9;}
 .pin{color:#ffd000;font-size:12px;}
 .status{font-size:18px;font-weight:bold;text-align:center;margin:8px 0;padding:6px;border-radius:10px;}
+.diz{display:inline-block;margin:2px 4px;padding:2px 6px;background:#222;border-radius:6px;color:#aaa;cursor:default;}
 footer{text-align:center;opacity:.5;margin:10px 0 6px;font-size:11px;}
 @media(min-width:768px){.groupCard{font-size:14px;}}
 </style>
@@ -33,6 +34,7 @@ footer{text-align:center;opacity:.5;margin:10px 0 6px;font-size:11px;}
 <div class="header">
   <h2>⚡ Львівська область</h2>
   <div class="viewers">👁 <span id="viewers"></span></div>
+  <div class="likes">❤️ Лайки: <span id="likeCount">0</span></div>
 </div>
 
 <div id="status" class="status">Завантаження...</div>
@@ -46,7 +48,21 @@ footer{text-align:center;opacity:.5;margin:10px 0 6px;font-size:11px;}
 
 <div id="content" class="card"></div>
 
-<footer>Оновлюється автоматично • Демонстрація</footer>
+<footer>
+  Дізи: 
+  <span class="diz">1.1</span>
+  <span class="diz">1.2</span>
+  <span class="diz">2.1</span>
+  <span class="diz">2.2</span>
+  <span class="diz">3.1</span>
+  <span class="diz">3.2</span>
+  <span class="diz">4.1</span>
+  <span class="diz">4.2</span>
+  <span class="diz">5.1</span>
+  <span class="diz">5.2</span>
+  <span class="diz">6.1</span>
+  <span class="diz">6.2</span>
+</footer>
 
 <script>
 // =================== Фейкові глядачі ===================
@@ -54,6 +70,18 @@ let viewers=Math.floor(Math.random()*(700000-975)+975);
 const v=document.getElementById("viewers");
 function updView(){viewers+=Math.floor(Math.random()*4000-2000);viewers=Math.max(975,Math.min(700000,viewers));v.textContent=viewers.toLocaleString("uk-UA");}
 updView(); setInterval(updView,3000);
+
+// =================== Лайки ===================
+const likeEl = document.getElementById("likeCount");
+const likeStart = new Date("2026-01-21T20:40:00");
+function updateLikes() {
+  const now = new Date();
+  let diff = Math.floor((now - likeStart) / 1000); // сек
+  if(diff<0) diff=0;
+  likeEl.textContent = diff.toLocaleString("uk-UA");
+}
+updateLikes();
+setInterval(updateLikes,1000);
 
 // =================== Дні та групи ===================
 const days=["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
@@ -112,20 +140,16 @@ function autoSelectDay(){
 
 // =================== Останнє оновлення ===================
 let lastUpdateTime = new Date();
-lastUpdateTime.setHours(19,50,0); // 19:50 сьогодні
+lastUpdateTime.setHours(19,50,0);
 const lastUpdateEl = document.getElementById("lastUpdate");
 function updateLastTime(){
   const now = new Date();
-  let diff = Math.floor((now-lastUpdateTime)/1000/60); // хвилини
+  let diff = Math.floor((now-lastUpdateTime)/1000/60);
   let text="";
   if(diff<1) text="менше хвилини тому";
   else if(diff===1) text="1 хвилина тому";
   else if(diff<60) text=diff+" хвилин тому";
-  else{
-    let h=Math.floor(diff/60);
-    let m=diff%60;
-    text=h+"г "+m+"хв тому";
-  }
+  else{text=Math.floor(diff/60)+"г "+diff%60+"хв тому";}
   lastUpdateEl.textContent="Останнє оновлення: "+text;
 }
 setInterval(updateLastTime,1000);
