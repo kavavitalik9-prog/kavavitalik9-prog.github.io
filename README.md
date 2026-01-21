@@ -55,21 +55,31 @@ button {
     border-radius: 14px;
     padding: 12px;
     margin: 6px 0;
-    text-align: center;
+    transition: all 0.3s ease;
 }
 .group-name {
     font-weight: 700;
     font-size: 18px;
     margin-bottom: 8px;
 }
-.status-indicator {
+.status-line {
+    display: flex;
+    align-items: center;
+    margin: 4px 0;
+}
+.status-line span.status-indicator {
+    width: 28px;
+    text-align: center;
+    margin-right: 6px;
     font-size: 28px;
-    display: block;
-    margin: 6px 0;
 }
 .timer {
     font-size: 16px;
     margin-top: 4px;
+}
+.current-group {
+    border: 2px solid #00ff00;
+    background: #262626;
 }
 .footer {
     margin-top: 14px;
@@ -101,12 +111,10 @@ button {
 </div>
 
 <script>
-// ==================== Налаштування ====================
 const updatedAt = new Date("2026-01-21T19:50:00");
 const days = ["mon","tue","wed","thu","fri","sat","sun"];
 const dayNames = {mon:"Понеділок",tue:"Вівторок",wed:"Середа",thu:"Четвер",fri:"Пʼятниця",sat:"Субота",sun:"Неділя"};
 
-// ==================== ГРАФІКИ ====================
 const schedules = {mon:{},tue:{},wed:{},thu:{},fri:{},sat:{},sun:{}};
 
 // ==== Середа ====
@@ -171,28 +179,38 @@ function render(){
   const day = daySel.value;
   const daySchedule = schedules[day];
   let html="";
+
   Object.keys(daySchedule).forEach(group=>{
     const gSched = daySchedule[group];
-    html+=`<div class="group-card"><div class="group-name">Група ${group}</div>`;
+    let current=null;
+
+    if(gSched){
+      const n = nowMin();
+      gSched.forEach(s=>{
+        const from=toMin(s[0]), to=toMin(s[1]);
+        if(n>=from && n<to) current={from,to,state:s[2]};
+      });
+    }
+
+    const isCurrent = group===groupSel.value;
+    html+=`<div class="group-card ${isCurrent?'current-group':''}">`;
+    html+=`<div class="group-name">Група ${group}</div>`;
+
     if(!gSched){
       html+="⏳ Графік ще формується</div>";
       return;
     }
 
-    const n = nowMin();
-    let current=null;
     gSched.forEach(s=>{
-      const from=toMin(s[0]), to=toMin(s[1]), isOn=s[2]==="on";
-      html+=`<span class="status-indicator">${isOn?"🟢":"⚫"}</span> ${s[0]}-${s[1]}`;
-      html+=`<br>`;
-      if(n>=from && n<to) current={from,to,isOn};
+      const indicator = s[2]==="on"?"🟢":"⚫";
+      html+=`<div class="status-line"><span class="status-indicator">${indicator}</span>${s[0]}-${s[1]}</div>`;
     });
 
     if(current){
-      let left=current.to-n;
+      let left=current.to-nowMin();
       let h=Math.floor(left/60), m=left%60;
-      html+=`<div class="timer">⏱ До ${current.isOn?"вимкнення":"увімкнення"}: ${h} год ${m} хв</div>`;
-      html+=`<div class="timer">${current.isOn?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА"}</div>`;
+      html+=`<div class="timer">⏱ До ${current.state==="on"?"вимкнення":"увімкнення"}: ${h} год ${m} хв</div>`;
+      html+=`<div class="timer">${current.state==="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА"}</div>`;
     }
 
     html+="</div>";
@@ -201,7 +219,7 @@ function render(){
   statusCard.innerHTML = html;
 }
 
-function pinGroup(){localStorage.setItem("group",groupSel.value);}
+function pinGroup(){localStorage.setItem("group",groupSel.value); render();}
 
 function updateMeta(){
   let diff=Math.floor((Date.now()-updatedAt)/60000);
@@ -219,7 +237,7 @@ daySel.onchange=render;
 groupSel.onchange=render;
 setInterval(()=>{render();updateMeta();},1000);
 
-// Автоперемикання опівночі
+// Авто-перемикання дня опівночі
 setInterval(()=>{
   const d = new Date();
   if(d.getHours()===0 && d.getMinutes()===0 && d.getSeconds()===0){
