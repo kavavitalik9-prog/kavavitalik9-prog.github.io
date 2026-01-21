@@ -2,171 +2,214 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Графіки відключення світла — Львівська область</title>
+<title>Графік відключення світла — Львівська область</title>
 
 <style>
 body{
   margin:0;
-  background:#0b0b0b;
-  color:#ffffff;
   font-family:Arial, sans-serif;
+  background:#0d0d0d;
+  color:#fff;
 }
 .container{
   max-width:1000px;
   margin:auto;
-  padding:15px;
+  padding:20px;
 }
 h1{
   text-align:center;
+  color:#ffd000;
 }
-.days{
-  display:flex;
-  gap:6px;
-  overflow-x:auto;
-  margin-bottom:15px;
-}
-.days button{
-  background:#111;
+select, button{
+  padding:10px;
+  margin:10px 0;
+  background:#1a1a1a;
   color:#fff;
   border:1px solid #333;
-  padding:8px 12px;
+  border-radius:6px;
+}
+button{
   cursor:pointer;
 }
-.days button.active{
-  background:#fff;
-  color:#000;
-  font-weight:bold;
-}
-.group{
+.card{
+  background:#151515;
+  border-radius:10px;
+  padding:15px;
   margin-bottom:15px;
-  border:1px solid #333;
-  padding:10px;
+  box-shadow:0 0 10px #000;
 }
-.group h3{
-  margin:0 0 8px 0;
+.card h3{
+  margin-top:0;
+  color:#ffd000;
 }
 .slot{
   display:flex;
   justify-content:space-between;
-  padding:6px;
-  border-bottom:1px solid #222;
+  padding:8px;
+  margin-bottom:5px;
+  border-radius:6px;
 }
-.off{ color:#ff4d4d; }
-.on{ color:#4dff88; }
+.on{ background:#063; color:#6aff9a; }
+.off{ background:#400; color:#ff7a7a; }
 
-.empty{
-  text-align:center;
-  padding:30px;
-  font-size:18px;
+.status{
+  margin-top:10px;
+  font-weight:bold;
+}
+.countdown{
+  font-size:14px;
   opacity:0.8;
 }
 
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.95);
+  overflow:auto;
+  padding:20px;
+}
+.modal-content{
+  max-width:900px;
+  margin:auto;
+  background:#111;
+  padding:20px;
+  border-radius:10px;
+}
+.close{
+  font-size:28px;
+  cursor:pointer;
+  float:right;
+}
 .footer{
-  margin-top:20px;
-  opacity:.6;
   text-align:center;
-  font-size:14px;
+  opacity:0.6;
+  margin-top:20px;
 }
 </style>
 </head>
 
 <body>
-
 <div class="container">
-  <h1>⚡ Графіки відключення світла<br>Львівська область</h1>
+  <h1>⚡ Львівська область — Середа</h1>
 
-  <div class="days" id="days"></div>
-  <div id="schedule"></div>
+  <label>Оберіть вашу групу:</label><br>
+  <select id="groupSelect"></select><br>
 
-  <div class="footer">
-    Інформація має ознайомчий характер
+  <div id="current"></div>
+
+  <button id="showAll">Показати всі групи</button>
+
+  <div class="footer">⏱ Дані оновлюються автоматично</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Всі групи (Середа)</h2>
+    <div id="allGroups"></div>
   </div>
 </div>
 
 <script>
-// ===== ГРУПИ =====
-const groups = [
-  "1.1","1.2","2.1","2.2",
-  "3.1","3.2","4.1","4.2",
-  "5.1","5.2","6.1","6.2"
-];
-
-// ===== ГРАФІКИ =====
-// Якщо день порожній {} → буде "Графік ще формується"
-const week = {
-  "Понеділок": {},
-  "Вівторок": {},
-  "Середа": {},
-  "Четвер": {},
-  "Пʼятниця": {},
-  "Субота": {},
-  "Неділя": {}
+// ===== ГРАФІК (СЕРЕДА) =====
+const schedule = {
+ "1.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+ "1.2":[["00:00","01:30","off"],["01:30","23:59","on"]],
+ "2.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
+ "2.2":[["00:00","23:59","on"]],
+ "3.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
+ "3.2":[["00:00","23:59","on"]],
+ "4.1":[["00:00","20:00","on"],["20:00","22:00","off"],["22:00","23:59","on"]],
+ "4.2":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+ "5.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
+ "5.2":[["00:00","23:59","on"]],
+ "6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
+ "6.2":[["00:00","23:59","on"]]
 };
 
-// приклад: заповнимо ПОНЕДІЛОК
+const groups = Object.keys(schedule);
+const groupSelect = document.getElementById("groupSelect");
+const currentDiv = document.getElementById("current");
+const modal = document.getElementById("modal");
+const allGroupsDiv = document.getElementById("allGroups");
+
+// заповнюємо селект
 groups.forEach(g=>{
-  week["Понеділок"][`Група ${g}`] = [
-    ["00:00–04:00","off"],
-    ["04:00–08:00","on"],
-    ["08:00–12:00","off"],
-    ["12:00–16:00","on"],
-    ["16:00–20:00","off"],
-    ["20:00–24:00","on"]
-  ];
+  const opt=document.createElement("option");
+  opt.value=g;
+  opt.textContent="Група "+g;
+  groupSelect.appendChild(opt);
 });
 
-// ===== ЛОГІКА =====
-const daysDiv = document.getElementById("days");
-const scheduleDiv = document.getElementById("schedule");
-
-const days = Object.keys(week);
-let currentDay = days[0];
-
-days.forEach(day=>{
-  const btn = document.createElement("button");
-  btn.textContent = day;
-  btn.onclick = ()=>{
-    currentDay = day;
-    document.querySelectorAll(".days button")
-      .forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-    render();
-  };
-  if(day === currentDay) btn.classList.add("active");
-  daysDiv.appendChild(btn);
-});
-
-function render(){
-  scheduleDiv.innerHTML = "";
-  const dayData = week[currentDay];
-
-  // ❗ якщо графіків немає
-  if(Object.keys(dayData).length === 0){
-    scheduleDiv.innerHTML =
-      `<div class="empty">⏳ Графік ще формується</div>`;
-    return;
-  }
-
-  for(const group in dayData){
-    const box = document.createElement("div");
-    box.className = "group";
-    box.innerHTML = `<h3>${group}</h3>`;
-
-    dayData[group].forEach(s=>{
-      const row = document.createElement("div");
-      row.className = "slot " + (s[1]==="off"?"off":"on");
-      row.innerHTML =
-        `<span>${s[0]}</span>
-         <span>${s[1]==="off"?"Немає світла":"Є світло"}</span>`;
-      box.appendChild(row);
-    });
-
-    scheduleDiv.appendChild(box);
-  }
+// хвилини з часу
+function toMin(t){
+  const [h,m]=t.split(":").map(Number);
+  return h*60+m;
 }
 
-render();
-</script>
+function renderGroup(g){
+  currentDiv.innerHTML="";
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
 
+  const card=document.createElement("div");
+  card.className="card";
+  card.innerHTML=`<h3>Група ${g}</h3>`;
+
+  let statusText="";
+
+  schedule[g].forEach(s=>{
+    const [st,en,state]=s;
+    const stM=toMin(st);
+    const enM=toMin(en);
+
+    const row=document.createElement("div");
+    row.className="slot "+(state==="on"?"on":"off");
+    row.innerHTML=`<span>${st}–${en}</span><span>${state==="on"?"Світло є":"Світла нема"}</span>`;
+    card.appendChild(row);
+
+    if(nowMin>=stM && nowMin<enM){
+      const diff=enM-nowMin;
+      const h=Math.floor(diff/60);
+      const m=diff%60;
+      statusText=`${state==="on"?"🟢 Світло є":"🔴 Світла нема"} — ${state==="on"?"до відключення":"до увімкнення"} ${h} год ${m} хв`;
+    }
+  });
+
+  const status=document.createElement("div");
+  status.className="status";
+  status.textContent=statusText || "⏳ Немає даних";
+  card.appendChild(status);
+
+  currentDiv.appendChild(card);
+}
+
+// подія
+groupSelect.onchange=()=>renderGroup(groupSelect.value);
+renderGroup(groups[0]);
+
+// ===== ВСІ ГРУПИ =====
+document.getElementById("showAll").onclick=()=>{
+  modal.style.display="block";
+  allGroupsDiv.innerHTML="";
+  groups.forEach(g=>{
+    const c=document.createElement("div");
+    c.className="card";
+    c.innerHTML=`<h3>Група ${g}</h3>`;
+    schedule[g].forEach(s=>{
+      const r=document.createElement("div");
+      r.className="slot "+(s[2]==="on"?"on":"off");
+      r.innerHTML=`${s[0]}–${s[1]} — ${s[2]==="on"?"Світло є":"Світла нема"}`;
+      c.appendChild(r);
+    });
+    allGroupsDiv.appendChild(c);
+  });
+};
+document.getElementById("closeModal").onclick=()=>modal.style.display="none";
+
+// автооновлення
+setInterval(()=>renderGroup(groupSelect.value),60000);
+</script>
 </body>
 </html>
