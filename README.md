@@ -3,265 +3,180 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Графіки відключення світла — Львівська область</title>
+<title>⚡ Графіки відключення світла — Львівська область</title>
 
 <style>
 body{
   margin:0;
-  font-family:Arial, sans-serif;
-  background:#0d0d0d;
+  font-family:system-ui,Arial;
+  background:#0f0f0f;
   color:#fff;
 }
 .container{
-  max-width:1100px;
+  max-width:900px;
   margin:auto;
   padding:15px;
 }
-h1{
-  text-align:center;
-  color:#ffd000;
-  font-size:22px;
-}
-.days{
+.header{
   display:flex;
-  gap:8px;
-  overflow-x:auto;
-  margin-bottom:15px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
 }
-.days button{
-  padding:8px 12px;
-  background:#1a1a1a;
-  color:#fff;
-  border:1px solid #333;
-  border-radius:6px;
-  cursor:pointer;
-  white-space:nowrap;
+.viewers{
+  border:1px solid #ffd000;
+  padding:6px 12px;
+  border-radius:10px;
+  background:#111;
+  font-size:14px;
 }
-.days button.active{
-  background:#ffd000;
-  color:#000;
-  font-weight:bold;
-}
-select, button{
+select{
   width:100%;
   padding:10px;
-  margin:8px 0;
-  background:#1a1a1a;
-  color:#fff;
-  border:1px solid #333;
-  border-radius:6px;
+  border-radius:8px;
+  border:none;
+  margin:10px 0;
+  font-size:16px;
 }
 .card{
   background:#151515;
-  border-radius:10px;
+  border-radius:12px;
   padding:15px;
-  margin-bottom:15px;
-  box-shadow:0 0 10px #000;
-}
-.card h3{
-  margin-top:0;
-  color:#ffd000;
-}
-.slot{
-  display:flex;
-  justify-content:space-between;
-  padding:7px;
-  margin-bottom:5px;
-  border-radius:6px;
-  font-size:14px;
-}
-.on{ background:#063; color:#6aff9a; }
-.off{ background:#400; color:#ff7a7a; }
-.status{
   margin-top:10px;
-  font-weight:bold;
-  font-size:14px;
 }
-.center{
-  text-align:center;
-  opacity:0.8;
+.status-on{color:#4cff4c;}
+.status-off{color:#ff4c4c;}
+.timer{
+  font-size:18px;
+  margin-top:8px;
 }
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.95);
-  overflow:auto;
-  padding:15px;
-}
-.modal-content{
-  max-width:900px;
-  margin:auto;
-  background:#111;
-  padding:15px;
-  border-radius:10px;
-}
-.close{
-  font-size:26px;
-  cursor:pointer;
-  float:right;
-}
-.footer{
-  text-align:center;
-  opacity:0.6;
-  margin-top:15px;
+.fake-ip{
   font-size:13px;
+  opacity:.7;
+  margin-top:5px;
 }
-
-/* 📱 адаптація */
-@media (max-width:600px){
-  h1{font-size:18px;}
-  .slot{flex-direction:column; gap:4px;}
+footer{
+  text-align:center;
+  margin:20px 0;
+  opacity:.5;
+  font-size:13px;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <h1>⚡ Львівська область</h1>
 
-  <div class="days" id="days"></div>
-
-  <label>Оберіть вашу групу:</label>
-  <select id="groupSelect"></select>
-
-  <div id="content"></div>
-
-  <button id="showAll">Показати всі групи</button>
-
-  <div class="footer">⏱ Дані оновлюються автоматично</div>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <span class="close" id="closeModal">&times;</span>
-    <h2>Всі групи — Середа</h2>
-    <div id="allGroups"></div>
+  <div class="header">
+    <h1>⚡ Львівська область</h1>
+    <div class="viewers">
+      👁 <span id="viewers">...</span>
+    </div>
   </div>
+
+  <select id="daySelect">
+    <option value="forming">Понеділок</option>
+    <option value="forming">Вівторок</option>
+    <option value="wednesday">Середа</option>
+    <option value="forming">Четвер</option>
+    <option value="forming">Пʼятниця</option>
+    <option value="forming">Субота</option>
+    <option value="forming">Неділя</option>
+  </select>
+
+  <select id="groupSelect">
+    <option>1.1</option><option>1.2</option>
+    <option>2.1</option><option>2.2</option>
+    <option>3.1</option><option>3.2</option>
+    <option>4.1</option><option>4.2</option>
+    <option>5.1</option><option>5.2</option>
+    <option>6.1</option><option>6.2</option>
+  </select>
+
+  <div id="content" class="card"></div>
+
 </div>
+
+<footer>Дані можуть змінюватись • Демонстраційний проєкт</footer>
 
 <script>
-// ===== ДНІ =====
-const daysList = ["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
-let currentDay = "Середа";
+// ===== ФЕЙК ОНЛАЙН =====
+let viewers = Math.floor(Math.random()*(700000-975)+975);
+const viewersEl = document.getElementById("viewers");
 
-// ===== ГРАФІК ЛИШЕ НА СЕРЕДУ =====
-const wednesday = {
- "1.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
- "1.2":[["00:00","01:30","off"],["01:30","23:59","on"]],
- "2.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
- "2.2":[["00:00","23:59","on"]],
- "3.1":[["00:00","20:00","on"],["20:00","23:59","off"]],
- "3.2":[["00:00","23:59","on"]],
- "4.1":[["00:00","20:00","on"],["20:00","22:00","off"],["22:00","23:59","on"]],
- "4.2":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
- "5.1":[["00:00","18:00","on"],["18:00","20:00","off"],["20:00","23:59","on"]],
- "5.2":[["00:00","23:59","on"]],
- "6.1":[["00:00","01:30","off"],["01:30","23:59","on"]],
- "6.2":[["00:00","23:59","on"]]
-};
+function updateViewers(){
+  viewers += Math.floor(Math.random()*6000-3000);
+  if(viewers<975) viewers=975;
+  if(viewers>700000) viewers=700000;
+  viewersEl.textContent = viewers.toLocaleString("uk-UA");
+}
+updateViewers();
+setInterval(updateViewers,3000);
 
-const groups = Object.keys(wednesday);
-const daysDiv = document.getElementById("days");
-const groupSelect = document.getElementById("groupSelect");
-const content = document.getElementById("content");
-const modal = document.getElementById("modal");
-const allGroups = document.getElementById("allGroups");
-
-// кнопки днів
-daysList.forEach(d=>{
-  const b=document.createElement("button");
-  b.textContent=d;
-  if(d===currentDay) b.classList.add("active");
-  b.onclick=()=>{
-    currentDay=d;
-    document.querySelectorAll(".days button").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active");
-    render();
-  };
-  daysDiv.appendChild(b);
-});
-
-// select груп
-groups.forEach(g=>{
-  const o=document.createElement("option");
-  o.value=g;
-  o.textContent="Група "+g;
-  groupSelect.appendChild(o);
-});
-
-function toMin(t){
-  const [h,m]=t.split(":").map(Number);
-  return h*60+m;
+// ===== ФЕЙК IP =====
+function fakeIP(){
+  return `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.*.*`;
 }
 
-function render(){
-  content.innerHTML="";
+// ===== ГРАФІК СЕРЕДИ =====
+const schedule = {
+ "1.1":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
+ "1.2":[["00:00","01:30",0],["01:30","23:59",1]],
+ "2.1":[["00:00","20:00",1],["20:00","23:59",0]],
+ "2.2":[["00:00","23:59",1]],
+ "3.1":[["00:00","20:00",1],["20:00","23:59",0]],
+ "3.2":[["00:00","23:59",1]],
+ "4.1":[["00:00","20:00",1],["20:00","22:00",0],["22:00","23:59",1]],
+ "4.2":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
+ "5.1":[["00:00","18:00",1],["18:00","20:00",0],["20:00","23:59",1]],
+ "5.2":[["00:00","23:59",1]],
+ "6.1":[["00:00","01:30",0],["01:30","23:59",1]],
+ "6.2":[["00:00","23:59",1]]
+};
 
-  if(currentDay!=="Середа"){
-    content.innerHTML=`<div class="card center">⏳ Графік ще формується</div>`;
-    return;
-  }
+const content=document.getElementById("content");
 
-  const g=groupSelect.value;
-  const now=new Date();
-  const nowMin=now.getHours()*60+now.getMinutes();
+function show(){
+ const day=daySelect.value;
+ const group=groupSelect.value;
 
-  const card=document.createElement("div");
-  card.className="card";
-  card.innerHTML=`<h3>Група ${g}</h3>`;
+ if(day!=="wednesday"){
+   content.innerHTML="⏳ <b>Графік ще формується</b>";
+   return;
+ }
 
-  let statusText="";
+ const now=new Date();
+ const cur=now.getHours()*60+now.getMinutes();
+ let current=null,next=null;
 
-  wednesday[g].forEach(s=>{
-    const [st,en,state]=s;
-    const stM=toMin(st), enM=toMin(en);
+ for(let i of schedule[group]){
+  const s=i[0].split(":"), e=i[1].split(":");
+  const sm=+s[0]*60+ +s[1], em=+e[0]*60+ +e[1];
+  if(cur>=sm && cur<=em) current=i;
+  if(cur<sm && !next) next=i;
+ }
 
-    const row=document.createElement("div");
-    row.className="slot "+(state==="on"?"on":"off");
-    row.innerHTML=`<span>${st}–${en}</span><span>${state==="on"?"Світло є":"Світла нема"}</span>`;
-    card.appendChild(row);
+ if(!current){
+   content.innerHTML="⏳ Немає даних";
+   return;
+ }
 
-    if(nowMin>=stM && nowMin<enM){
-      const diff=enM-nowMin;
-      const h=Math.floor(diff/60), m=diff%60;
-      statusText = (state==="on"?"🟢 Світло є":"🔴 Світла нема")
-        + " — " + (state==="on"?"до відключення":"до увімкнення")
-        + ` ${h} год ${m} хв`;
-    }
-  });
+ const status=current[2]?
+   "<span class='status-on'>⚡ Світло є</span>":
+   "<span class='status-off'>⛔ Світла нема</span>";
 
-  const status=document.createElement("div");
-  status.className="status";
-  status.textContent=statusText || "⏳ Немає активного інтервалу";
-  card.appendChild(status);
-
-  content.appendChild(card);
+ content.innerHTML=`
+   <h3>Група ${group}</h3>
+   ${status}
+   <div class="fake-ip">👤 Глядач: ${fakeIP()}</div>
+ `;
 }
 
-groupSelect.onchange=render;
-render();
-
-// всі групи
-document.getElementById("showAll").onclick=()=>{
-  modal.style.display="block";
-  allGroups.innerHTML="";
-  groups.forEach(g=>{
-    const c=document.createElement("div");
-    c.className="card";
-    c.innerHTML=`<h3>Група ${g}</h3>`;
-    wednesday[g].forEach(s=>{
-      const r=document.createElement("div");
-      r.className="slot "+(s[2]==="on"?"on":"off");
-      r.textContent=`${s[0]}–${s[1]} — ${s[2]==="on"?"Світло є":"Світла нема"}`;
-      c.appendChild(r);
-    });
-    allGroups.appendChild(c);
-  });
-};
-document.getElementById("closeModal").onclick=()=>modal.style.display="none";
-
-setInterval(render,60000);
+daySelect.onchange=show;
+groupSelect.onchange=show;
+show();
 </script>
+
 </body>
 </html>
