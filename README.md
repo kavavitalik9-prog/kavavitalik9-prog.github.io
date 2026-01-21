@@ -114,6 +114,12 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
   font-weight:600;
   text-align:center;
 }
+.lastUpdate{
+  margin-top:6px;
+  font-size:14px;
+  text-align:center;
+  opacity:0.9;
+}
 .showAllBtn{
   margin-top:8px;
 }
@@ -130,10 +136,11 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
 <h1>⚡ Львівська область</h1>
 <div class="meta">
 <div>👁 <span id="views"></span></div>
-<div id="lastUpdate"></div>
 </div>
+<div class="lastUpdate" id="lastUpdate"></div>
 </div>
 
+<select id="daySelect"></select>
 <select id="group"></select>
 <button class="showAllBtn" onclick="showAll()">📄 Переглянути усі групи</button>
 <button onclick="pinGroup()">📌 Закріпити мою групу</button>
@@ -145,17 +152,15 @@ select:hover,button:hover{background:#3a3a3a; cursor:pointer;}
 </div>
 
 <script>
-// ==== Авто-вибір дня ====
-const days = ["sun","mon","tue","wed","thu","fri","sat"];
+// ==== Дні тижня ====
+const days = ["mon","tue","wed","thu","fri","sat","sun"];
 const dayNames = {mon:"Понеділок",tue:"Вівторок",wed:"Середа",thu:"Четвер",fri:"Пʼятниця",sat:"Субота",sun:"Неділя"};
 let now = new Date();
-let today = days[now.getDay()];
+let today = days[now.getDay()===0?6:now.getDay()-1]; // В неділю getDay()=0
 
-// ==== Графіки ====
-const schedules = {};
-
-// ==== Середа ====
-schedules.wed = {
+// ==== Графіки (приклад) ====
+const schedules = {
+wed: {
 "1.1":[["00:00","24:00","on"]],
 "1.2":[["00:00","01:30","off"],["01:30","24:00","on"]],
 "2.1":[["00:00","23:00","on"],["23:00","24:00","off"]],
@@ -168,10 +173,8 @@ schedules.wed = {
 "5.2":[["00:00","24:00","on"]],
 "6.1":[["00:00","01:30","off"],["01:30","24:00","on"]],
 "6.2":[["00:00","24:00","on"]]
-};
-
-// ==== Четвер ====
-schedules.thu = {
+},
+thu:{
 "1.1":[["00:00","03:00","off"],["03:00","13:30","on"],["13:30","17:00","off"],["17:00","24:00","on"]],
 "1.2":[["00:00","06:30","off"],["06:30","10:00","on"],["10:00","13:30","off"],["13:30","17:00","on"],["17:00","24:00","on"]],
 "2.1":[["00:00","08:00","off"],["08:00","13:30","on"],["13:30","17:00","off"],["17:00","22:00","on"],["22:00","24:00","on"]],
@@ -184,58 +187,58 @@ schedules.thu = {
 "5.2":[["00:00","13:30","off"],["13:30","17:00","on"],["17:00","20:30","off"],["20:30","24:00","on"]],
 "6.1":[["00:00","03:00","off"],["03:00","06:30","on"],["06:30","13:30","off"],["13:30","17:00","on"],["17:00","20:30","off"],["20:30","24:00","on"]],
 "6.2":[["00:00","08:00","off"],["08:00","13:30","on"],["13:30","17:00","off"],["17:00","20:30","on"],["20:30","24:00","on"]]
+}
 };
 
-// ==== Елементи ====
+// ==== Селект днів і груп ====
+const daySelect = document.getElementById("daySelect");
+days.forEach(d=>daySelect.innerHTML+=`<option value="${d}">${dayNames[d]}</option>`);
+daySelect.value = today;
+
 const groupSel = document.getElementById("group");
 for(let g=1;g<=6;g++){["1","2"].forEach(s=>groupSel.innerHTML+=`<option value="${g}.${s}">${g}.${s}</option>`);}
 groupSel.value = localStorage.getItem("group") || "1.1";
-
-const statusCard = document.getElementById("statusCard");
-const likesEl = document.getElementById("likes");
-const viewsEl = document.getElementById("views");
 
 // ==== Лайки ====
 let startLikeTime = new Date("2026-01-21T20:40:00");
 let likes = 0;
 
 // ==== Фейкові глядачі ====
+const viewsEl = document.getElementById("views");
 function updateViews(){viewsEl.textContent = Math.floor(975+Math.random()*700000);}
 
-// ==== Таймери ====
+// ==== Функції часу ====
 function nowMin(){let d=new Date();return d.getHours()*60+d.getMinutes();}
 function toMin(t){let[h,m]=t.split(":");return +h*60+ +m;}
 
 // ==== Рендер ====
-let showAllGroups = false;
-function render(){
-  const dayKey = today;
-  const daySchedule = schedules[dayKey];
-  if(!daySchedule) return statusCard.innerHTML="⏳ Графік ще формується";
-  let html="";
+const statusCard = document.getElementById("statusCard");
+const likesEl = document.getElementById("likes");
+const lastUpdateEl = document.getElementById("lastUpdate");
+let showAllGroups=false;
 
+function render(){
+  const dayKey = daySelect.value;
+  const daySchedule = schedules[dayKey];
+  if(!daySchedule){statusCard.innerHTML="⏳ Графік ще формується"; return;}
+
+  let html="";
   const groups = showAllGroups?Object.keys(daySchedule):[groupSel.value];
+
+  const n = nowMin();
 
   groups.forEach(group=>{
     const gSched = daySchedule[group];
     let current=null;
-    const n = nowMin();
 
-    if(gSched){
-      gSched.forEach(s=>{
-        const from=toMin(s[0]), to=toMin(s[1]);
-        if(n>=from && n<to) current={from,to,state:s[2],start:s[0],end:s[1]};
-      });
-    }
+    gSched.forEach(s=>{
+      const from=toMin(s[0]), to=toMin(s[1]);
+      if(n>=from && n<to) current={from,to,state:s[2],start:s[0],end:s[1]};
+    });
 
     const isCurrent = group===groupSel.value;
     html+=`<div class="group-card ${isCurrent?'current-group':''}">`;
     html+=`<div class="group-name">Група ${group}</div>`;
-
-    if(!gSched){
-      html+="⏳ Графік ще формується</div>";
-      return;
-    }
 
     gSched.forEach(s=>{
       const indicator = s[2]==="on"?"🟢":"⚫";
@@ -256,6 +259,15 @@ function render(){
   });
 
   statusCard.innerHTML = html;
+
+  // ==== Останнє оновлення ====
+  let lastUpdate = new Date("2026-01-21T22:18:00"); 
+  let diff = Math.floor((new Date() - lastUpdate)/1000);
+  let text="";
+  if(diff<60) text="Останнє оновлення: щойно";
+  else if(diff<3600) text=`Останнє оновлення: ${Math.floor(diff/60)} хв тому`;
+  else text=`Останнє оновлення: ${Math.floor(diff/3600)} год ${Math.floor(diff/60%60)} хв тому`;
+  lastUpdateEl.textContent=text;
 }
 
 // ==== Закріпити групу ====
@@ -269,7 +281,7 @@ setInterval(()=>{
   likesEl.textContent = likes;
 },1000);
 
-// ==== Автооновлення та глядачі ====
+// ==== Автооновлення і перегляди ====
 setInterval(()=>{render();updateViews();},1000);
 
 // ==== Ініціалізація ====
