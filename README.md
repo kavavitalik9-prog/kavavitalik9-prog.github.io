@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Графік світла</title>
+<title>Моя карта</title>
 
 <style>
 body{
@@ -15,49 +15,31 @@ body{
   justify-content:center;
 }
 .phone{
-  max-width:420px;
   width:100%;
+  max-width:430px;
   min-height:100vh;
-  padding:12px 12px 80px;
+  padding:12px;
 }
 .header{
   background:#151a26;
   border-radius:18px;
   padding:14px;
-  margin-bottom:12px;
+  margin-bottom:10px;
 }
-.group{
+.mapBox{
   background:#151a26;
   border-radius:18px;
-  padding:14px;
-  margin-bottom:12px;
-}
-.timeline{
-  height:20px;
-  background:#222;
-  border-radius:10px;
   overflow:hidden;
-  margin-top:6px;
-  position:relative;
 }
-.segOn{background:#2cff9a;height:100%;position:absolute}
-.segOff{background:#ff5c5c;height:100%;position:absolute}
-.now{
-  position:absolute;
-  width:2px;
-  height:26px;
-  background:#fff;
-  top:-3px;
+.mapBox img{
+  width:100%;
+  display:block;
 }
-.on{color:#2cff9a}
-.off{color:#ff5c5c}
-.blink{animation:blink 3s infinite}
-@keyframes blink{
-  0%,100%{opacity:1}
-  50%{opacity:.7}
+.info{
+  padding:10px;
+  font-size:14px;
+  opacity:.85;
 }
-
-/* ADMIN BUTTON */
 .adminBtn{
   position:fixed;
   right:0;
@@ -69,8 +51,6 @@ body{
   padding:12px;
   font-size:18px;
 }
-
-/* MODAL */
 .modal{
   position:fixed;
   inset:0;
@@ -86,14 +66,22 @@ body{
   width:90%;
   max-width:380px;
 }
-input,select,textarea,button{
+input,button{
   width:100%;
-  margin-top:8px;
+  margin-top:10px;
   padding:10px;
   border-radius:10px;
   border:none;
   background:#222;
   color:#fff;
+}
+.viewers{
+  background:#1d2333;
+  border-radius:12px;
+  padding:6px 10px;
+  font-size:13px;
+  display:inline-block;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -101,26 +89,25 @@ input,select,textarea,button{
 <body>
 <div class="phone">
   <div class="header">
-    <b>⚡ Львівська область</b><br>
-    <span id="updated"></span>
+    <b id="title">🗺 Моя карта</b><br>
+    <span id="updated"></span><br>
+    <span class="viewers">👁 <span id="viewers"></span></span>
   </div>
 
-  <div id="list"></div>
+  <div class="mapBox">
+    <img id="mapImg" src="">
+    <div class="info">Супутниковий знімок</div>
+  </div>
 </div>
 
 <button class="adminBtn" onclick="openAdmin()">⚙</button>
 
-<!-- ADMIN -->
 <div class="modal" id="admin">
   <div class="modalBox">
     <h3>Адмін панель</h3>
     <input id="pass" placeholder="Пароль">
-    <select id="day"></select>
-    <select id="group"></select>
-    <textarea id="offInput" rows="5"
-      placeholder="Періоди БЕЗ світла
-10:00-12:00
-18:30-20:00"></textarea>
+    <input id="mapTitle" placeholder="Назва карти">
+    <input type="file" id="file">
     <button onclick="save()">Зберегти</button>
     <button onclick="closeAdmin()">Закрити</button>
   </div>
@@ -128,95 +115,65 @@ input,select,textarea,button{
 
 <script>
 const PASS="3709";
-const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
-const days=["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
 
-let schedules={};
-days.forEach(d=>{
-  schedules[d]={};
-  groups.forEach(g=>schedules[d][g]=[]);
-});
+let data=JSON.parse(localStorage.getItem("mapData"))||{
+  title:"🗺 Моя карта",
+  img:"",
+  updated:Date.now()
+};
 
-let lastUpdate=new Date();
+const titleEl=document.getElementById("title");
+const imgEl=document.getElementById("mapImg");
+const updatedEl=document.getElementById("updated");
 
-const daySel=document.getElementById("day");
-const groupSel=document.getElementById("group");
-days.forEach(d=>daySel.innerHTML+=`<option>${d}</option>`);
-groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
-
-function openAdmin(){document.getElementById("admin").style.display="flex"}
-function closeAdmin(){document.getElementById("admin").style.display="none"}
-
-function toMin(t){
-  let[h,m]=t.split(":").map(Number);
-  return h*60+m;
-}
-
-function formatTime(min){
-  let h=Math.floor(min/60);
-  let m=min%60;
-  let r=[];
-  if(h>0)r.push(h+" год");
-  if(m>0)r.push(m+" хв");
-  return r.join(" ");
-}
-
-function build(off){
-  let p=[0,1440];
-  off.forEach(r=>p.push(r[0],r[1]));
-  p=[...new Set(p)].sort((a,b)=>a-b);
-  let r=[];
-  for(let i=0;i<p.length-1;i++){
-    let a=p[i],b=p[i+1];
-    let offed=off.some(o=>a>=o[0]&&b<=o[1]);
-    r.push([a,b,offed?"off":"on"]);
-  }
-  return r;
-}
-
-function save(){
-  if(pass.value!==PASS){alert("Невірний пароль");return;}
-  let off=offInput.value.split("\n").filter(Boolean)
-    .map(l=>l.split("-").map(toMin));
-  schedules[day.value][group.value]=build(off);
-  lastUpdate=new Date();
-  closeAdmin();
-  render();
+function formatAgo(ms){
+  let m=Math.floor((Date.now()-ms)/60000);
+  if(m<60) return `Останнє оновлення: ${m} хв тому`;
+  let h=Math.floor(m/60);
+  let mm=m%60;
+  if(h<24) return `Останнє оновлення: ${h} год ${mm} хв тому`;
+  let d=Math.floor(h/24);
+  return `Останнє оновлення: ${d} д тому`;
 }
 
 function render(){
-  updated.innerText="Останнє оновлення: "+lastUpdate.toLocaleString();
-  let now=new Date();
-  let m=now.getHours()*60+now.getMinutes();
-  let d=days[(now.getDay()+6)%7];
-  list.innerHTML="";
-
-  groups.forEach(g=>{
-    let segs="",state="off",next=0;
-    schedules[d][g].forEach(s=>{
-      let[a,b,t]=s;
-      let l=a/1440*100,w=(b-a)/1440*100;
-      segs+=`<div class="${t=="on"?"segOn":"segOff"}" style="left:${l}%;width:${w}%"></div>`;
-      if(m>=a&&m<b){state=t;next=b-m}
-    });
-
-    list.innerHTML+=`
-    <div class="group">
-      <b>Група ${g}</b>
-      <div class="timeline">
-        ${segs}
-        <div class="now" style="left:${m/1440*100}%"></div>
-      </div>
-      <div class="${state=="on"?"on blink":"off"}">
-        ${state=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМА СВІТЛА"}
-      </div>
-      <div>До зміни: ${formatTime(next)}</div>
-    </div>`;
-  });
+  titleEl.textContent=data.title;
+  if(data.img) imgEl.src=data.img;
+  updatedEl.textContent=formatAgo(data.updated);
 }
-
 render();
 setInterval(render,60000);
+
+/* viewers (fake) */
+let viewers=975+Math.floor(Math.random()*2000);
+setInterval(()=>{
+  viewers+=Math.floor(Math.random()*3);
+  document.getElementById("viewers").textContent=viewers;
+},2000);
+
+function openAdmin(){admin.style.display="flex"}
+function closeAdmin(){admin.style.display="none"}
+
+function save(){
+  if(pass.value!==PASS){alert("Невірний пароль");return;}
+  data.title=mapTitle.value||data.title;
+
+  let f=file.files[0];
+  if(f){
+    let r=new FileReader();
+    r.onload=()=>{
+      data.img=r.result;
+      data.updated=Date.now();
+      localStorage.setItem("mapData",JSON.stringify(data));
+      closeAdmin(); render();
+    }
+    r.readAsDataURL(f);
+  }else{
+    data.updated=Date.now();
+    localStorage.setItem("mapData",JSON.stringify(data));
+    closeAdmin(); render();
+  }
+}
 </script>
 </body>
 </html>
