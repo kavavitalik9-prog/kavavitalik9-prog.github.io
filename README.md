@@ -3,193 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Мої карти</title>
+<title>Графік світла — Львівська область</title>
 <style>
-body {
-  margin: 0;
-  font-family: system-ui;
-  background: #000;
-  color: #fff;
-  display: flex;
-  justify-content: center;
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b0d13;
+  color:#fff;
+  display:flex;
+  justify-content:center;
 }
-
-.phone {
-  width: 100%;
-  max-width: 430px;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
+.phone{
+  max-width:430px;
+  width:100%;
+  min-height:100vh;
+  padding:12px;
 }
-
-#map {
-  width: 100%;
-  height: 100%;
-  background-image: url('https://i.imgur.com/5rB4vTU.jpg');
-  background-size: cover;
-  background-position: center;
-  position: relative;
+.header{
+  background:#151a26;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:10px;
+  text-align:center;
 }
-
-/* Кнопка адміна */
-.adminBtn {
-  position: fixed;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #222;
-  color: #fff;
-  border: none;
-  border-radius: 14px 0 0 14px;
-  padding: 12px;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 100;
+.group{
+  background:#151a26;
+  border-radius:16px;
+  margin-bottom:12px;
+  padding:12px;
 }
-
-/* Додані знімки */
-.snapshot {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  border: 2px solid #2b61ff;
-  border-radius: 8px;
-  background-size: cover;
-  background-position: center;
+.status{
+  font-weight:bold;
+  margin-top:6px;
 }
-
-/* Модалки */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 200;
-}
-
-.modalBox {
-  background: #151a26;
-  padding: 16px;
-  border-radius: 14px;
-  width: 90%;
-  max-width: 380px;
-}
-
-input, button {
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  background: #222;
-  color: #fff;
-}
-
-button {
-  background: #2b61ff;
-  cursor: pointer;
-}
-
-button.close {
-  background: #333;
-}
+.green{color:#00ff00;}
+.red{color:#ff3333;}
+.small{font-size:12px;opacity:.7;}
 </style>
 </head>
-
 <body>
 <div class="phone">
-  <div id="map"></div>
-</div>
-
-<button class="adminBtn" onclick="openLogin()">⚙</button>
-
-<!-- LOGIN -->
-<div class="modal" id="login">
-  <div class="modalBox">
-    <h3>Введи пароль</h3>
-    <input id="pass" placeholder="Пароль">
-    <button onclick="check()">Увійти</button>
-    <button class="close" onclick="closeAll()">Скасувати</button>
+  <div class="header">
+    <b>⚡ Львівська область</b><br>
+    <span id="updated" class="small">Останнє оновлення: 08:29 22 січня 2026</span>
   </div>
-</div>
-
-<!-- ADMIN -->
-<div class="modal" id="admin">
-  <div class="modalBox">
-    <h3>Додати знімок</h3>
-    <input type="file" id="file">
-    <button onclick="enablePlace()">ОК</button>
-    <button class="close" onclick="closeAll()">Закрити</button>
-  </div>
+  <div id="groups"></div>
 </div>
 
 <script>
-// логіка знімків
-let snapshots = JSON.parse(localStorage.getItem("snapshots")) || [];
+// Графік на четвер
+const data = {
+  "1.1":[
+    {start:"00:00", end:"01:00", light:true},
+    {start:"01:00", end:"03:00", light:false},
+    {start:"03:00", end:"13:30", light:true},
+    {start:"13:30", end:"17:00", light:false},
+    {start:"17:00", end:"24:00", light:true}
+  ],
+  "1.2":[
+    {start:"00:00", end:"06:30", light:true},
+    {start:"06:30", end:"10:00", light:false},
+    {start:"10:00", end:"13:30", light:true},
+    {start:"13:30", end:"17:00", light:false},
+    {start:"17:00", end:"24:00", light:true}
+  ],
+  "2.1":[
+    {start:"00:00", end:"01:30", light:true},
+    {start:"01:30", end:"03:00", light:false},
+    {start:"03:00", end:"10:00", light:true},
+    {start:"10:00", end:"13:30", light:false},
+    {start:"13:30", end:"24:00", light:true}
+  ],
+  "2.2":[
+    {start:"00:00", end:"10:00", light:true},
+    {start:"10:00", end:"13:30", light:false},
+    {start:"13:30", end:"17:00", light:true},
+    {start:"17:00", end:"22:00", light:false},
+    {start:"22:00", end:"24:00", light:true}
+  ],
+  "3.1":[
+    {start:"00:00", end:"01:00", light:true},
+    {start:"01:00", end:"03:00", light:false},
+    {start:"03:00", end:"17:00", light:true},
+    {start:"17:00", end:"22:00", light:false},
+    {start:"22:00", end:"24:00", light:true}
+  ],
+  "3.2":[
+    {start:"00:00", end:"10:00", light:true},
+    {start:"10:00", end:"13:30", light:false},
+    {start:"13:30", end:"17:00", light:true},
+    {start:"17:00", end:"22:00", light:false},
+    {start:"22:00", end:"24:00", light:true}
+  ],
+  "4.1":[
+    {start:"00:00", end:"06:30", light:true},
+    {start:"06:30", end:"10:00", light:false},
+    {start:"10:00", end:"13:30", light:true},
+    {start:"13:30", end:"17:00", light:false},
+    {start:"17:00", end:"24:00", light:true}
+  ],
+  "4.2":[
+    {start:"00:00", end:"03:00", light:true},
+    {start:"03:00", end:"04:00", light:false},
+    {start:"04:00", end:"06:00", light:true},
+    {start:"06:00", end:"06:30", light:false},
+    {start:"06:30", end:"20:30", light:true},
+    {start:"20:30", end:"24:00", light:false}
+  ],
+  "5.1":[
+    {start:"00:00", end:"10:00", light:true},
+    {start:"10:00", end:"13:30", light:false},
+    {start:"13:30", end:"17:00", light:true},
+    {start:"17:00", end:"20:30", light:false},
+    {start:"20:30", end:"24:00", light:true}
+  ],
+  "5.2":[
+    {start:"00:00", end:"01:30", light:true},
+    {start:"01:30", end:"03:00", light:false},
+    {start:"03:00", end:"13:30", light:true},
+    {start:"13:30", end:"17:00", light:false},
+    {start:"17:00", end:"20:30", light:true},
+    {start:"20:30", end:"24:00", light:false}
+  ],
+  "6.1":[
+    {start:"00:00", end:"03:00", light:true},
+    {start:"03:00", end:"04:00", light:false},
+    {start:"04:00", end:"06:00", light:true},
+    {start:"06:00", end:"06:30", light:false},
+    {start:"06:30", end:"13:30", light:true},
+    {start:"13:30", end:"17:00", light:false},
+    {start:"17:00", end:"24:00", light:true}
+  ],
+  "6.2":[
+    {start:"00:00", end:"10:00", light:true},
+    {start:"10:00", end:"13:30", light:false},
+    {start:"13:30", end:"17:00", light:true},
+    {start:"17:00", end:"20:30", light:false},
+    {start:"20:30", end:"24:00", light:true}
+  ]
+};
 
-const mapEl = document.getElementById("map");
-function renderSnapshots() {
-  document.querySelectorAll(".snapshot").forEach(el => el.remove());
-  snapshots.forEach(s => {
-    const div = document.createElement("div");
-    div.className = "snapshot";
-    div.style.left = `${s.x}px`;
-    div.style.top = `${s.y}px`;
-    div.style.backgroundImage = `url(${s.img})`;
-    mapEl.appendChild(div);
-  });
+// Відображення груп
+const container=document.getElementById("groups");
+
+function timeToMinutes(str){
+  const [h,m]=str.split(":").map(Number);
+  return h*60+m;
 }
-renderSnapshots();
 
-let adminMode = false;
-let selectedFile = null;
-
-// відкриття/закриття модалок
-function openLogin(){login.style.display="flex"}
-function closeAll(){login.style.display="none"; admin.style.display="none"; adminMode=false; selectedFile=null;}
-function check(){
-  if(pass.value !== "3709"){ alert("Невірний пароль"); return; }
-  login.style.display="none";
-  admin.style.display="flex";
+function render(){
+  container.innerHTML="";
+  const now=new Date();
+  const nowMinutes=now.getHours()*60+now.getMinutes();
+  for(const group in data){
+    const div=document.createElement("div");
+    div.className="group";
+    let statusText="", statusClass="";
+    const periods=data[group];
+    for(const p of periods){
+      const startM=timeToMinutes(p.start);
+      const endM=timeToMinutes(p.end);
+      if(nowMinutes>=startM && nowMinutes<endM){
+        statusText=p.light?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
+        statusClass=p.light?"green":"red";
+      }
+    }
+    // Таймер до зміни
+    let nextChange=null;
+    for(const p of periods){
+      const startM=timeToMinutes(p.start);
+      const endM=timeToMinutes(p.end);
+      if(nowMinutes<endM){
+        nextChange=endM;
+        break;
+      }
+    }
+    let timer="";
+    if(nextChange!==null){
+      let diff=nextChange-nowMinutes;
+      const h=Math.floor(diff/60);
+      const m=diff%60;
+      timer=`До зміни: ${h>0?h+"г ":""}${m}хв`;
+    }
+    div.innerHTML=`<b>${group}</b><br><span class="status ${statusClass}">${statusText}</span><br><span class="small">${timer}</span>`;
+    container.appendChild(div);
+  }
 }
 
-// вибір файлу
-file.addEventListener("change", () => {
-  selectedFile = file.files[0];
-});
+render();
+setInterval(render,60000);
 
-// ставимо на карту
-function enablePlace() {
-  if(!selectedFile){ alert("Оберіть файл"); return; }
-  adminMode = true;
-  admin.style.display = "none";
-  alert("Тисни на карту, де хочеш поставити знімок.");
-}
-
-mapEl.addEventListener("click", e => {
-  if(!adminMode) return;
-  const rect = mapEl.getBoundingClientRect();
-  const x = e.clientX - rect.left - 30;
-  const y = e.clientY - rect.top - 30;
-  const reader = new FileReader();
-  reader.onload = () => {
-    snapshots.push({
-      img: reader.result,
-      x: x,
-      y: y,
-      time: Date.now()
-    });
-    localStorage.setItem("snapshots", JSON.stringify(snapshots));
-    renderSnapshots();
-  };
-  reader.readAsDataURL(selectedFile);
-  adminMode = false;
-  selectedFile = null;
-}
-);
 </script>
-
 </body>
 </html>
