@@ -67,23 +67,31 @@ button{cursor:pointer}
 .off{color:#ff5c5c}
 
 .blink{
-  animation:blink 1.8s ease-in-out infinite;
+  animation:blink 3s ease-in-out infinite;
 }
 
 @keyframes blink{
   0%,100%{opacity:1}
-  50%{opacity:.6}
+  50%{opacity:.7}
 }
 
 .timer{font-size:14px;color:#ccc;margin-top:6px}
 
 /* ===== TIME SCALE ===== */
+.timeNumbers{
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  color:#aaa;
+  margin-top:8px;
+}
+
 .timeline{
   position:relative;
   height:22px;
   border-radius:11px;
   overflow:hidden;
-  margin-top:10px;
+  margin-top:4px;
   background:#222;
 }
 
@@ -104,15 +112,6 @@ button{cursor:pointer}
   background:#fff;
   opacity:.9;
 }
-
-/* ===== ADMIN ===== */
-.admin{
-  display:none;
-  background:#111522;
-  border-radius:18px;
-  padding:14px;
-  margin-top:12px;
-}
 </style>
 </head>
 
@@ -126,41 +125,38 @@ button{cursor:pointer}
 </div>
 
 <div class="controls">
+  <select id="daySelect"></select>
   <select id="groupSelect"></select>
-  <button onclick="toggleAdmin()">🔐</button>
 </div>
 
 <div id="groups"></div>
 
-<div class="admin" id="admin">
-  <input id="adminPass" placeholder="Пароль">
-  <button onclick="login()">Увійти</button>
-  <textarea id="adminText"
-   style="width:100%;height:100px;margin-top:8px;border-radius:14px;
-   background:#151a26;color:#fff;padding:8px"></textarea>
-  <button onclick="saveAll()">💾 Оновити всі групи</button>
-</div>
-
 </div>
 
 <script>
-const PASSWORD="3709";
-let admin=false;
-
-const allGroups=[
+/* ===== DATA ===== */
+const days=["Понеділок","Вівторок","Середа","Четвер","Пʼятниця","Субота","Неділя"];
+const groups=[
 "1.1","1.2","2.1","2.2","3.1","3.2",
 "4.1","4.2","5.1","5.2","6.1","6.2"
 ];
 
-let selected=localStorage.getItem("group")||"ALL";
-let lastUpdate=new Date();
-
-let schedule={};
-allGroups.forEach(g=>{
-  schedule[g]=[["00:00","24:00","on"]];
+let schedules={};
+days.forEach(d=>{
+  schedules[d]={};
+  groups.forEach(g=>{
+    schedules[d][g]=[["00:00","24:00","on"]];
+  });
 });
 
-// ===== UTIL =====
+/* ===== AUTO DAY ===== */
+const today=new Date().getDay(); // 0 = Sunday
+let currentDay=days[(today+6)%7];
+
+let selectedGroup=localStorage.getItem("group")||"ALL";
+let lastUpdate=new Date();
+
+/* ===== UTIL ===== */
 function toMin(t){
   const [h,m]=t.split(":").map(Number);
   return h*60+m;
@@ -181,7 +177,7 @@ function format(min){
   return r.join(" ");
 }
 
-// ===== VIEWERS =====
+/* ===== VIEWERS ===== */
 function fakeViewers(){
   document.getElementById("viewers").innerText=
    "👀 "+(Math.floor(Math.random()*40)+60)+" онлайн";
@@ -189,37 +185,23 @@ function fakeViewers(){
 setInterval(fakeViewers,5000);
 fakeViewers();
 
-// ===== SELECT =====
-const sel=document.getElementById("groupSelect");
-sel.innerHTML="<option value='ALL'>Усі групи</option>";
-allGroups.forEach(g=>sel.innerHTML+=`<option>${g}</option>`);
-sel.value=selected;
-sel.onchange=()=>{
-  selected=sel.value;
-  localStorage.setItem("group",selected);
+/* ===== SELECTS ===== */
+const daySel=document.getElementById("daySelect");
+days.forEach(d=>daySel.innerHTML+=`<option>${d}</option>`);
+daySel.value=currentDay;
+daySel.onchange=()=>{currentDay=daySel.value;render();};
+
+const groupSel=document.getElementById("groupSelect");
+groupSel.innerHTML="<option value='ALL'>Усі групи</option>";
+groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
+groupSel.value=selectedGroup;
+groupSel.onchange=()=>{
+  selectedGroup=groupSel.value;
+  localStorage.setItem("group",selectedGroup);
   render();
 };
 
-// ===== ADMIN =====
-function toggleAdmin(){
-  document.getElementById("admin").style.display="block";
-}
-function login(){
-  if(document.getElementById("adminPass").value===PASSWORD){
-    admin=true;
-    document.getElementById("adminText").value=
-      JSON.stringify(schedule,null,2);
-    alert("Адмін режим увімкнено");
-  }
-}
-function saveAll(){
-  if(!admin) return;
-  schedule=JSON.parse(document.getElementById("adminText").value);
-  lastUpdate=new Date();
-  render();
-}
-
-// ===== RENDER =====
+/* ===== RENDER ===== */
 function render(){
   document.getElementById("updated").innerText=
    "Останнє оновлення: "+
@@ -229,11 +211,11 @@ function render(){
   box.innerHTML="";
   const now=nowMin();
 
-  allGroups.forEach(g=>{
-    if(selected!=="ALL" && selected!==g) return;
+  groups.forEach(g=>{
+    if(selectedGroup!=="ALL" && selectedGroup!==g) return;
 
     let state="off",next=0;
-    for(const s of schedule[g]){
+    for(const s of schedules[currentDay][g]){
       const a=toMin(s[0]),b=toMin(s[1]);
       if(now>=a && now<b){
         state=s[2];
@@ -243,7 +225,7 @@ function render(){
     }
 
     let segments="";
-    schedule[g].forEach(s=>{
+    schedules[currentDay][g].forEach(s=>{
       const left=toMin(s[0])/1440*100;
       const width=(toMin(s[1])-toMin(s[0]))/1440*100;
       segments+=`<div class="segment ${s[2]==="on"?"onSeg":"offSeg"}"
@@ -253,6 +235,10 @@ function render(){
     box.innerHTML+=`
     <div class="group ${state==="on"?"onBox":"offBox"}">
       <div class="group-title">Група ${g}</div>
+
+      <div class="timeNumbers">
+        <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
+      </div>
 
       <div class="timeline">
         ${segments}
