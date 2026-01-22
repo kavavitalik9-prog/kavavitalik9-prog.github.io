@@ -22,6 +22,11 @@ body{
   position:relative;
 }
 .header h1{margin:0;color:#ffc400}
+.update-time{
+  margin-top:6px;
+  font-size:14px;
+  opacity:.85;
+}
 
 .admin-btn{
   position:absolute;
@@ -92,6 +97,7 @@ textarea{resize:none;height:150px}
 
 <div class="header">
   <h1>⚡ Львівська область</h1>
+  <div class="update-time" id="updateTime">Останнє оновлення: —</div>
   <div class="admin-btn" onclick="openAdmin()">🔒</div>
 </div>
 
@@ -102,7 +108,7 @@ textarea{resize:none;height:150px}
 
 <div class="admin-panel" id="adminPanel">
   <h3>🔧 Редагування графіка</h3>
-  <p>Вводь ТІЛЬКИ періоди, коли <b>світла нема</b><br>Формат: HH:MM-HH:MM</p>
+  <p>Вводь <b>тільки періоди, коли світла нема</b><br>Формат: HH:MM-HH:MM</p>
   <textarea id="editor"></textarea>
   <button onclick="saveSchedule()">💾 Зберегти</button>
 </div>
@@ -135,6 +141,7 @@ groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
 
 /* Дані */
 let data=JSON.parse(localStorage.getItem("schedules"))||{};
+let lastUpdate=localStorage.getItem("lastUpdate");
 
 /* Доп */
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
@@ -152,12 +159,21 @@ function normalize(off){
   return res;
 }
 
+function formatTime(d){
+  return d.toLocaleTimeString("uk-UA",{hour12:false});
+}
+
 /* Рендер */
 function render(){
   const c=document.getElementById("content");
   c.innerHTML="";
   const d=daySel.value;
   const g=groupSel.value;
+
+  if(lastUpdate){
+    document.getElementById("updateTime").innerText=
+      "Останнє оновлення: "+lastUpdate;
+  }
 
   if(!data[d]||!data[d][g]){
     c.innerHTML=`<div class="center">⏳ Графік ще формується</div>`;
@@ -180,7 +196,10 @@ function render(){
 /* Адмін */
 function openAdmin(){
   const pass=prompt("Пароль:");
-  if(pass!==ADMIN_PASSWORD){alert("❌ Невірний пароль");return;}
+  if(pass!==ADMIN_PASSWORD){
+    alert("❌ Невірний пароль");
+    return;
+  }
   document.getElementById("adminPanel").style.display="block";
   loadEditor();
 }
@@ -189,19 +208,29 @@ function loadEditor(){
   const d=daySel.value;
   const g=groupSel.value;
   const arr=data[d]?.[g]||[];
-  document.getElementById("editor").value=arr.map(a=>`${a[0]}-${a[1]}`).join("\n");
+  document.getElementById("editor").value=
+    arr.map(a=>`${a[0]}-${a[1]}`).join("\n");
 }
 
 function saveSchedule(){
   const d=daySel.value;
   const g=groupSel.value;
-  const lines=document.getElementById("editor").value.trim().split("\n").filter(Boolean);
+  const lines=document.getElementById("editor").value
+    .trim().split("\n").filter(Boolean);
+
   if(!data[d]) data[d]={};
   data[d][g]=lines.map(l=>l.split("-"));
+
+  const now=new Date();
+  lastUpdate=formatTime(now);
+
   localStorage.setItem("schedules",JSON.stringify(data));
+  localStorage.setItem("lastUpdate",lastUpdate);
+
   render();
 }
 
+/* Події */
 daySel.onchange=()=>{render();loadEditor();}
 groupSel.onchange=()=>{render();loadEditor();}
 render();
