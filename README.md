@@ -31,12 +31,22 @@ body{
   font-weight:700;
   text-align:center;
 }
-.big-status.on{background:rgba(0,255,0,.15);color:#6cff8f;animation:blink 1.2s infinite}
-.big-status.off{background:rgba(255,0,0,.15);color:#ff6c6c;animation:none}
+
+/* Повільне блимає для 🟢 */
+.big-status.on {
+  background: rgba(0,255,0,0.15);
+  color: #6cff8f;
+  animation: blink 2s infinite;
+}
+.big-status.off {
+  background: rgba(255,0,0,0.15);
+  color: #ff6c6c;
+  animation:none;
+}
 
 @keyframes blink{
-  0%,50%,100%{opacity:1}
-  25%,75%{opacity:0.4}
+  0%,50%,100% { opacity: 1; }
+  25%,75% { opacity: 0.5; }
 }
 
 select,button,textarea{
