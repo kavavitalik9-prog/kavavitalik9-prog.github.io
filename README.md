@@ -17,30 +17,26 @@ body{
   max-width:430px;
   width:100%;
   min-height:100vh;
-  padding:12px 12px 90px;
+  padding:0;
+  position:relative;
 }
-.header{
-  background:#151a26;
-  border-radius:18px;
-  padding:14px;
-  margin-bottom:10px;
-}
-.card{
-  background:#151a26;
-  border-radius:18px;
-  margin-bottom:12px;
-  overflow:hidden;
-}
-.card img{
+#map{
   width:100%;
-  display:block;
+  height:100vh;
+  background:url('https://i.imgur.com/5rB4vTU.jpg') no-repeat center center;
+  background-size:cover;
+  position:relative;
 }
-.cardInfo{
-  padding:10px;
-}
-.small{
-  font-size:13px;
-  opacity:.8;
+
+/* Додані знімки */
+.snapshot{
+  position:absolute;
+  width:60px;
+  height:60px;
+  border:2px solid #2b61ff;
+  border-radius:8px;
+  overflow:hidden;
+  cursor:pointer;
 }
 
 /* Кнопка адміна збоку */
@@ -96,11 +92,7 @@ button.close{
 <body>
 
 <div class="phone">
-  <div class="header">
-    <b>🗺 Мої карти</b><br>
-    <span class="small" id="updated"></span>
-  </div>
-  <div id="list"></div>
+  <div id="map"></div>
 </div>
 
 <button class="adminBtn" onclick="openLogin()">⚙</button>
@@ -118,80 +110,78 @@ button.close{
 <!-- ADMIN -->
 <div class="modal" id="admin">
   <div class="modalBox">
-    <h3>Додати карту</h3>
-    <input id="title" placeholder="Назва карти">
-    <input type="file" id="file">
-    <button onclick="addMap()">Додати карту</button>
+    <h3>Додати знімок</h3>
+    <p>Натисни на карту, де хочеш додати знімок</p>
+    <input id="file" type="file">
+    <button onclick="finishAdd()">Додати</button>
     <button class="close" onclick="closeAll()">Закрити</button>
   </div>
 </div>
 
 <script>
 const PASS="3709";
-let maps=JSON.parse(localStorage.getItem("maps"))||[];
-const list=document.getElementById("list");
-const updatedEl=document.getElementById("updated");
+const map=document.getElementById("map");
+let adminMode=false;
+let addFile=null;
+let snapshots=JSON.parse(localStorage.getItem("snapshots"))||[];
 
-function formatAgo(time){
-  let m=Math.floor((Date.now()-time)/60000);
-  if(m<60) return `${m} хв тому`;
-  let h=Math.floor(m/60);
-  let mm=m%60;
-  if(h<24) return `${h} год ${mm} хв тому`;
-  let d=Math.floor(h/24);
-  return `${d} д ${mm} год тому`;
-}
-
-function render(){
-  list.innerHTML="";
-  if(maps.length===0){
-    list.innerHTML="<div class='small'>Карт ще немає</div>";
-    updatedEl.textContent="";
-    return;
-  }
-  maps.forEach(m=>{
-    list.innerHTML+=`
-      <div class="card">
-        <img src="${m.img}">
-        <div class="cardInfo">
-          <b>${m.title}</b><br>
-          <span class="small">Останнє оновлення: ${formatAgo(m.time)}</span>
-        </div>
-      </div>
-    `;
+// Відображаємо всі знімки зі збереження
+function renderSnapshots(){
+  document.querySelectorAll('.snapshot').forEach(el=>el.remove());
+  snapshots.forEach(s=>{
+    const imgEl=document.createElement('img');
+    imgEl.src=s.img;
+    imgEl.className='snapshot';
+    imgEl.style.left=s.x+'px';
+    imgEl.style.top=s.y+'px';
+    map.appendChild(imgEl);
   });
-  updatedEl.textContent=`Всього карт: ${maps.length}`;
 }
+renderSnapshots();
 
-render();
-setInterval(render,60000);
-
-/* ADMIN FUNCTIONS */
-function openLogin(){login.style.display="flex"}
-function closeAll(){login.style.display="none";admin.style.display="none"}
+// Кнопка адміна
+function openLogin(){document.getElementById('login').style.display='flex'}
+function closeAll(){document.getElementById('login').style.display='none';document.getElementById('admin').style.display='none'; adminMode=false; addFile=null;}
 
 function check(){
-  if(pass.value!==PASS){alert("Невірний пароль"); return;}
-  login.style.display="none";
-  admin.style.display="flex";
+  if(document.getElementById('pass').value!==PASS){alert("Невірний пароль"); return;}
+  document.getElementById('login').style.display='none';
+  document.getElementById('admin').style.display='flex';
+  alert("Тепер натисни на карту, де хочеш додати знімок");
 }
 
-function addMap(){
-  let f=file.files[0];
-  if(!f){alert("Обери файл"); return;}
-  let r=new FileReader();
-  r.onload=()=>{
-    maps.unshift({
-      title:title.value||"Без назви",
-      img:r.result,
-      time:Date.now()
-    });
-    localStorage.setItem("maps",JSON.stringify(maps));
-    closeAll();
-    render();
+// Вибір файлу
+document.getElementById('file').addEventListener('change',e=>{
+  addFile=e.target.files[0];
+  if(addFile){
+    adminMode=true;
   }
-  r.readAsDataURL(f);
+});
+
+// Натискання на карту
+map.addEventListener('click', e=>{
+  if(!adminMode || !addFile) return;
+  const rect=map.getBoundingClientRect();
+  const x=e.clientX-rect.left-30; // центр знімка
+  const y=e.clientY-rect.top-30;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    snapshots.push({img:reader.result, x:x, y:y, time:Date.now()});
+    localStorage.setItem("snapshots", JSON.stringify(snapshots));
+    renderSnapshots();
+    adminMode=false;
+    addFile=null;
+    closeAll();
+  }
+  reader.readAsDataURL(addFile);
+});
+
+// Кнопка додати після вибору файлу
+function finishAdd(){
+  if(!addFile){alert("Оберіть файл"); return;}
+  alert("Тепер натисніть на карту, де хочете розмістити знімок");
 }
 </script>
+
 </body>
 </html>
