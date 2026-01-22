@@ -22,6 +22,7 @@ body{
   position:relative;
 }
 .header h1{margin:0;color:#ffc400}
+
 .admin-btn{
   position:absolute;
   right:12px;
@@ -46,7 +47,8 @@ select,button,textarea{
   color:#fff;
   font-size:16px;
 }
-textarea{resize:none;height:140px}
+
+textarea{resize:none;height:150px}
 
 .group-card{
   background:#1c1f26;
@@ -55,6 +57,7 @@ textarea{resize:none;height:140px}
   border-radius:16px;
   box-shadow:0 4px 12px rgba(0,0,0,.5);
 }
+
 .line{
   display:flex;
   align-items:center;
@@ -62,9 +65,16 @@ textarea{resize:none;height:140px}
   padding:6px 10px;
   border-radius:10px;
 }
+
 .on{background:rgba(0,255,0,.15)}
 .off{background:rgba(255,0,0,.15)}
 .ind{width:28px;font-size:20px}
+
+.center{
+  text-align:center;
+  padding:20px;
+  opacity:.8;
+}
 
 .admin-panel{
   display:none;
@@ -73,12 +83,6 @@ textarea{resize:none;height:140px}
   padding:12px;
   margin-top:12px;
   box-shadow:0 0 15px rgba(255,196,0,.5);
-}
-
-.center{
-  text-align:center;
-  padding:20px;
-  opacity:.8;
 }
 </style>
 </head>
@@ -97,8 +101,8 @@ textarea{resize:none;height:140px}
 <div id="content"></div>
 
 <div class="admin-panel" id="adminPanel">
-  <h3>🔧 Редагування графіка (четвер)</h3>
-  <p>Формат:<br><b>HH:MM-HH:MM off</b></p>
+  <h3>🔧 Редагування графіка</h3>
+  <p>Вводь ТІЛЬКИ періоди, коли <b>світла нема</b><br>Формат: HH:MM-HH:MM</p>
   <textarea id="editor"></textarea>
   <button onclick="saveSchedule()">💾 Зберегти</button>
 </div>
@@ -106,56 +110,38 @@ textarea{resize:none;height:140px}
 </div>
 
 <script>
-/* ===== НАЛАШТУВАННЯ ===== */
 const ADMIN_PASSWORD="3709";
-const EDITABLE_DAY="thu";
 
-/* ===== ДНІ ===== */
+/* Дні */
 const days=[
-  ["mon","Понеділок"],
-  ["tue","Вівторок"],
-  ["wed","Середа"],
-  ["thu","Четвер"],
-  ["fri","Пʼятниця"],
-  ["sat","Субота"],
-  ["sun","Неділя"]
+ ["mon","Понеділок"],
+ ["tue","Вівторок"],
+ ["wed","Середа"],
+ ["thu","Четвер"],
+ ["fri","Пʼятниця"],
+ ["sat","Субота"],
+ ["sun","Неділя"]
 ];
 
 const daySel=document.getElementById("day");
 days.forEach(d=>daySel.innerHTML+=`<option value="${d[0]}">${d[1]}</option>`);
+daySel.value=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
 
-const today=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
-daySel.value=today;
-
-/* ===== ГРУПИ ===== */
+/* Групи */
 const groups=[];
 for(let g=1;g<=6;g++)["1","2"].forEach(s=>groups.push(`${g}.${s}`));
 const groupSel=document.getElementById("group");
 groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
 
-/* ===== ЧЕТВЕР (OFF-ІНТЕРВАЛИ) ===== */
-const defaultThu={
-"1.1":[["01:00","03:00"],["13:30","17:00"]],
-"1.2":[["06:30","10:00"],["13:30","17:00"]],
-"2.1":[["01:30","03:00"],["10:00","13:30"]],
-"2.2":[["10:00","13:30"],["17:00","22:00"]],
-"3.1":[["01:00","03:00"],["17:00","22:00"]],
-"3.2":[["10:00","13:30"],["17:00","22:00"]],
-"4.1":[["06:30","10:00"],["13:30","17:00"]],
-"4.2":[["03:00","04:00"],["06:00","06:30"],["20:30","24:00"]],
-"5.1":[["10:00","13:30"],["17:00","20:30"]],
-"5.2":[["01:30","03:00"],["13:30","17:00"],["20:30","24:00"]],
-"6.1":[["03:00","04:00"],["06:00","06:30"],["13:30","17:00"]],
-"6.2":[["10:00","13:30"],["17:00","20:30"]]
-};
+/* Дані */
+let data=JSON.parse(localStorage.getItem("schedules"))||{};
 
-let thu=JSON.parse(localStorage.getItem("thu"))||defaultThu;
-
-/* ===== ДОП ФУНКЦІЇ ===== */
+/* Доп */
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
 
 function normalize(off){
   let res=[],p=0;
+  off.sort((a,b)=>toMin(a[0])-toMin(b[0]));
   off.forEach(o=>{
     let f=toMin(o[0]),t=toMin(o[1]);
     if(p<f) res.push([p,f,"on"]);
@@ -166,57 +152,58 @@ function normalize(off){
   return res;
 }
 
-/* ===== РЕНДЕР ===== */
+/* Рендер */
 function render(){
   const c=document.getElementById("content");
   c.innerHTML="";
+  const d=daySel.value;
+  const g=groupSel.value;
 
-  if(daySel.value!==EDITABLE_DAY){
+  if(!data[d]||!data[d][g]){
     c.innerHTML=`<div class="center">⏳ Графік ще формується</div>`;
-    document.getElementById("adminPanel").style.display="none";
     return;
   }
 
-  const g=groupSel.value;
-  normalize(thu[g]).forEach(s=>{
+  normalize(data[d][g]).forEach(s=>{
     c.innerHTML+=`
-      <div class="group-card">
-        <div class="line ${s[2]}">
-          <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
-          ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
-          –
-          ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
-        </div>
-      </div>`;
+    <div class="group-card">
+      <div class="line ${s[2]}">
+        <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
+        ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
+        –
+        ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+      </div>
+    </div>`;
   });
 }
 
-/* ===== АДМІН ===== */
+/* Адмін */
 function openAdmin(){
-  if(daySel.value!==EDITABLE_DAY){
-    alert("Редагування доступне лише для четверга");
-    return;
-  }
   const pass=prompt("Пароль:");
-  if(pass===ADMIN_PASSWORD){
-    document.getElementById("adminPanel").style.display="block";
-    document.getElementById("editor").value=
-      thu[groupSel.value].map(s=>`${s[0]}-${s[1]} off`).join("\n");
-  }else alert("❌ Невірний пароль");
+  if(pass!==ADMIN_PASSWORD){alert("❌ Невірний пароль");return;}
+  document.getElementById("adminPanel").style.display="block";
+  loadEditor();
+}
+
+function loadEditor(){
+  const d=daySel.value;
+  const g=groupSel.value;
+  const arr=data[d]?.[g]||[];
+  document.getElementById("editor").value=arr.map(a=>`${a[0]}-${a[1]}`).join("\n");
 }
 
 function saveSchedule(){
-  const lines=document.getElementById("editor").value.trim().split("\n");
-  thu[groupSel.value]=lines.map(l=>{
-    const [t]=l.split(" ");
-    return t.split("-");
-  });
-  localStorage.setItem("thu",JSON.stringify(thu));
+  const d=daySel.value;
+  const g=groupSel.value;
+  const lines=document.getElementById("editor").value.trim().split("\n").filter(Boolean);
+  if(!data[d]) data[d]={};
+  data[d][g]=lines.map(l=>l.split("-"));
+  localStorage.setItem("schedules",JSON.stringify(data));
   render();
 }
 
-daySel.onchange=render;
-groupSel.onchange=render;
+daySel.onchange=()=>{render();loadEditor();}
+groupSel.onchange=()=>{render();loadEditor();}
 render();
 </script>
 </body>
