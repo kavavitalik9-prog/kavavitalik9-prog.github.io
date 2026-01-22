@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚡ Графік світла — Львівська область</title>
-
 <style>
 body{
   margin:0;
@@ -30,9 +29,15 @@ body{
   border-radius:16px;
   font-size:20px;
   font-weight:700;
+  text-align:center;
 }
-.on{background:rgba(0,255,0,.15);color:#6cff8f}
+.on{background:rgba(0,255,0,.15);color:#6cff8f;animation:blink 1s infinite}
 .off{background:rgba(255,0,0,.15);color:#ff6c6c}
+
+@keyframes blink{
+  0%,50%,100%{opacity:1}
+  25%,75%{opacity:0.4}
+}
 
 select,button,textarea{
   width:100%;
@@ -61,6 +66,7 @@ button{cursor:pointer}
   margin:4px 0;
 }
 .ind{width:26px;font-size:20px}
+.timer-line{margin-left:auto;font-size:14px;opacity:.9}
 
 .admin-btn{
   position:absolute;
@@ -85,10 +91,11 @@ button{cursor:pointer}
   box-shadow:0 0 18px rgba(255,196,0,.5);
 }
 
-textarea{height:160px;resize:none}
+textarea{height:100px;resize:none}
 .center{text-align:center;padding:20px;opacity:.8}
 .timer{margin-top:8px;font-size:16px;opacity:.9}
-.pin-btn{background:#444}
+.group-edit{margin-top:6px}
+.group-edit label{font-weight:600;margin-top:6px;display:block}
 </style>
 </head>
 
@@ -102,35 +109,22 @@ textarea{height:160px;resize:none}
 </div>
 
 <div id="status" class="big-status">—</div>
-<div class="timer" id="timer"></div>
 
 <select id="day"></select>
-<select id="group"></select>
-<button class="pin-btn" onclick="pinGroup()">📌 Закріпити групу</button>
-<button onclick="toggleAll()">👥 Показати всі групи</button>
 
 <div id="content"></div>
 
 <div class="admin-panel" id="admin">
 <h3>🔧 Адмін-панель</h3>
-<label>Режим:</label>
-<select id="mode">
-  <option value="one">Одна група</option>
-  <option value="all">Всі групи</option>
-</select>
-
 <label>День:</label>
 <select id="adminDay">
   <option value="current">Поточний</option>
   <option value="all">Весь тиждень</option>
 </select>
 
-<textarea id="editor" placeholder="Періоди БЕЗ світла
-Напр:
-01:30-06:00
-18:00-20:00"></textarea>
+<div id="allGroupsEditor"></div>
 
-<button onclick="save()">💾 Зберегти</button>
+<button onclick="saveAll()">💾 Зберегти усі групи</button>
 </div>
 
 </div>
@@ -140,16 +134,12 @@ const PASS="3709";
 const days=[["mon","Понеділок"],["tue","Вівторок"],["wed","Середа"],["thu","Четвер"],["fri","Пʼятниця"],["sat","Субота"],["sun","Неділя"]];
 const groups=[...Array(6)].flatMap((_,i)=>[`${i+1}.1`,`${i+1}.2`]);
 
-const daySel=day,groupSel=group;
+const daySel=document.getElementById("day");
 days.forEach(d=>daySel.innerHTML+=`<option value="${d[0]}">${d[1]}</option>`);
-groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
-
 daySel.value=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
-groupSel.value=localStorage.getItem("pinned")||"1.1";
 
 let data=JSON.parse(localStorage.getItem("data")||"{}");
 let last=+localStorage.getItem("last")||null;
-let showAll=false;
 
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
 function normalize(off){
@@ -163,6 +153,7 @@ function normalize(off){
  if(p<1440) r.push([p,1440,"on"]);
  return r;
 }
+
 function human(){
  if(!last) return "—";
  let s=(Date.now()-last)/1000;
@@ -173,62 +164,68 @@ function human(){
 }
 
 function render(){
- updateText.innerText="Останнє оновлення: "+human();
- content.innerHTML="";
+ document.getElementById("updateText").innerText="Останнє оновлення: "+human();
+ let c=document.getElementById("content");
+ c.innerHTML="";
  let now=new Date();
  let m=now.getHours()*60+now.getMinutes();
 
- let list=showAll?groups:[groupSel.value];
- list.forEach(g=>{
+ let st=document.getElementById("status");
+
+groups.forEach((g,i)=>{
   if(!data[daySel.value]||!data[daySel.value][g]){
-   content.innerHTML+=`<div class="center">${g}: ⏳ графік формується</div>`;
+   c.innerHTML+=`<div class="center">${g}: ⏳ графік формується</div>`;
    return;
   }
   let seg=normalize(data[daySel.value][g]);
   let cur=seg.find(s=>m>=s[0]&&m<s[1]);
-  if(g===groupSel.value){
-    status.className="big-status "+cur[2];
-    status.innerText=cur[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
-    let d=cur[1]-m;
-    timer.innerText=(cur[2]=="on"?"До вимкнення: ":"До увімкнення: ")+
-      `${String(Math.floor(d/60)).padStart(2,"0")}:${String(d%60).padStart(2,"0")}`;
+  if(i===0){
+    st.className="big-status "+cur[2];
+    st.innerText=cur[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
   }
   let html=`<div class="group-card"><b>${g}</b>`;
   seg.forEach(s=>{
+   let timerText="";
+   if(cur===s){
+     let d=s[1]-m;
+     timerText=(s[2]=="on"?"До вимкнення: ":"До увімкнення: ")+`${String(Math.floor(d/60)).padStart(2,"0")}:${String(d%60).padStart(2,"0")}`;
+   }
    html+=`<div class="line ${s[2]}">
    <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
-   ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
-   –
-   ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+   ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")} – ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+   <div class="timer-line">${timerText}</div>
    </div>`;
   });
   html+="</div>";
-  content.innerHTML+=html;
+  c.innerHTML+=html;
  });
 }
 
-function pinGroup(){
- localStorage.setItem("pinned",groupSel.value);
- alert("Групу закріплено");
-}
-
-function toggleAll(){
- showAll=!showAll;
- render();
-}
-
+/* Адмін */
 function openAdmin(){
- if(prompt("Пароль")!==PASS) return alert("❌ Невірно");
- admin.style.display="block";
+ if(prompt("Пароль")!==PASS){alert("Невірно"); return;}
+ document.getElementById("admin").style.display="block";
+ renderAdmin();
 }
 
-function save(){
- let lines=editor.value.trim().split("\n").filter(Boolean).map(l=>l.split("-"));
- let daysTarget=adminDay.value=="all"?days.map(d=>d[0]):[daySel.value];
- let groupsTarget=mode.value=="all"?groups:[groupSel.value];
- daysTarget.forEach(d=>{
-  if(!data[d]) data[d]={};
-  groupsTarget.forEach(g=>data[d][g]=lines);
+function renderAdmin(){
+ const cont=document.getElementById("allGroupsEditor");
+ cont.innerHTML="";
+ groups.forEach(g=>{
+  let val=data[daySel.value]?.[g]?.map(a=>a.join("-")).join("\n")||"";
+  cont.innerHTML+=`<div class="group-edit"><label>${g}</label><textarea id="ta_${g}">${val}</textarea></div>`;
+ });
+}
+
+function saveAll(){
+ let dayTarget=document.getElementById("adminDay").value;
+ let daysTarget=dayTarget=="all"?days.map(d=>d[0]):[daySel.value];
+ groups.forEach(g=>{
+  let val=document.getElementById(`ta_${g}`).value.trim().split("\n").filter(Boolean).map(l=>l.split("-"));
+  daysTarget.forEach(d=>{
+    if(!data[d]) data[d]={};
+    data[d][g]=val;
+  });
  });
  last=Date.now();
  localStorage.setItem("data",JSON.stringify(data));
@@ -236,6 +233,7 @@ function save(){
  render();
 }
 
+daySel.onchange=()=>{render(); renderAdmin();}
 setInterval(render,1000);
 render();
 </script>
