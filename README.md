@@ -12,7 +12,7 @@ body{
   color:#fff;
 }
 .container{
-  max-width:600px;
+  max-width:420px;
   margin:auto;
   padding:12px;
 }
@@ -34,7 +34,15 @@ body{
   opacity:.8;
   margin-top:6px;
 }
-
+.views{
+  margin-top:6px;
+  font-size:14px;
+  padding:6px 10px;
+  border:2px solid #ffc400;
+  border-radius:14px;
+  text-align:center;
+  background:#222;
+}
 .big-status{
   margin-top:14px;
   padding:18px;
@@ -59,10 +67,9 @@ body{
   0%,50%,100% {opacity:1;}
   25%,75% {opacity:0.5;}
 }
-
 .selects{
   display:flex;
-  gap:8px;
+  gap:6px;
   flex-wrap:wrap;
   margin-top:12px;
 }
@@ -76,7 +83,6 @@ body{
   font-size:16px;
   cursor:pointer;
 }
-
 .group-card{
   background:#1c1c1c;
   margin-top:12px;
@@ -103,7 +109,6 @@ body{
 }
 .line.on{background:rgba(0,255,0,0.2);}
 .line.off{background:rgba(255,0,0,0.2);}
-
 .admin-btn{
   position:absolute;
   top:12px;
@@ -145,6 +150,7 @@ textarea{
 <div class="header">
   <h1>⚡ Львівська область</h1>
   <div class="update" id="updateText">Останнє оновлення: —</div>
+  <div class="views" id="viewers">Переглядають: —</div>
   <div class="admin-btn" onclick="openAdmin()">🔒</div>
 </div>
 
@@ -223,6 +229,10 @@ function human(){
 }
 
 function render(){
+ // фейкові глядачі
+ const viewCount=Math.floor(Math.random()*(700000-975+1)+975);
+ document.getElementById("viewers").innerText=`Переглядають: ${viewCount}`;
+
  document.getElementById("updateText").innerText="Останнє оновлення: "+human();
  let c=document.getElementById("content");
  c.innerHTML="";
