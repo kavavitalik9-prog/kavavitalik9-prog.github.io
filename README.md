@@ -31,8 +31,6 @@ body{
   font-weight:700;
   text-align:center;
 }
-
-/* Повільне блимає для 🟢 */
 .big-status.on {
   background: rgba(0,255,0,0.15);
   color: #6cff8f;
@@ -43,7 +41,6 @@ body{
   color: #ff6c6c;
   animation:none;
 }
-
 @keyframes blink{
   0%,50%,100% { opacity: 1; }
   25%,75% { opacity: 0.5; }
@@ -106,8 +103,6 @@ textarea{height:100px;resize:none}
 .timer{margin-top:8px;font-size:16px;opacity:.9}
 .group-edit{margin-top:6px}
 .group-edit label{font-weight:600;margin-top:6px;display:block}
-
-/* Підсвічування активного періоду */
 .line.on{background:rgba(0,255,0,0.25);}
 .line.off{background:rgba(255,0,0,0.25);}
 </style>
@@ -125,6 +120,27 @@ textarea{height:100px;resize:none}
 <div id="status" class="big-status">—</div>
 
 <select id="day"></select>
+
+<!-- Вибір групи -->
+<div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+  <select id="groupSelect">
+    <option value="all">Всі групи</option>
+    <option value="1.1">1.1</option>
+    <option value="1.2">1.2</option>
+    <option value="2.1">2.1</option>
+    <option value="2.2">2.2</option>
+    <option value="3.1">3.1</option>
+    <option value="3.2">3.2</option>
+    <option value="4.1">4.1</option>
+    <option value="4.2">4.2</option>
+    <option value="5.1">5.1</option>
+    <option value="5.2">5.2</option>
+    <option value="6.1">6.1</option>
+    <option value="6.2">6.2</option>
+  </select>
+  <button onclick="pinGroup()">Закріпити групу</button>
+  <button onclick="showAllGroups()">Показати всі групи</button>
+</div>
 
 <div id="content"></div>
 
@@ -154,6 +170,8 @@ daySel.value=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
 
 let data=JSON.parse(localStorage.getItem("data")||"{}");
 let last=+localStorage.getItem("last")||null;
+let pinnedGroup = localStorage.getItem("pinnedGroup") || "all";
+document.getElementById("groupSelect").value = pinnedGroup;
 
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
 function normalize(off){
@@ -183,17 +201,17 @@ function render(){
  c.innerHTML="";
  let now=new Date();
  let m=now.getHours()*60+now.getMinutes();
-
  let st=document.getElementById("status");
 
-groups.forEach((g,i)=>{
+ groups.forEach((g,i)=>{
+  if(pinnedGroup!=="all" && g!==pinnedGroup) return;
   if(!data[daySel.value]||!data[daySel.value][g]){
    c.innerHTML+=`<div class="center">${g}: ⏳ графік формується</div>`;
    return;
   }
   let seg=normalize(data[daySel.value][g]);
   let cur=seg.find(s=>m>=s[0]&&m<s[1]);
-  if(i===0){
+  if(i===0 || pinnedGroup===g){
     st.className="big-status "+cur[2];
     st.innerText=cur[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
   }
@@ -248,6 +266,19 @@ function saveAll(){
  localStorage.setItem("data",JSON.stringify(data));
  localStorage.setItem("last",last);
  render();
+}
+
+function pinGroup() {
+  pinnedGroup = document.getElementById("groupSelect").value;
+  localStorage.setItem("pinnedGroup", pinnedGroup);
+  render();
+}
+
+function showAllGroups() {
+  pinnedGroup = "all";
+  document.getElementById("groupSelect").value = "all";
+  localStorage.setItem("pinnedGroup", pinnedGroup);
+  render();
 }
 
 daySel.onchange=()=>{render(); renderAdmin();}
