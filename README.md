@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Графік світла — Львівська область</title>
+<title>Графіки світла — Львівська область</title>
 
 <style>
 body{
@@ -21,7 +21,6 @@ body{
   text-align:center;
 }
 .header h1{margin:0;color:#ffc400}
-.meta{display:flex;justify-content:space-between;margin-top:6px;font-size:14px}
 .lastUpdate{margin-top:6px;font-size:14px;opacity:.9}
 
 select,button{
@@ -59,6 +58,7 @@ button:hover,select:hover{background:#3a3a3a}
 }
 .on{background:rgba(0,255,0,.15)}
 .off{background:rgba(255,0,0,.15)}
+.active{outline:2px solid #ffc400}
 .ind{width:28px;font-size:20px}
 
 .timer{text-align:center;margin-top:6px;font-weight:600}
@@ -74,9 +74,6 @@ button:hover,select:hover{background:#3a3a3a}
 
 <div class="header">
   <h1>⚡ Львівська область</h1>
-  <div class="meta">
-    <div>👁 <span id="views"></span></div>
-  </div>
   <div class="lastUpdate" id="lastUpdate"></div>
 </div>
 
@@ -86,8 +83,8 @@ button:hover,select:hover{background:#3a3a3a}
 <button onclick="showAll()">📄 Показати всі групи</button>
 
 <div id="content"></div>
+<div class="footer">Офіційні графіки • ручне оновлення</div>
 
-<div class="footer">Автооновлення • Демо</div>
 </div>
 
 <script>
@@ -97,6 +94,7 @@ const now=new Date();
 const today=days[(now.getDay()+6)%7];
 
 const schedules={
+/* ================== СЕРЕДА ================== */
 wed:{
 "1.1":[["00:00","24:00","on"]],
 "1.2":[["00:00","01:30","off"],["01:30","24:00","on"]],
@@ -111,7 +109,22 @@ wed:{
 "6.1":[["00:00","01:30","off"],["01:30","24:00","on"]],
 "6.2":[["00:00","24:00","on"]]
 },
-thu:{} // четвер залишився без змін
+
+/* ================== ЧЕТВЕР ================== */
+thu:{
+"1.1":[["01:00","03:00","off"],["13:30","17:00","off"]],
+"1.2":[["06:30","10:00","off"],["13:30","17:00","off"]],
+"2.1":[["01:30","03:00","off"],["10:00","13:30","off"]],
+"2.2":[["10:00","13:30","off"],["17:00","22:00","off"]],
+"3.1":[["01:00","03:00","off"],["17:00","22:00","off"]],
+"3.2":[["10:00","13:30","off"],["17:00","22:00","off"]],
+"4.1":[["06:30","10:00","off"],["13:30","17:00","off"]],
+"4.2":[["03:00","04:00","off"],["06:00","06:30","off"],["20:30","24:00","off"]],
+"5.1":[["10:00","13:30","off"],["17:00","20:30","off"]],
+"5.2":[["01:30","03:00","off"],["13:30","17:00","off"],["20:30","24:00","off"]],
+"6.1":[["03:00","04:00","off"],["06:00","06:30","off"],["13:30","17:00","off"]],
+"6.2":[["10:00","13:30","off"],["17:00","20:30","off"]]
+}
 };
 
 const daySel=document.getElementById("day");
@@ -126,11 +139,30 @@ let all=false;
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
 function nowMin(){let d=new Date();return d.getHours()*60+d.getMinutes()}
 
+function normalize(day){
+  const res={};
+  for(const g in day){
+    let off=day[g];
+    let list=[],p=0;
+    off.forEach(o=>{
+      let f=toMin(o[0]),t=toMin(o[1]);
+      if(p<f) list.push([p,f,"on"]);
+      list.push([f,t,"off"]);
+      p=t;
+    });
+    if(p<1440) list.push([p,1440,"on"]);
+    res[g]=list;
+  }
+  return res;
+}
+
 function render(){
   const c=document.getElementById("content");
   c.innerHTML="";
-  const day=schedules[daySel.value];
-  if(!day){c.textContent="⏳ Графік ще формується";return}
+  if(!schedules[daySel.value]){
+    c.textContent="⏳ Графік ще формується";return;
+  }
+  const day=normalize(schedules[daySel.value]);
   const list=all?Object.keys(day):[groupSel.value];
   const n=nowMin();
 
@@ -141,35 +173,37 @@ function render(){
     let current=null;
 
     day[g].forEach(s=>{
-      const f=toMin(s[0]),t=toMin(s[1]);
-      if(n>=f&&n<t)current={f,t,state:s[2]};
-      card.innerHTML+=`<div class="line ${s[2]}"><div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>${s[0]}–${s[1]}</div>`;
+      if(n>=s[0]&&n<s[1]) current=s;
+      card.innerHTML+=`<div class="line ${s[2]} ${current===s?"active":""}">
+        <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
+        ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
+        –
+        ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+      </div>`;
     });
 
     if(current){
-      let left=current.t-n;
+      let left=current[1]-n;
       let h=Math.floor(left/60),m=left%60;
-      let p=Math.floor((n-current.f)/(current.t-current.f)*100);
+      let p=Math.floor((n-current[0])/(current[1]-current[0])*100);
       card.innerHTML+=`
-      <div class="timer">${current.state=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА"}</div>
-      <div class="timer">До ${current.state=="on"?"вимкнення":"увімкнення"}: ${h}г ${m}хв</div>
+      <div class="timer">${current[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА"}</div>
+      <div class="timer">До ${current[2]=="on"?"вимкнення":"увімкнення"}: ${h}г ${m}хв</div>
       <div class="progress-bar"><div class="progress" style="width:${p}%"></div></div>`;
     }
     c.appendChild(card);
   });
 
-  const upd=new Date();
-  upd.setHours(8,48,0,0);
+  const upd=new Date(2026,0,22,8,29);
   const diff=Math.floor((new Date()-upd)/60000);
   document.getElementById("lastUpdate").textContent=
-    diff<1?"Останнє оновлення: щойно":
     diff<60?`Останнє оновлення: ${diff} хв тому`:
     `Останнє оновлення: ${Math.floor(diff/60)} год ${diff%60} хв тому`;
 }
 
 function pin(){localStorage.setItem("group",groupSel.value);render()}
 function showAll(){all=true;render()}
-setInterval(()=>{render();document.getElementById("views").textContent=975+Math.floor(Math.random()*700000)},1000);
+setInterval(render,60000);
 render();
 </script>
 </body>
