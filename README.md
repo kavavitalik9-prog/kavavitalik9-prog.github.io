@@ -3,61 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Карти</title>
-
+<title>Карти з супутником</title>
 <style>
-body{
-  margin:0;
-  background:#0b0d13;
-  font-family:system-ui;
-  color:#fff;
-  display:flex;
-  justify-content:center;
-}
-.phone{
-  max-width:430px;
-  width:100%;
-  min-height:100vh;
-  padding:12px 12px 90px;
-}
-.header{
-  background:#151a26;
-  border-radius:18px;
-  padding:14px;
-  margin-bottom:10px;
-}
-.card{
-  background:#151a26;
-  border-radius:18px;
-  margin-bottom:12px;
-  overflow:hidden;
-}
-.card img{
-  width:100%;
-  display:block;
-}
-.cardInfo{
-  padding:10px;
-}
-.small{
-  font-size:13px;
-  opacity:.8;
-}
+body, html { margin:0; padding:0; height:100%; font-family:system-ui; }
+#map { height:100vh; width:100%; }
 
-/* ADMIN BUTTON */
+/* Кнопка адміна збоку */
 .adminBtn{
   position:fixed;
   right:0;
-  top:40%;
+  top:50%;
+  transform:translateY(-50%);
   background:#222;
   color:#fff;
   border:none;
   border-radius:14px 0 0 14px;
   padding:12px;
   font-size:18px;
+  z-index:10;
+  cursor:pointer;
 }
 
-/* MODAL */
+/* Модальні вікна */
 .modal{
   position:fixed;
   inset:0;
@@ -65,6 +32,7 @@ body{
   display:none;
   justify-content:center;
   align-items:center;
+  z-index:20;
 }
 .modalBox{
   background:#151a26;
@@ -90,17 +58,9 @@ button.close{
 }
 </style>
 </head>
-
 <body>
-<div class="phone">
-  <div class="header">
-    <b>🗺 Перегляд карт</b><br>
-    <span class="small">Супутникові знімки</span>
-  </div>
 
-  <div id="list"></div>
-</div>
-
+<div id="map"></div>
 <button class="adminBtn" onclick="openLogin()">⚙</button>
 
 <!-- LOGIN -->
@@ -116,48 +76,48 @@ button.close{
 <!-- ADMIN -->
 <div class="modal" id="admin">
   <div class="modalBox">
-    <h3>Додати карту</h3>
-    <input id="title" placeholder="Назва карти">
+    <h3>Додати знімок</h3>
+    <input id="title" placeholder="Назва знімку">
+    <input id="lat" placeholder="Широта">
+    <input id="lng" placeholder="Довгота">
     <input type="file" id="file">
-    <button onclick="addMap()">Додати</button>
+    <button onclick="addOverlay()">Додати на карту</button>
     <button class="close" onclick="closeAll()">Закрити</button>
   </div>
 </div>
 
 <script>
-const PASS="3709";
-let maps=JSON.parse(localStorage.getItem("maps"))||[];
+let PASS="3709";
+let map;
+let overlays=[]; // наші додані знімки
 
-const list=document.getElementById("list");
+function initMap(){
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 49.8397, lng: 24.0297 }, // Львів
+    zoom: 12,
+    mapTypeId: 'satellite'
+  });
 
-function ago(t){
-  let m=Math.floor((Date.now()-t)/60000);
-  if(m<60) return m+" хв тому";
-  let h=Math.floor(m/60), mm=m%60;
-  if(h<24) return h+" год "+mm+" хв тому";
-  return Math.floor(h/24)+" д тому";
-}
-
-function render(){
-  list.innerHTML="";
-  if(!maps.length){
-    list.innerHTML="<div class='small'>Карт ще немає</div>";
-    return;
-  }
-  maps.forEach(m=>{
-    list.innerHTML+=`
-    <div class="card">
-      <img src="${m.img}">
-      <div class="cardInfo">
-        <b>${m.title}</b><br>
-        <span class="small">Оновлено ${ago(m.time)}</span>
-      </div>
-    </div>`;
+  // Завантаження збережених overlay з localStorage
+  let saved = JSON.parse(localStorage.getItem("overlays"))||[];
+  saved.forEach(o=>{
+    createOverlay(o);
   });
 }
-render();
-setInterval(render,60000);
 
+function createOverlay(o){
+  const imageBounds = new google.maps.LatLngBounds(
+    { lat: o.lat-0.01, lng: o.lng-0.01 },
+    { lat: o.lat+0.01, lng: o.lng+0.01 }
+  );
+  const overlay = new google.maps.GroundOverlay(o.img, imageBounds);
+  overlay.setMap(map);
+  overlay.title=o.title;
+  overlay.time=o.time;
+  overlays.push(overlay);
+}
+
+/* ADMIN */
 function openLogin(){login.style.display="flex"}
 function closeAll(){login.style.display="none";admin.style.display="none"}
 
@@ -167,22 +127,32 @@ function check(){
   admin.style.display="flex";
 }
 
-function addMap(){
+function addOverlay(){
   let f=file.files[0];
-  if(!f)return alert("Обери файл");
+  if(!f){alert("Обери файл"); return;}
+  let t=parseFloat(lat.value);
+  let g=parseFloat(lng.value);
+  if(isNaN(t)||isNaN(g)){alert("Введи координати"); return;}
+
   let r=new FileReader();
   r.onload=()=>{
-    maps.unshift({
+    let o={
       title:title.value||"Без назви",
+      lat:t,
+      lng:g,
       img:r.result,
       time:Date.now()
-    });
-    localStorage.setItem("maps",JSON.stringify(maps));
+    };
+    createOverlay(o);
+    let saved = JSON.parse(localStorage.getItem("overlays"))||[];
+    saved.unshift(o);
+    localStorage.setItem("overlays",JSON.stringify(saved));
     closeAll();
-    render();
-  };
+  }
   r.readAsDataURL(f);
 }
 </script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=ВАШ_API_KEY&callback=initMap" async defer></script>
 </body>
 </html>
