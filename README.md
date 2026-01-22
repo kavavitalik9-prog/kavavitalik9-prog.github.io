@@ -28,13 +28,10 @@ button.close{background:#333;}
     <b>⚡ Львівська область</b>
     <span id="updated">Останнє оновлення: 0 хвилин тому</span>
   </div>
-  <div>
-    <select id="daySelect"></select>
-  </div>
   <div id="groups"></div>
 </div>
 
-<button class="adminBtn" onclick="openLogin()">⚙</button>
+<button class="adminBtn" onclick="openLogin()">🔒</button>
 
 <!-- LOGIN -->
 <div class="modal" id="login">
@@ -50,6 +47,7 @@ button.close{background:#333;}
 <div class="modal" id="admin">
   <div class="modalBox">
     <h3>Редагування групи</h3>
+    <select id="selectDay"></select>
     <select id="selectGroup"></select>
     <textarea id="inputPeriods" rows="5" placeholder="Введи години без світла, наприклад: 01:00-03:00,13:30-17:00"></textarea>
     <button onclick="saveGroup()">Зберегти</button>
@@ -60,10 +58,11 @@ button.close{background:#333;}
 <script>
 // Дані
 const days=["Понеділок","Вівторок","Середа","Четвер","П’ятниця","Субота","Неділя"];
-let currentDay=0; // індекс дня
-const daySelect=document.getElementById("daySelect");
+let currentDay=0;
+
+const daySelect=document.getElementById("selectDay");
 days.forEach((d,i)=>{let o=document.createElement("option");o.value=i;o.text=d;daySelect.appendChild(o);});
-daySelect.addEventListener("change",()=>{currentDay=parseInt(daySelect.value); render();});
+daySelect.addEventListener("change",()=>{currentDay=parseInt(daySelect.value); loadGroup(); render();});
 
 let data=JSON.parse(localStorage.getItem("data"))||{};
 days.forEach(d=>{
@@ -81,7 +80,7 @@ let lastUpdate=parseInt(localStorage.getItem("lastUpdate"))||Date.now();
 const container=document.getElementById("groups");
 const updated=document.getElementById("updated");
 
-// Функції часу
+// Час
 function timeToMinutes(str){const [h,m]=str.split(":").map(Number);return h*60+m;}
 function minutesToStr(m){let h=Math.floor(m/60);let min=m%60;return (h<10?"0"+h:h)+":"+(min<10?"0"+min:min);}
 function formatDiff(ms){
@@ -92,7 +91,7 @@ function formatDiff(ms){
   let str=""; if(days>0) str+=days+"д "; if(hours>0) str+=hours+"г "; str+=minutes+"хв"; return str;
 }
 
-// Рендер груп
+// Рендер
 function render(){
   container.innerHTML="";
   updated.textContent="Останнє оновлення: "+formatDiff(lastUpdate)+" тому";
@@ -113,6 +112,7 @@ function render(){
         statusClass=p.light?"green":"red";
       }
     }
+    // Таймер
     let nextChange=null;
     for(const p of periods){
       const startM=timeToMinutes(p.start);
@@ -147,20 +147,19 @@ function check(){
   if(pass.value!=="3709"){alert("Невірний пароль");return;}
   login.style.display="none";
   admin.style.display="flex";
-  selectGroup.innerHTML="";
-  const dayName=days[currentDay];
-  for(const g in data[dayName]){
-    let opt=document.createElement("option"); opt.value=g; opt.textContent=g; selectGroup.appendChild(opt);
-  }
   loadGroup();
 }
+
 function loadGroup(){
   const g=selectGroup.value;
   const dayName=days[currentDay];
   let arr=data[dayName][g].filter(p=>!p.light).map(p=>p.start+"-"+p.end);
   inputPeriods.value=arr.join(",");
 }
+
+// Зміна групи у адмінці
 selectGroup.addEventListener("change",loadGroup);
+daySelect.addEventListener("change",loadGroup);
 
 function saveGroup(){
   const g=selectGroup.value;
