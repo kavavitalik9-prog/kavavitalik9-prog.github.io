@@ -31,8 +31,8 @@ body{
   font-weight:700;
   text-align:center;
 }
-.on{background:rgba(0,255,0,.15);color:#6cff8f;animation:blink 1s infinite}
-.off{background:rgba(255,0,0,.15);color:#ff6c6c}
+.big-status.on{background:rgba(0,255,0,.15);color:#6cff8f;animation:blink 1.2s infinite}
+.big-status.off{background:rgba(255,0,0,.15);color:#ff6c6c;animation:none}
 
 @keyframes blink{
   0%,50%,100%{opacity:1}
@@ -96,6 +96,10 @@ textarea{height:100px;resize:none}
 .timer{margin-top:8px;font-size:16px;opacity:.9}
 .group-edit{margin-top:6px}
 .group-edit label{font-weight:600;margin-top:6px;display:block}
+
+/* Підсвічування активного періоду */
+.line.on{background:rgba(0,255,0,0.25);}
+.line.off{background:rgba(255,0,0,0.25);}
 </style>
 </head>
 
@@ -188,9 +192,12 @@ groups.forEach((g,i)=>{
    let timerText="";
    if(cur===s){
      let d=s[1]-m;
-     timerText=(s[2]=="on"?"До вимкнення: ":"До увімкнення: ")+`${String(Math.floor(d/60)).padStart(2,"0")}:${String(d%60).padStart(2,"0")}`;
+     let h=Math.floor(d/60);
+     let min=d%60;
+     timerText=(s[2]=="on"?"До вимкнення: ":"До увімкнення: ")+`${h}г ${min}хв`;
    }
-   html+=`<div class="line ${s[2]}">
+   let lineClass = (cur===s) ? (s[2]=="on"?"on":"off") : "";
+   html+=`<div class="line ${s[2]} ${lineClass}">
    <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
    ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")} – ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
    <div class="timer-line">${timerText}</div>
