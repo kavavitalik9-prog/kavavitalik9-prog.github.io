@@ -10,42 +10,74 @@ body{
   margin:0;
   background:#0b0d13;
   font-family:system-ui;
+  color:#fff;
   display:flex;
   justify-content:center;
-  color:#fff;
 }
-.phone{max-width:420px;width:100%;min-height:100vh;padding:12px}
+.phone{
+  max-width:420px;
+  width:100%;
+  min-height:100vh;
+  padding:12px 12px 80px;
+}
 .header{
   background:#151a26;
   border-radius:18px;
   padding:14px;
-  margin-bottom:10px;
+  margin-bottom:12px;
+}
+.group{
+  background:#151a26;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.timeline{
+  height:20px;
+  background:#222;
+  border-radius:10px;
+  overflow:hidden;
+  margin-top:6px;
   position:relative;
 }
-.adminBtn{
+.segOn{background:#2cff9a;height:100%;position:absolute}
+.segOff{background:#ff5c5c;height:100%;position:absolute}
+.now{
   position:absolute;
-  right:12px;
-  top:12px;
-  background:#222;
-  border:none;
-  color:#fff;
-  border-radius:10px;
-  padding:6px 10px;
+  width:2px;
+  height:26px;
+  background:#fff;
+  top:-3px;
 }
-.group{background:#151a26;border-radius:18px;padding:14px;margin-bottom:12px}
 .on{color:#2cff9a}
 .off{color:#ff5c5c}
 .blink{animation:blink 3s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:.7}
+}
 
-.timeline{height:20px;background:#222;border-radius:10px;overflow:hidden;margin-top:6px;position:relative}
-.segOn{background:#2cff9a;height:100%;position:absolute}
-.segOff{background:#ff5c5c;height:100%;position:absolute}
-.now{position:absolute;width:2px;height:26px;background:#fff;top:-3px}
+/* ADMIN BUTTON */
+.adminBtn{
+  position:fixed;
+  right:0;
+  top:40%;
+  background:#222;
+  color:#fff;
+  border:none;
+  border-radius:14px 0 0 14px;
+  padding:12px;
+  font-size:18px;
+}
 
+/* MODAL */
 .modal{
-  position:fixed;inset:0;background:#000a;
-  display:none;justify-content:center;align-items:center
+  position:fixed;
+  inset:0;
+  background:#000a;
+  display:none;
+  justify-content:center;
+  align-items:center;
 }
 .modalBox{
   background:#151a26;
@@ -54,7 +86,7 @@ body{
   width:90%;
   max-width:380px;
 }
-textarea,input,select,button{
+input,select,textarea,button{
   width:100%;
   margin-top:8px;
   padding:10px;
@@ -68,28 +100,27 @@ textarea,input,select,button{
 
 <body>
 <div class="phone">
+  <div class="header">
+    <b>⚡ Львівська область</b><br>
+    <span id="updated"></span>
+  </div>
 
-<div class="header">
-  <b>⚡ Львівська область</b>
-  <div id="updated"></div>
-  <button class="adminBtn" onclick="openAdmin()">⚙ Адмін</button>
+  <div id="list"></div>
 </div>
 
-<div id="list"></div>
-
-</div>
+<button class="adminBtn" onclick="openAdmin()">⚙</button>
 
 <!-- ADMIN -->
 <div class="modal" id="admin">
   <div class="modalBox">
-    <h3>Адмін доступ</h3>
+    <h3>Адмін панель</h3>
     <input id="pass" placeholder="Пароль">
     <select id="day"></select>
+    <select id="group"></select>
     <textarea id="offInput" rows="5"
-      placeholder="Впиши періоди БЕЗ світла
-Напр:
+      placeholder="Періоди БЕЗ світла
 10:00-12:00
-18:00-20:30"></textarea>
+18:30-20:00"></textarea>
     <button onclick="save()">Зберегти</button>
     <button onclick="closeAdmin()">Закрити</button>
   </div>
@@ -108,93 +139,78 @@ days.forEach(d=>{
 
 let lastUpdate=new Date();
 
-function openAdmin(){
-  document.getElementById("admin").style.display="flex";
-}
-function closeAdmin(){
-  document.getElementById("admin").style.display="none";
-}
-
 const daySel=document.getElementById("day");
+const groupSel=document.getElementById("group");
 days.forEach(d=>daySel.innerHTML+=`<option>${d}</option>`);
+groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
+
+function openAdmin(){document.getElementById("admin").style.display="flex"}
+function closeAdmin(){document.getElementById("admin").style.display="none"}
 
 function toMin(t){
-  let [h,m]=t.split(":").map(Number);
+  let[h,m]=t.split(":").map(Number);
   return h*60+m;
 }
 
-function buildSchedule(offRanges){
-  let points=[0,1440];
-  offRanges.forEach(r=>{
-    let[a,b]=r;
-    points.push(a,b);
-  });
-  points=[...new Set(points)].sort((a,b)=>a-b);
+function formatTime(min){
+  let h=Math.floor(min/60);
+  let m=min%60;
+  let r=[];
+  if(h>0)r.push(h+" год");
+  if(m>0)r.push(m+" хв");
+  return r.join(" ");
+}
 
-  let res=[];
-  for(let i=0;i<points.length-1;i++){
-    let a=points[i],b=points[i+1];
-    let off=offRanges.some(r=>a>=r[0] && b<=r[1]);
-    res.push([a,b,off?"off":"on"]);
+function build(off){
+  let p=[0,1440];
+  off.forEach(r=>p.push(r[0],r[1]));
+  p=[...new Set(p)].sort((a,b)=>a-b);
+  let r=[];
+  for(let i=0;i<p.length-1;i++){
+    let a=p[i],b=p[i+1];
+    let offed=off.some(o=>a>=o[0]&&b<=o[1]);
+    r.push([a,b,offed?"off":"on"]);
   }
-  return res;
+  return r;
 }
 
 function save(){
-  if(document.getElementById("pass").value!==PASS){
-    alert("Невірний пароль");
-    return;
-  }
-  let off=document.getElementById("offInput").value
-    .split("\n")
-    .filter(Boolean)
-    .map(l=>{
-      let[t1,t2]=l.split("-");
-      return [toMin(t1),toMin(t2)];
-    });
-
-  let sched=buildSchedule(off);
-  let d=daySel.value;
-  groups.forEach(g=>schedules[d][g]=sched);
+  if(pass.value!==PASS){alert("Невірний пароль");return;}
+  let off=offInput.value.split("\n").filter(Boolean)
+    .map(l=>l.split("-").map(toMin));
+  schedules[day.value][group.value]=build(off);
   lastUpdate=new Date();
   closeAdmin();
   render();
 }
 
 function render(){
-  document.getElementById("updated").innerText=
-    "Останнє оновлення: "+lastUpdate.toLocaleTimeString();
-
+  updated.innerText="Останнє оновлення: "+lastUpdate.toLocaleString();
   let now=new Date();
   let m=now.getHours()*60+now.getMinutes();
-  let box=document.getElementById("list");
-  box.innerHTML="";
-
   let d=days[(now.getDay()+6)%7];
+  list.innerHTML="";
 
   groups.forEach(g=>{
-    let segs="";
-    let state="off";
-    let next=0;
+    let segs="",state="off",next=0;
     schedules[d][g].forEach(s=>{
       let[a,b,t]=s;
       let l=a/1440*100,w=(b-a)/1440*100;
-      segs+=`<div class="${t==="on"?"segOn":"segOff"}"
-        style="left:${l}%;width:${w}%"></div>`;
-      if(m>=a && m<b){state=t;next=b-m}
+      segs+=`<div class="${t=="on"?"segOn":"segOff"}" style="left:${l}%;width:${w}%"></div>`;
+      if(m>=a&&m<b){state=t;next=b-m}
     });
 
-    box.innerHTML+=`
+    list.innerHTML+=`
     <div class="group">
       <b>Група ${g}</b>
       <div class="timeline">
         ${segs}
         <div class="now" style="left:${m/1440*100}%"></div>
       </div>
-      <div class="${state==="on"?"on blink":"off"}">
-        ${state==="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМА СВІТЛА"}
+      <div class="${state=="on"?"on blink":"off"}">
+        ${state=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМА СВІТЛА"}
       </div>
-      <div>До зміни: ${next} хв</div>
+      <div>До зміни: ${formatTime(next)}</div>
     </div>`;
   });
 }
