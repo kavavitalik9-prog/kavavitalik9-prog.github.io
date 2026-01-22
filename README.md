@@ -7,7 +7,8 @@
 <style>
 body{margin:0;font-family:system-ui;background:#0b0d13;color:#fff;display:flex;justify-content:center;}
 .phone{max-width:430px;width:100%;min-height:100vh;padding:12px;}
-.header{background:#151a26;border-radius:18px;padding:14px;margin-bottom:10px;text-align:center;}
+.header{background:#151a26;border-radius:18px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.header span{font-size:12px;opacity:0.7;}
 .group{background:#151a26;border-radius:16px;margin-bottom:12px;padding:12px;}
 .status{font-weight:bold;margin-top:6px;}
 .green{color:#00ff00;}
@@ -16,7 +17,7 @@ body{margin:0;font-family:system-ui;background:#0b0d13;color:#fff;display:flex;j
 .adminBtn{position:fixed;right:0;top:50%;transform:translateY(-50%);background:#222;color:#fff;border:none;border-radius:14px 0 0 14px;padding:12px;font-size:18px;cursor:pointer;z-index:100;}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:200;}
 .modalBox{background:#151a26;padding:16px;border-radius:14px;width:90%;max-width:380px;}
-input,button,textarea{width:100%;margin-top:10px;padding:10px;border:none;border-radius:10px;background:#222;color:#fff;}
+input,button,textarea,select{width:100%;margin-top:10px;padding:10px;border:none;border-radius:10px;background:#222;color:#fff;}
 button{background:#2b61ff;cursor:pointer;}
 button.close{background:#333;}
 </style>
@@ -24,8 +25,11 @@ button.close{background:#333;}
 <body>
 <div class="phone">
   <div class="header">
-    <b>⚡ Львівська область</b><br>
-    <span id="updated" class="small">Останнє оновлення: 0 хвилин тому</span>
+    <b>⚡ Львівська область</b>
+    <span id="updated">Останнє оновлення: 0 хвилин тому</span>
+  </div>
+  <div>
+    <select id="daySelect"></select>
   </div>
   <div id="groups"></div>
 </div>
@@ -54,52 +58,53 @@ button.close{background:#333;}
 </div>
 
 <script>
-// Початкові дані
-let data = JSON.parse(localStorage.getItem("data")) || {
-  "1.1": [],
-  "1.2": [],
-  "2.1": [],
-  "2.2": [],
-  "3.1": [],
-  "3.2": [],
-  "4.1": [],
-  "4.2": [],
-  "5.1": [],
-  "5.2": [],
-  "6.1": [],
-  "6.2": []
-};
-let lastUpdate = parseInt(localStorage.getItem("lastUpdate")) || Date.now();
+// Дані
+const days=["Понеділок","Вівторок","Середа","Четвер","П’ятниця","Субота","Неділя"];
+let currentDay=0; // індекс дня
+const daySelect=document.getElementById("daySelect");
+days.forEach((d,i)=>{let o=document.createElement("option");o.value=i;o.text=d;daySelect.appendChild(o);});
+daySelect.addEventListener("change",()=>{currentDay=parseInt(daySelect.value); render();});
+
+let data=JSON.parse(localStorage.getItem("data"))||{};
+days.forEach(d=>{
+  if(!data[d]){
+    data[d]={};
+    for(let g=1;g<=6;g++){
+      for(let s=1;s<=2;s++){
+        data[d][`${g}.${s}`]=[];
+      }
+    }
+  }
+});
+let lastUpdate=parseInt(localStorage.getItem("lastUpdate"))||Date.now();
 
 const container=document.getElementById("groups");
 const updated=document.getElementById("updated");
 
-// Функції для часу
+// Функції часу
 function timeToMinutes(str){const [h,m]=str.split(":").map(Number);return h*60+m;}
+function minutesToStr(m){let h=Math.floor(m/60);let min=m%60;return (h<10?"0"+h:h)+":"+(min<10?"0"+min:min);}
 function formatDiff(ms){
   let diff=Math.floor((Date.now()-ms)/1000); 
   const days=Math.floor(diff/86400); diff%=86400;
   const hours=Math.floor(diff/3600); diff%=3600;
   const minutes=Math.floor(diff/60); 
-  let str="";
-  if(days>0) str+=days+"д ";
-  if(hours>0) str+=hours+"г ";
-  str+=minutes+"хв";
-  return str;
+  let str=""; if(days>0) str+=days+"д "; if(hours>0) str+=hours+"г "; str+=minutes+"хв"; return str;
 }
 
-// Відображення груп
+// Рендер груп
 function render(){
   container.innerHTML="";
   updated.textContent="Останнє оновлення: "+formatDiff(lastUpdate)+" тому";
   const now=new Date();
   const nowMinutes=now.getHours()*60+now.getMinutes();
-  for(const group in data){
+  const dayName=days[currentDay];
+  const groups=data[dayName];
+  for(const group in groups){
     const div=document.createElement("div");
     div.className="group";
-    let statusText="", statusClass="";
-    let periods=data[group];
-    if(periods.length===0){statusText="🟢 ЗАРАЗ Є СВІТЛО"; statusClass="green";}
+    let periods=groups[group];
+    let statusText="🟢 ЗАРАЗ Є СВІТЛО", statusClass="green";
     for(const p of periods){
       const startM=timeToMinutes(p.start);
       const endM=timeToMinutes(p.end);
@@ -108,7 +113,6 @@ function render(){
         statusClass=p.light?"green":"red";
       }
     }
-    // Таймер
     let nextChange=null;
     for(const p of periods){
       const startM=timeToMinutes(p.start);
@@ -144,22 +148,23 @@ function check(){
   login.style.display="none";
   admin.style.display="flex";
   selectGroup.innerHTML="";
-  for(const g in data){
-    let opt=document.createElement("option");
-    opt.value=g; opt.textContent=g;
-    selectGroup.appendChild(opt);
+  const dayName=days[currentDay];
+  for(const g in data[dayName]){
+    let opt=document.createElement("option"); opt.value=g; opt.textContent=g; selectGroup.appendChild(opt);
   }
   loadGroup();
 }
 function loadGroup(){
   const g=selectGroup.value;
-  let arr=data[g].filter(p=>!p.light).map(p=>p.start+"-"+p.end);
+  const dayName=days[currentDay];
+  let arr=data[dayName][g].filter(p=>!p.light).map(p=>p.start+"-"+p.end);
   inputPeriods.value=arr.join(",");
 }
 selectGroup.addEventListener("change",loadGroup);
 
 function saveGroup(){
   const g=selectGroup.value;
+  const dayName=days[currentDay];
   let raw=inputPeriods.value.split(",").map(s=>s.trim()).filter(s=>s.length>0);
   let periods=[];
   let prev=0;
@@ -170,17 +175,12 @@ function saveGroup(){
     prev=timeToMinutes(end);
   }
   if(prev<1440){periods.push({start:minutesToStr(prev),end:"24:00",light:true});}
-  data[g]=periods;
+  data[dayName][g]=periods;
   lastUpdate=Date.now();
   localStorage.setItem("data",JSON.stringify(data));
   localStorage.setItem("lastUpdate",lastUpdate);
   render();
   alert("Збережено!");
-}
-
-function minutesToStr(m){
-  let h=Math.floor(m/60); let min=m%60;
-  return (h<10?"0"+h:h)+":"+(min<10?"0"+min:min);
 }
 </script>
 </body>
