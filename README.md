@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Графіки світла — Львівська область</title>
+<title>Графік світла — Львівська область</title>
 
 <style>
 body{
@@ -19,11 +19,24 @@ body{
   padding:14px;
   box-shadow:0 4px 15px rgba(0,0,0,.6);
   text-align:center;
+  position:relative;
 }
 .header h1{margin:0;color:#ffc400}
-.lastUpdate{margin-top:6px;font-size:14px;opacity:.9}
+.admin-btn{
+  position:absolute;
+  right:12px;
+  top:12px;
+  background:#333;
+  border-radius:50%;
+  width:36px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
 
-select,button{
+select,button,textarea{
   width:100%;
   margin-top:8px;
   padding:12px;
@@ -33,7 +46,7 @@ select,button{
   color:#fff;
   font-size:16px;
 }
-button:hover,select:hover{background:#3a3a3a}
+textarea{resize:none;height:140px}
 
 .group-card{
   background:#1c1f26;
@@ -42,30 +55,31 @@ button:hover,select:hover{background:#3a3a3a}
   border-radius:16px;
   box-shadow:0 4px 12px rgba(0,0,0,.5);
 }
-.current-group{
-  border:2px solid #00ff66;
-  box-shadow:0 0 12px #00ff66;
-}
-.group-name{font-size:18px;font-weight:700;margin-bottom:6px}
-
 .line{
   display:flex;
   align-items:center;
   margin:4px 0;
   padding:6px 10px;
   border-radius:10px;
-  font-size:15px;
 }
 .on{background:rgba(0,255,0,.15)}
 .off{background:rgba(255,0,0,.15)}
-.active{outline:2px solid #ffc400}
 .ind{width:28px;font-size:20px}
 
-.timer{text-align:center;margin-top:6px;font-weight:600}
-.progress-bar{height:8px;background:#444;border-radius:4px;margin-top:6px}
-.progress{height:100%;background:#00ff66;width:0%;transition:width 1s}
+.admin-panel{
+  display:none;
+  background:#111;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+  box-shadow:0 0 15px rgba(255,196,0,.5);
+}
 
-.footer{text-align:center;margin:14px 0;opacity:.7}
+.center{
+  text-align:center;
+  padding:20px;
+  opacity:.8;
+}
 </style>
 </head>
 
@@ -74,136 +88,135 @@ button:hover,select:hover{background:#3a3a3a}
 
 <div class="header">
   <h1>⚡ Львівська область</h1>
-  <div class="lastUpdate" id="lastUpdate"></div>
+  <div class="admin-btn" onclick="openAdmin()">🔒</div>
 </div>
 
 <select id="day"></select>
 <select id="group"></select>
-<button onclick="pin()">📌 Закріпити групу</button>
-<button onclick="showAll()">📄 Показати всі групи</button>
 
 <div id="content"></div>
-<div class="footer">Офіційні графіки • ручне оновлення</div>
+
+<div class="admin-panel" id="adminPanel">
+  <h3>🔧 Редагування графіка (четвер)</h3>
+  <p>Формат:<br><b>HH:MM-HH:MM off</b></p>
+  <textarea id="editor"></textarea>
+  <button onclick="saveSchedule()">💾 Зберегти</button>
+</div>
 
 </div>
 
 <script>
-const days=["mon","tue","wed","thu","fri","sat","sun"];
-const names={mon:"Понеділок",tue:"Вівторок",wed:"Середа",thu:"Четвер",fri:"Пʼятниця",sat:"Субота",sun:"Неділя"};
-const now=new Date();
-const today=days[(now.getDay()+6)%7];
+/* ===== НАЛАШТУВАННЯ ===== */
+const ADMIN_PASSWORD="3709";
+const EDITABLE_DAY="thu";
 
-const schedules={
-/* ================== СЕРЕДА ================== */
-wed:{
-"1.1":[["00:00","24:00","on"]],
-"1.2":[["00:00","01:30","off"],["01:30","24:00","on"]],
-"2.1":[["00:00","24:00","on"]],
-"2.2":[["00:00","24:00","on"]],
-"3.1":[["00:00","24:00","on"]],
-"3.2":[["00:00","24:00","on"]],
-"4.1":[["00:00","24:00","on"]],
-"4.2":[["00:00","24:00","on"]],
-"5.1":[["00:00","24:00","on"]],
-"5.2":[["00:00","24:00","on"]],
-"6.1":[["00:00","01:30","off"],["01:30","24:00","on"]],
-"6.2":[["00:00","24:00","on"]]
-},
-
-/* ================== ЧЕТВЕР ================== */
-thu:{
-"1.1":[["01:00","03:00","off"],["13:30","17:00","off"]],
-"1.2":[["06:30","10:00","off"],["13:30","17:00","off"]],
-"2.1":[["01:30","03:00","off"],["10:00","13:30","off"]],
-"2.2":[["10:00","13:30","off"],["17:00","22:00","off"]],
-"3.1":[["01:00","03:00","off"],["17:00","22:00","off"]],
-"3.2":[["10:00","13:30","off"],["17:00","22:00","off"]],
-"4.1":[["06:30","10:00","off"],["13:30","17:00","off"]],
-"4.2":[["03:00","04:00","off"],["06:00","06:30","off"],["20:30","24:00","off"]],
-"5.1":[["10:00","13:30","off"],["17:00","20:30","off"]],
-"5.2":[["01:30","03:00","off"],["13:30","17:00","off"],["20:30","24:00","off"]],
-"6.1":[["03:00","04:00","off"],["06:00","06:30","off"],["13:30","17:00","off"]],
-"6.2":[["10:00","13:30","off"],["17:00","20:30","off"]]
-}
-};
+/* ===== ДНІ ===== */
+const days=[
+  ["mon","Понеділок"],
+  ["tue","Вівторок"],
+  ["wed","Середа"],
+  ["thu","Четвер"],
+  ["fri","Пʼятниця"],
+  ["sat","Субота"],
+  ["sun","Неділя"]
+];
 
 const daySel=document.getElementById("day");
-days.forEach(d=>daySel.innerHTML+=`<option value="${d}">${names[d]}</option>`);
+days.forEach(d=>daySel.innerHTML+=`<option value="${d[0]}">${d[1]}</option>`);
+
+const today=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
 daySel.value=today;
 
+/* ===== ГРУПИ ===== */
+const groups=[];
+for(let g=1;g<=6;g++)["1","2"].forEach(s=>groups.push(`${g}.${s}`));
 const groupSel=document.getElementById("group");
-for(let g=1;g<=6;g++)["1","2"].forEach(s=>groupSel.innerHTML+=`<option>${g}.${s}</option>`);
-groupSel.value=localStorage.getItem("group")||"1.1";
+groups.forEach(g=>groupSel.innerHTML+=`<option>${g}</option>`);
 
-let all=false;
+/* ===== ЧЕТВЕР (OFF-ІНТЕРВАЛИ) ===== */
+const defaultThu={
+"1.1":[["01:00","03:00"],["13:30","17:00"]],
+"1.2":[["06:30","10:00"],["13:30","17:00"]],
+"2.1":[["01:30","03:00"],["10:00","13:30"]],
+"2.2":[["10:00","13:30"],["17:00","22:00"]],
+"3.1":[["01:00","03:00"],["17:00","22:00"]],
+"3.2":[["10:00","13:30"],["17:00","22:00"]],
+"4.1":[["06:30","10:00"],["13:30","17:00"]],
+"4.2":[["03:00","04:00"],["06:00","06:30"],["20:30","24:00"]],
+"5.1":[["10:00","13:30"],["17:00","20:30"]],
+"5.2":[["01:30","03:00"],["13:30","17:00"],["20:30","24:00"]],
+"6.1":[["03:00","04:00"],["06:00","06:30"],["13:30","17:00"]],
+"6.2":[["10:00","13:30"],["17:00","20:30"]]
+};
+
+let thu=JSON.parse(localStorage.getItem("thu"))||defaultThu;
+
+/* ===== ДОП ФУНКЦІЇ ===== */
 function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
-function nowMin(){let d=new Date();return d.getHours()*60+d.getMinutes()}
 
-function normalize(day){
-  const res={};
-  for(const g in day){
-    let off=day[g];
-    let list=[],p=0;
-    off.forEach(o=>{
-      let f=toMin(o[0]),t=toMin(o[1]);
-      if(p<f) list.push([p,f,"on"]);
-      list.push([f,t,"off"]);
-      p=t;
-    });
-    if(p<1440) list.push([p,1440,"on"]);
-    res[g]=list;
-  }
+function normalize(off){
+  let res=[],p=0;
+  off.forEach(o=>{
+    let f=toMin(o[0]),t=toMin(o[1]);
+    if(p<f) res.push([p,f,"on"]);
+    res.push([f,t,"off"]);
+    p=t;
+  });
+  if(p<1440) res.push([p,1440,"on"]);
   return res;
 }
 
+/* ===== РЕНДЕР ===== */
 function render(){
   const c=document.getElementById("content");
   c.innerHTML="";
-  if(!schedules[daySel.value]){
-    c.textContent="⏳ Графік ще формується";return;
+
+  if(daySel.value!==EDITABLE_DAY){
+    c.innerHTML=`<div class="center">⏳ Графік ще формується</div>`;
+    document.getElementById("adminPanel").style.display="none";
+    return;
   }
-  const day=normalize(schedules[daySel.value]);
-  const list=all?Object.keys(day):[groupSel.value];
-  const n=nowMin();
 
-  list.forEach(g=>{
-    const card=document.createElement("div");
-    card.className="group-card"+(g===groupSel.value?" current-group":"");
-    card.innerHTML=`<div class="group-name">Група ${g}</div>`;
-    let current=null;
-
-    day[g].forEach(s=>{
-      if(n>=s[0]&&n<s[1]) current=s;
-      card.innerHTML+=`<div class="line ${s[2]} ${current===s?"active":""}">
-        <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
-        ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
-        –
-        ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+  const g=groupSel.value;
+  normalize(thu[g]).forEach(s=>{
+    c.innerHTML+=`
+      <div class="group-card">
+        <div class="line ${s[2]}">
+          <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
+          ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")}
+          –
+          ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
+        </div>
       </div>`;
-    });
-
-    if(current){
-      let left=current[1]-n;
-      let h=Math.floor(left/60),m=left%60;
-      let p=Math.floor((n-current[0])/(current[1]-current[0])*100);
-      card.innerHTML+=`
-      <div class="timer">${current[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА"}</div>
-      <div class="timer">До ${current[2]=="on"?"вимкнення":"увімкнення"}: ${h}г ${m}хв</div>
-      <div class="progress-bar"><div class="progress" style="width:${p}%"></div></div>`;
-    }
-    c.appendChild(card);
   });
-
-  const upd=new Date(2026,0,22,8,29);
-  const diff=Math.floor((new Date()-upd)/60000);
-  document.getElementById("lastUpdate").textContent=
-    diff<60?`Останнє оновлення: ${diff} хв тому`:
-    `Останнє оновлення: ${Math.floor(diff/60)} год ${diff%60} хв тому`;
 }
 
-function pin(){localStorage.setItem("group",groupSel.value);render()}
-function showAll(){all=true;render()}
-setInterval(render,60000);
+/* ===== АДМІН ===== */
+function openAdmin(){
+  if(daySel.value!==EDITABLE_DAY){
+    alert("Редагування доступне лише для четверга");
+    return;
+  }
+  const pass=prompt("Пароль:");
+  if(pass===ADMIN_PASSWORD){
+    document.getElementById("adminPanel").style.display="block";
+    document.getElementById("editor").value=
+      thu[groupSel.value].map(s=>`${s[0]}-${s[1]} off`).join("\n");
+  }else alert("❌ Невірний пароль");
+}
+
+function saveSchedule(){
+  const lines=document.getElementById("editor").value.trim().split("\n");
+  thu[groupSel.value]=lines.map(l=>{
+    const [t]=l.split(" ");
+    return t.split("-");
+  });
+  localStorage.setItem("thu",JSON.stringify(thu));
+  render();
+}
+
+daySel.onchange=render;
+groupSel.onchange=render;
 render();
 </script>
 </body>
