@@ -7,73 +7,102 @@
 <style>
 body{
   margin:0;
-  background:linear-gradient(135deg,#0d0f14,#1b1f2a);
-  font-family:system-ui,Segoe UI,sans-serif;
+  font-family:'Segoe UI', sans-serif;
+  background:#121212;
   color:#fff;
 }
-.container{max-width:520px;margin:auto;padding:12px}
+.container{
+  max-width:600px;
+  margin:auto;
+  padding:12px;
+}
 .header{
-  background:#222;
-  border-radius:18px;
+  background:#1e1e1e;
+  border-radius:16px;
   padding:16px;
   text-align:center;
   position:relative;
   box-shadow:0 0 20px rgba(255,196,0,.3);
 }
-.header h1{margin:0;color:#ffc400}
-.update{font-size:14px;opacity:.85;margin-top:6px}
+.header h1{
+  margin:0;
+  color:#ffc400;
+  font-size:22px;
+}
+.update{
+  font-size:14px;
+  opacity:.8;
+  margin-top:6px;
+}
 
 .big-status{
-  margin-top:12px;
-  padding:14px;
-  border-radius:16px;
-  font-size:20px;
+  margin-top:14px;
+  padding:18px;
+  border-radius:20px;
+  font-size:22px;
   font-weight:700;
   text-align:center;
+  box-shadow:0 0 15px rgba(0,255,0,.3);
 }
-.big-status.on {
+.big-status.on{
   background: rgba(0,255,0,0.15);
-  color: #6cff8f;
+  color:#6cff8f;
   animation: blink 2s infinite;
+  box-shadow:0 0 20px rgba(0,255,0,.5);
 }
-.big-status.off {
+.big-status.off{
   background: rgba(255,0,0,0.15);
-  color: #ff6c6c;
-  animation:none;
+  color:#ff6c6c;
+  box-shadow:0 0 20px rgba(255,0,0,.5);
 }
 @keyframes blink{
-  0%,50%,100% { opacity: 1; }
-  25%,75% { opacity: 0.5; }
+  0%,50%,100% {opacity:1;}
+  25%,75% {opacity:0.5;}
 }
 
-select,button,textarea{
-  width:100%;
-  margin-top:10px;
+.selects{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.selects select, .selects button{
+  flex:1 1 48%;
   padding:12px;
-  border-radius:14px;
+  border-radius:12px;
   border:none;
   background:#2a2a2a;
   color:#fff;
   font-size:16px;
+  cursor:pointer;
 }
-button{cursor:pointer}
 
 .group-card{
-  background:#1b1f2a;
-  margin-top:10px;
-  padding:12px;
+  background:#1c1c1c;
+  margin-top:12px;
+  padding:14px;
   border-radius:16px;
+  box-shadow:0 0 12px rgba(0,0,0,.5);
 }
 .line{
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
   padding:6px 10px;
-  border-radius:10px;
-  margin:4px 0;
+  border-radius:12px;
+  margin:6px 0;
 }
-.ind{width:26px;font-size:20px}
-.timer-line{margin-left:auto;font-size:14px;opacity:.9}
+.ind{
+  width:28px;
+  font-size:20px;
+}
+.timer-line{
+  margin-left:auto;
+  font-size:14px;
+  opacity:.85;
+}
+.line.on{background:rgba(0,255,0,0.2);}
+.line.off{background:rgba(255,0,0,0.2);}
 
 .admin-btn{
   position:absolute;
@@ -88,7 +117,6 @@ button{cursor:pointer}
   justify-content:center;
   cursor:pointer;
 }
-
 .admin-panel{
   display:none;
   margin-top:14px;
@@ -97,18 +125,21 @@ button{cursor:pointer}
   padding:12px;
   box-shadow:0 0 18px rgba(255,196,0,.5);
 }
-
-textarea{height:100px;resize:none}
-.center{text-align:center;padding:20px;opacity:.8}
-.timer{margin-top:8px;font-size:16px;opacity:.9}
-.group-edit{margin-top:6px}
+textarea{
+  width:100%;
+  height:100px;
+  resize:none;
+  border-radius:12px;
+  background:#222;
+  color:#fff;
+  padding:8px;
+  margin-top:6px;
+}
 .group-edit label{font-weight:600;margin-top:6px;display:block}
-.line.on{background:rgba(0,255,0,0.25);}
-.line.off{background:rgba(255,0,0,0.25);}
 </style>
 </head>
-
 <body>
+
 <div class="container">
 
 <div class="header">
@@ -119,10 +150,8 @@ textarea{height:100px;resize:none}
 
 <div id="status" class="big-status">—</div>
 
-<select id="day"></select>
-
-<!-- Вибір групи -->
-<div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+<div class="selects">
+  <select id="day"></select>
   <select id="groupSelect">
     <option value="all">Всі групи</option>
     <option value="1.1">1.1</option>
@@ -151,9 +180,7 @@ textarea{height:100px;resize:none}
   <option value="current">Поточний</option>
   <option value="all">Весь тиждень</option>
 </select>
-
 <div id="allGroupsEditor"></div>
-
 <button onclick="saveAll()">💾 Зберегти усі групи</button>
 </div>
 
