@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Моя карта</title>
+<title>Карти</title>
 
 <style>
 body{
@@ -15,10 +15,10 @@ body{
   justify-content:center;
 }
 .phone{
-  width:100%;
   max-width:430px;
+  width:100%;
   min-height:100vh;
-  padding:12px;
+  padding:12px 12px 90px;
 }
 .header{
   background:#151a26;
@@ -26,20 +26,25 @@ body{
   padding:14px;
   margin-bottom:10px;
 }
-.mapBox{
+.card{
   background:#151a26;
   border-radius:18px;
+  margin-bottom:12px;
   overflow:hidden;
 }
-.mapBox img{
+.card img{
   width:100%;
   display:block;
 }
-.info{
+.cardInfo{
   padding:10px;
-  font-size:14px;
-  opacity:.85;
 }
+.small{
+  font-size:13px;
+  opacity:.8;
+}
+
+/* ADMIN BUTTON */
 .adminBtn{
   position:fixed;
   right:0;
@@ -51,6 +56,8 @@ body{
   padding:12px;
   font-size:18px;
 }
+
+/* MODAL */
 .modal{
   position:fixed;
   inset:0;
@@ -75,13 +82,11 @@ input,button{
   background:#222;
   color:#fff;
 }
-.viewers{
-  background:#1d2333;
-  border-radius:12px;
-  padding:6px 10px;
-  font-size:13px;
-  display:inline-block;
-  margin-top:6px;
+button{
+  background:#2b61ff;
+}
+button.close{
+  background:#333;
 }
 </style>
 </head>
@@ -89,90 +94,94 @@ input,button{
 <body>
 <div class="phone">
   <div class="header">
-    <b id="title">🗺 Моя карта</b><br>
-    <span id="updated"></span><br>
-    <span class="viewers">👁 <span id="viewers"></span></span>
+    <b>🗺 Перегляд карт</b><br>
+    <span class="small">Супутникові знімки</span>
   </div>
 
-  <div class="mapBox">
-    <img id="mapImg" src="">
-    <div class="info">Супутниковий знімок</div>
+  <div id="list"></div>
+</div>
+
+<button class="adminBtn" onclick="openLogin()">⚙</button>
+
+<!-- LOGIN -->
+<div class="modal" id="login">
+  <div class="modalBox">
+    <h3>Адмін доступ</h3>
+    <input id="pass" placeholder="Пароль">
+    <button onclick="check()">Увійти</button>
+    <button class="close" onclick="closeAll()">Скасувати</button>
   </div>
 </div>
 
-<button class="adminBtn" onclick="openAdmin()">⚙</button>
-
+<!-- ADMIN -->
 <div class="modal" id="admin">
   <div class="modalBox">
-    <h3>Адмін панель</h3>
-    <input id="pass" placeholder="Пароль">
-    <input id="mapTitle" placeholder="Назва карти">
+    <h3>Додати карту</h3>
+    <input id="title" placeholder="Назва карти">
     <input type="file" id="file">
-    <button onclick="save()">Зберегти</button>
-    <button onclick="closeAdmin()">Закрити</button>
+    <button onclick="addMap()">Додати</button>
+    <button class="close" onclick="closeAll()">Закрити</button>
   </div>
 </div>
 
 <script>
 const PASS="3709";
+let maps=JSON.parse(localStorage.getItem("maps"))||[];
 
-let data=JSON.parse(localStorage.getItem("mapData"))||{
-  title:"🗺 Моя карта",
-  img:"",
-  updated:Date.now()
-};
+const list=document.getElementById("list");
 
-const titleEl=document.getElementById("title");
-const imgEl=document.getElementById("mapImg");
-const updatedEl=document.getElementById("updated");
-
-function formatAgo(ms){
-  let m=Math.floor((Date.now()-ms)/60000);
-  if(m<60) return `Останнє оновлення: ${m} хв тому`;
-  let h=Math.floor(m/60);
-  let mm=m%60;
-  if(h<24) return `Останнє оновлення: ${h} год ${mm} хв тому`;
-  let d=Math.floor(h/24);
-  return `Останнє оновлення: ${d} д тому`;
+function ago(t){
+  let m=Math.floor((Date.now()-t)/60000);
+  if(m<60) return m+" хв тому";
+  let h=Math.floor(m/60), mm=m%60;
+  if(h<24) return h+" год "+mm+" хв тому";
+  return Math.floor(h/24)+" д тому";
 }
 
 function render(){
-  titleEl.textContent=data.title;
-  if(data.img) imgEl.src=data.img;
-  updatedEl.textContent=formatAgo(data.updated);
+  list.innerHTML="";
+  if(!maps.length){
+    list.innerHTML="<div class='small'>Карт ще немає</div>";
+    return;
+  }
+  maps.forEach(m=>{
+    list.innerHTML+=`
+    <div class="card">
+      <img src="${m.img}">
+      <div class="cardInfo">
+        <b>${m.title}</b><br>
+        <span class="small">Оновлено ${ago(m.time)}</span>
+      </div>
+    </div>`;
+  });
 }
 render();
 setInterval(render,60000);
 
-/* viewers (fake) */
-let viewers=975+Math.floor(Math.random()*2000);
-setInterval(()=>{
-  viewers+=Math.floor(Math.random()*3);
-  document.getElementById("viewers").textContent=viewers;
-},2000);
+function openLogin(){login.style.display="flex"}
+function closeAll(){login.style.display="none";admin.style.display="none"}
 
-function openAdmin(){admin.style.display="flex"}
-function closeAdmin(){admin.style.display="none"}
-
-function save(){
+function check(){
   if(pass.value!==PASS){alert("Невірний пароль");return;}
-  data.title=mapTitle.value||data.title;
+  login.style.display="none";
+  admin.style.display="flex";
+}
 
+function addMap(){
   let f=file.files[0];
-  if(f){
-    let r=new FileReader();
-    r.onload=()=>{
-      data.img=r.result;
-      data.updated=Date.now();
-      localStorage.setItem("mapData",JSON.stringify(data));
-      closeAdmin(); render();
-    }
-    r.readAsDataURL(f);
-  }else{
-    data.updated=Date.now();
-    localStorage.setItem("mapData",JSON.stringify(data));
-    closeAdmin(); render();
-  }
+  if(!f)return alert("Обери файл");
+  let r=new FileReader();
+  r.onload=()=>{
+    maps.unshift({
+      title:title.value||"Без назви",
+      img:r.result,
+      time:Date.now()
+    });
+    localStorage.setItem("maps",JSON.stringify(maps));
+    closeAll();
+    render();
+  };
+  r.readAsDataURL(f);
 }
 </script>
 </body>
