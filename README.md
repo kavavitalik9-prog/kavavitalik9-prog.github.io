@@ -3,324 +3,276 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ Графік світла — Львівська область</title>
+<title>Графік світла</title>
+
 <style>
 body{
   margin:0;
-  font-family:'Segoe UI', sans-serif;
-  background:#121212;
-  color:#fff;
-}
-.container{
-  max-width:420px;
-  margin:auto;
-  padding:12px;
-}
-.header{
-  background:#1e1e1e;
-  border-radius:16px;
-  padding:16px;
-  text-align:center;
-  position:relative;
-  box-shadow:0 0 20px rgba(255,196,0,.3);
-}
-.header h1{
-  margin:0;
-  color:#ffc400;
-  font-size:22px;
-}
-.update{
-  font-size:14px;
-  opacity:.8;
-  margin-top:6px;
-}
-.views{
-  margin-top:6px;
-  font-size:14px;
-  padding:6px 10px;
-  border:2px solid #ffc400;
-  border-radius:14px;
-  text-align:center;
-  background:#222;
-}
-.big-status{
-  margin-top:14px;
-  padding:18px;
-  border-radius:20px;
-  font-size:22px;
-  font-weight:700;
-  text-align:center;
-  box-shadow:0 0 15px rgba(0,255,0,.3);
-}
-.big-status.on{
-  background: rgba(0,255,0,0.15);
-  color:#6cff8f;
-  animation: blink 2s infinite;
-  box-shadow:0 0 20px rgba(0,255,0,.5);
-}
-.big-status.off{
-  background: rgba(255,0,0,0.15);
-  color:#ff6c6c;
-  box-shadow:0 0 20px rgba(255,0,0,.5);
-}
-@keyframes blink{
-  0%,50%,100% {opacity:1;}
-  25%,75% {opacity:0.5;}
-}
-.selects{
+  background:#0b0d13;
+  font-family:system-ui,-apple-system;
   display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-top:12px;
-}
-.selects select, .selects button{
-  flex:1 1 48%;
-  padding:12px;
-  border-radius:12px;
-  border:none;
-  background:#2a2a2a;
-  color:#fff;
-  font-size:16px;
-  cursor:pointer;
-}
-.group-card{
-  background:#1c1c1c;
-  margin-top:12px;
-  padding:14px;
-  border-radius:16px;
-  box-shadow:0 0 12px rgba(0,0,0,.5);
-}
-.line{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:6px 10px;
-  border-radius:12px;
-  margin:6px 0;
-}
-.ind{
-  width:28px;
-  font-size:20px;
-}
-.timer-line{
-  margin-left:auto;
-  font-size:14px;
-  opacity:.85;
-}
-.line.on{background:rgba(0,255,0,0.2);}
-.line.off{background:rgba(255,0,0,0.2);}
-.admin-btn{
-  position:absolute;
-  top:12px;
-  right:12px;
-  background:#333;
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
   justify-content:center;
-  cursor:pointer;
-}
-.admin-panel{
-  display:none;
-  margin-top:14px;
-  background:#111;
-  border-radius:16px;
-  padding:12px;
-  box-shadow:0 0 18px rgba(255,196,0,.5);
-}
-textarea{
-  width:100%;
-  height:100px;
-  resize:none;
-  border-radius:12px;
-  background:#222;
   color:#fff;
-  padding:8px;
-  margin-top:6px;
 }
-.group-edit label{font-weight:600;margin-top:6px;display:block}
+
+.phone{
+  width:100%;
+  max-width:420px;
+  min-height:100vh;
+  padding:12px;
+}
+
+.header{
+  background:#151a26;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:10px;
+}
+
+.title{font-size:18px;font-weight:600}
+.updated{font-size:13px;color:#aaa;margin-top:4px}
+.viewers{font-size:13px;color:#7aff9e;margin-top:6px}
+
+.controls{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+select,button,input{
+  flex:1;
+  background:#151a26;
+  color:#fff;
+  border:none;
+  border-radius:14px;
+  padding:10px;
+  font-size:14px;
+}
+
+button{cursor:pointer}
+
+.group{
+  background:#151a26;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+
+.onBox{box-shadow:0 0 0 2px #2cff9a55}
+.offBox{box-shadow:0 0 0 2px #ff4c4c55}
+
+.group-title{font-size:16px;font-weight:600}
+.status{margin-top:6px;font-weight:600}
+.on{color:#2cff9a}
+.off{color:#ff5c5c}
+
+.blink{
+  animation:blink 1.8s ease-in-out infinite;
+}
+
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:.6}
+}
+
+.timer{font-size:14px;color:#ccc;margin-top:6px}
+
+/* ===== TIME SCALE ===== */
+.timeline{
+  position:relative;
+  height:22px;
+  border-radius:11px;
+  overflow:hidden;
+  margin-top:10px;
+  background:#222;
+}
+
+.segment{
+  position:absolute;
+  top:0;
+  height:100%;
+}
+
+.onSeg{background:#2cff9a}
+.offSeg{background:#ff5c5c}
+
+.nowLine{
+  position:absolute;
+  top:-4px;
+  width:2px;
+  height:30px;
+  background:#fff;
+  opacity:.9;
+}
+
+/* ===== ADMIN ===== */
+.admin{
+  display:none;
+  background:#111522;
+  border-radius:18px;
+  padding:14px;
+  margin-top:12px;
+}
 </style>
 </head>
-<body>
 
-<div class="container">
+<body>
+<div class="phone">
 
 <div class="header">
-  <h1>⚡ Львівська область</h1>
-  <div class="update" id="updateText">Останнє оновлення: —</div>
-  <div class="views" id="viewers">Переглядають: —</div>
-  <div class="admin-btn" onclick="openAdmin()">🔒</div>
+  <div class="title">⚡ Графік відключень</div>
+  <div class="updated" id="updated"></div>
+  <div class="viewers" id="viewers"></div>
 </div>
 
-<div id="status" class="big-status">—</div>
-
-<div class="selects">
-  <select id="day"></select>
-  <select id="groupSelect">
-    <option value="all">Всі групи</option>
-    <option value="1.1">1.1</option>
-    <option value="1.2">1.2</option>
-    <option value="2.1">2.1</option>
-    <option value="2.2">2.2</option>
-    <option value="3.1">3.1</option>
-    <option value="3.2">3.2</option>
-    <option value="4.1">4.1</option>
-    <option value="4.2">4.2</option>
-    <option value="5.1">5.1</option>
-    <option value="5.2">5.2</option>
-    <option value="6.1">6.1</option>
-    <option value="6.2">6.2</option>
-  </select>
-  <button onclick="pinGroup()">Закріпити групу</button>
-  <button onclick="showAllGroups()">Показати всі групи</button>
+<div class="controls">
+  <select id="groupSelect"></select>
+  <button onclick="toggleAdmin()">🔐</button>
 </div>
 
-<div id="content"></div>
+<div id="groups"></div>
 
-<div class="admin-panel" id="admin">
-<h3>🔧 Адмін-панель</h3>
-<label>День:</label>
-<select id="adminDay">
-  <option value="current">Поточний</option>
-  <option value="all">Весь тиждень</option>
-</select>
-<div id="allGroupsEditor"></div>
-<button onclick="saveAll()">💾 Зберегти усі групи</button>
+<div class="admin" id="admin">
+  <input id="adminPass" placeholder="Пароль">
+  <button onclick="login()">Увійти</button>
+  <textarea id="adminText"
+   style="width:100%;height:100px;margin-top:8px;border-radius:14px;
+   background:#151a26;color:#fff;padding:8px"></textarea>
+  <button onclick="saveAll()">💾 Оновити всі групи</button>
 </div>
 
 </div>
 
 <script>
-const PASS="3709";
-const days=[["mon","Понеділок"],["tue","Вівторок"],["wed","Середа"],["thu","Четвер"],["fri","Пʼятниця"],["sat","Субота"],["sun","Неділя"]];
-const groups=[...Array(6)].flatMap((_,i)=>[`${i+1}.1`,`${i+1}.2`]);
+const PASSWORD="3709";
+let admin=false;
 
-const daySel=document.getElementById("day");
-days.forEach(d=>daySel.innerHTML+=`<option value="${d[0]}">${d[1]}</option>`);
-daySel.value=["sun","mon","tue","wed","thu","fri","sat"][new Date().getDay()];
+const allGroups=[
+"1.1","1.2","2.1","2.2","3.1","3.2",
+"4.1","4.2","5.1","5.2","6.1","6.2"
+];
 
-let data=JSON.parse(localStorage.getItem("data")||"{}");
-let last=+localStorage.getItem("last")||null;
-let pinnedGroup = localStorage.getItem("pinnedGroup") || "all";
-document.getElementById("groupSelect").value = pinnedGroup;
+let selected=localStorage.getItem("group")||"ALL";
+let lastUpdate=new Date();
 
-function toMin(t){let[a,b]=t.split(":");return a*60+ +b}
-function normalize(off){
- let r=[],p=0;
- off.sort((a,b)=>toMin(a[0])-toMin(b[0]));
- off.forEach(o=>{
-  let f=toMin(o[0]),t=toMin(o[1]);
-  if(p<f) r.push([p,f,"on"]);
-  r.push([f,t,"off"]); p=t;
- });
- if(p<1440) r.push([p,1440,"on"]);
- return r;
+let schedule={};
+allGroups.forEach(g=>{
+  schedule[g]=[["00:00","24:00","on"]];
+});
+
+// ===== UTIL =====
+function toMin(t){
+  const [h,m]=t.split(":").map(Number);
+  return h*60+m;
+}
+function nowMin(){
+  const d=new Date();
+  return d.getHours()*60+d.getMinutes();
+}
+function format(min){
+  if(min<=0) return "0 хв";
+  let d=Math.floor(min/1440);
+  let h=Math.floor((min%1440)/60);
+  let m=min%60;
+  let r=[];
+  if(d) r.push(d+" д");
+  if(h) r.push(h+" год");
+  if(m) r.push(m+" хв");
+  return r.join(" ");
 }
 
-function human(){
- if(!last) return "—";
- let s=(Date.now()-last)/1000;
- if(s<60) return "щойно";
- if(s<3600) return Math.floor(s/60)+" хв тому";
- if(s<86400) return Math.floor(s/3600)+" год тому";
- return Math.floor(s/86400)+" дн тому";
+// ===== VIEWERS =====
+function fakeViewers(){
+  document.getElementById("viewers").innerText=
+   "👀 "+(Math.floor(Math.random()*40)+60)+" онлайн";
 }
+setInterval(fakeViewers,5000);
+fakeViewers();
 
-function render(){
- // фейкові глядачі
- const viewCount=Math.floor(Math.random()*(700000-975+1)+975);
- document.getElementById("viewers").innerText=`Переглядають: ${viewCount}`;
+// ===== SELECT =====
+const sel=document.getElementById("groupSelect");
+sel.innerHTML="<option value='ALL'>Усі групи</option>";
+allGroups.forEach(g=>sel.innerHTML+=`<option>${g}</option>`);
+sel.value=selected;
+sel.onchange=()=>{
+  selected=sel.value;
+  localStorage.setItem("group",selected);
+  render();
+};
 
- document.getElementById("updateText").innerText="Останнє оновлення: "+human();
- let c=document.getElementById("content");
- c.innerHTML="";
- let now=new Date();
- let m=now.getHours()*60+now.getMinutes();
- let st=document.getElementById("status");
-
- groups.forEach((g,i)=>{
-  if(pinnedGroup!=="all" && g!==pinnedGroup) return;
-  if(!data[daySel.value]||!data[daySel.value][g]){
-   c.innerHTML+=`<div class="center">${g}: ⏳ графік формується</div>`;
-   return;
+// ===== ADMIN =====
+function toggleAdmin(){
+  document.getElementById("admin").style.display="block";
+}
+function login(){
+  if(document.getElementById("adminPass").value===PASSWORD){
+    admin=true;
+    document.getElementById("adminText").value=
+      JSON.stringify(schedule,null,2);
+    alert("Адмін режим увімкнено");
   }
-  let seg=normalize(data[daySel.value][g]);
-  let cur=seg.find(s=>m>=s[0]&&m<s[1]);
-  if(i===0 || pinnedGroup===g){
-    st.className="big-status "+cur[2];
-    st.innerText=cur[2]=="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМАЄ СВІТЛА";
-  }
-  let html=`<div class="group-card"><b>${g}</b>`;
-  seg.forEach(s=>{
-   let timerText="";
-   if(cur===s){
-     let d=s[1]-m;
-     let h=Math.floor(d/60);
-     let min=d%60;
-     timerText=(s[2]=="on"?"До вимкнення: ":"До увімкнення: ")+`${h}г ${min}хв`;
-   }
-   let lineClass = (cur===s) ? (s[2]=="on"?"on":"off") : "";
-   html+=`<div class="line ${s[2]} ${lineClass}">
-   <div class="ind">${s[2]=="on"?"🟢":"⚫"}</div>
-   ${String(Math.floor(s[0]/60)).padStart(2,"0")}:${String(s[0]%60).padStart(2,"0")} – ${String(Math.floor(s[1]/60)).padStart(2,"0")}:${String(s[1]%60).padStart(2,"0")}
-   <div class="timer-line">${timerText}</div>
-   </div>`;
-  });
-  html+="</div>";
-  c.innerHTML+=html;
- });
 }
-
-/* Адмін */
-function openAdmin(){
- if(prompt("Пароль")!==PASS){alert("Невірно"); return;}
- document.getElementById("admin").style.display="block";
- renderAdmin();
-}
-
-function renderAdmin(){
- const cont=document.getElementById("allGroupsEditor");
- cont.innerHTML="";
- groups.forEach(g=>{
-  let val=data[daySel.value]?.[g]?.map(a=>a.join("-")).join("\n")||"";
-  cont.innerHTML+=`<div class="group-edit"><label>${g}</label><textarea id="ta_${g}">${val}</textarea></div>`;
- });
-}
-
 function saveAll(){
- let dayTarget=document.getElementById("adminDay").value;
- let daysTarget=dayTarget=="all"?days.map(d=>d[0]):[daySel.value];
- groups.forEach(g=>{
-  let val=document.getElementById(`ta_${g}`).value.trim().split("\n").filter(Boolean).map(l=>l.split("-"));
-  daysTarget.forEach(d=>{
-    if(!data[d]) data[d]={};
-    data[d][g]=val;
+  if(!admin) return;
+  schedule=JSON.parse(document.getElementById("adminText").value);
+  lastUpdate=new Date();
+  render();
+}
+
+// ===== RENDER =====
+function render(){
+  document.getElementById("updated").innerText=
+   "Останнє оновлення: "+
+   format(Math.floor((Date.now()-lastUpdate)/60000))+" тому";
+
+  const box=document.getElementById("groups");
+  box.innerHTML="";
+  const now=nowMin();
+
+  allGroups.forEach(g=>{
+    if(selected!=="ALL" && selected!==g) return;
+
+    let state="off",next=0;
+    for(const s of schedule[g]){
+      const a=toMin(s[0]),b=toMin(s[1]);
+      if(now>=a && now<b){
+        state=s[2];
+        next=b-now;
+        break;
+      }
+    }
+
+    let segments="";
+    schedule[g].forEach(s=>{
+      const left=toMin(s[0])/1440*100;
+      const width=(toMin(s[1])-toMin(s[0]))/1440*100;
+      segments+=`<div class="segment ${s[2]==="on"?"onSeg":"offSeg"}"
+        style="left:${left}%;width:${width}%"></div>`;
+    });
+
+    box.innerHTML+=`
+    <div class="group ${state==="on"?"onBox":"offBox"}">
+      <div class="group-title">Група ${g}</div>
+
+      <div class="timeline">
+        ${segments}
+        <div class="nowLine" style="left:${now/1440*100}%"></div>
+      </div>
+
+      <div class="status ${state==="on"?"on blink":"off"}">
+        ${state==="on"?"🟢 ЗАРАЗ Є СВІТЛО":"⚫ ЗАРАЗ НЕМА СВІТЛА"}
+      </div>
+
+      <div class="timer">
+        ${state==="on"?"До вимкнення: ":"До увімкнення: "}
+        ${format(next)}
+      </div>
+    </div>`;
   });
- });
- last=Date.now();
- localStorage.setItem("data",JSON.stringify(data));
- localStorage.setItem("last",last);
- render();
 }
 
-function pinGroup() {
-  pinnedGroup = document.getElementById("groupSelect").value;
-  localStorage.setItem("pinnedGroup", pinnedGroup);
-  render();
-}
-
-function showAllGroups() {
-  pinnedGroup = "all";
-  document.getElementById("groupSelect").value = "all";
-  localStorage.setItem("pinnedGroup", pinnedGroup);
-  render();
-}
-
-daySel.onchange=()=>{render(); renderAdmin();}
-setInterval(render,1000);
 render();
+setInterval(render,60000);
 </script>
 </body>
 </html>
