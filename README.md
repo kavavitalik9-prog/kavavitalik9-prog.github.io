@@ -2,82 +2,195 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>🌦 Погода</title>
+<title>🌦 Мій прогноз погоди</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
   margin:0;
-  background:linear-gradient(180deg,#1e3c72,#2a5298);
+  background:linear-gradient(180deg,#0f2027,#203a43,#2c5364);
   font-family:system-ui;
   color:#fff;
 }
-.weather-card{
-  max-width:360px;
-  margin:30px auto;
+.app{max-width:390px;margin:auto;padding:14px}
+.card{
   background:rgba(0,0,0,.25);
-  border-radius:20px;
-  padding:20px;
-  text-align:center;
-  box-shadow:0 10px 30px rgba(0,0,0,.4);
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:14px;
 }
-.city{font-size:22px;font-weight:600}
-.temp{font-size:48px;font-weight:700;margin:10px 0}
-.desc{text-transform:capitalize;opacity:.9}
-.details{
+.now{text-align:center}
+.temp{font-size:48px;font-weight:700}
+.desc{opacity:.85}
+.hourly,.daily{display:flex;gap:10px;overflow-x:auto}
+.item{
+  min-width:64px;
+  text-align:center;
+  background:rgba(255,255,255,.08);
+  padding:8px;
+  border-radius:12px;
+  font-size:13px;
+}
+.icon{font-size:22px}
+.time{opacity:.7;font-size:13px}
+
+.admin-btn{
+  position:fixed;
+  bottom:16px;
+  right:16px;
+  font-size:22px;
+  background:#0008;
+  border-radius:50%;
+  width:48px;
+  height:48px;
   display:flex;
-  justify-content:space-around;
-  margin-top:16px;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:#000a;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal-box{
+  background:#1c1f26;
+  padding:16px;
+  border-radius:14px;
+  width:90%;
+  max-width:360px;
+}
+input,textarea,button{
+  width:100%;
+  margin-top:8px;
+  padding:8px;
+  border-radius:8px;
+  border:none;
   font-size:14px;
 }
-.details div{opacity:.85}
-small{opacity:.6;display:block;margin-top:12px}
+button{background:#2ecc71;color:#000;font-weight:600}
+.close{background:#ff4d4d}
 </style>
 </head>
 
 <body>
 
-<div class="weather-card">
-  <div class="city" id="city">Завантаження...</div>
-  <img id="icon" width="100">
-  <div class="temp" id="temp">--°C</div>
-  <div class="desc" id="desc"></div>
+<div class="app">
 
-  <div class="details">
-    <div>💨 <span id="wind"></span> м/с</div>
-    <div>💧 <span id="hum"></span>%</div>
+<div class="card now">
+  <div class="icon" id="nowIcon">☀️</div>
+  <div class="temp" id="nowTemp">+18°</div>
+  <div class="desc" id="nowDesc">Сонячно</div>
+  <div class="time" id="timeNow"></div>
+</div>
+
+<div class="card">
+  <h3>⏰ Погодинно</h3>
+  <div class="hourly" id="hourly"></div>
+</div>
+
+<div class="card">
+  <h3>📅 7 днів</h3>
+  <div class="daily" id="daily"></div>
+</div>
+
+</div>
+
+<!-- 🔒 КНОПКА АДМІНА -->
+<div class="admin-btn" onclick="openLogin()">🔒</div>
+
+<!-- 🔑 МОДАЛЬ -->
+<div class="modal" id="modal">
+  <div class="modal-box" id="modalBox">
+    <h3>Адмін доступ</h3>
+    <input id="pass" placeholder="Пароль">
+    <button onclick="login()">Увійти</button>
+    <button class="close" onclick="closeModal()">Закрити</button>
   </div>
-
-  <small id="updated">Оновлення...</small>
 </div>
 
 <script>
-// ====== НАЛАШТУВАННЯ ======
-const CITY = "Lviv"; // <-- змінюй місто (Lviv, Mostyska, Kyiv...)
-const API_KEY = "ВСТАВ_СВІЙ_API_КЛЮЧ"; // <-- ОБОВʼЯЗКОВО
-const LANG = "uk";
-// ==========================
+// ===== ПАРОЛЬ =====
+let ADMIN_PASSWORD = "3709";
 
-async function loadWeather(){
-  const url = `https://api.openweathermap.org/data/2.5/weather?q=${CITY}&units=metric&lang=${LANG}&appid=${API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
+// ===== ДАНІ =====
+let hourlyData = [
+ {h:"00:00",t:"+12°",i:"🌙"},
+ {h:"06:00",t:"+14°",i:"🌤"},
+ {h:"12:00",t:"+19°",i:"☀️"},
+ {h:"18:00",t:"+17°",i:"🌤"}
+];
 
-  document.getElementById("city").textContent = data.name;
-  document.getElementById("temp").textContent = Math.round(data.main.temp) + "°C";
-  document.getElementById("desc").textContent = data.weather[0].description;
-  document.getElementById("wind").textContent = data.wind.speed;
-  document.getElementById("hum").textContent = data.main.humidity;
-  document.getElementById("icon").src =
-    `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+let dailyData = [
+ {d:"Пн",t:"+18°",i:"☀️"},
+ {d:"Вт",t:"+16°",i:"🌧"},
+ {d:"Ср",t:"+14°",i:"🌧"},
+ {d:"Чт",t:"+17°",i:"🌤"},
+ {d:"Пт",t:"+20°",i:"☀️"},
+ {d:"Сб",t:"+22°",i:"☀️"},
+ {d:"Нд",t:"+19°",i:"⛅"}
+];
 
-  const now = new Date();
-  document.getElementById("updated").textContent =
-    "Оновлено о " + now.toLocaleTimeString("uk-UA",{hour:"2-digit",minute:"2-digit"});
+// ===== РЕНДЕР =====
+function render(){
+  hourly.innerHTML="";
+  hourlyData.forEach(x=>{
+    hourly.innerHTML+=`
+    <div class="item">
+      <div>${x.h}</div>
+      <div class="icon">${x.i}</div>
+      <div>${x.t}</div>
+    </div>`;
+  });
+
+  daily.innerHTML="";
+  dailyData.forEach(x=>{
+    daily.innerHTML+=`
+    <div class="item">
+      <div>${x.d}</div>
+      <div class="icon">${x.i}</div>
+      <div>${x.t}</div>
+    </div>`;
+  });
+}
+render();
+
+// ===== ЧАС =====
+function updateTime(){
+  const n=new Date();
+  timeNow.textContent="Зараз: "+n.toLocaleTimeString("uk-UA");
+}
+updateTime();
+setInterval(updateTime,1000);
+
+// ===== АДМІН =====
+function openLogin(){modal.style.display="flex"}
+function closeModal(){modal.style.display="none"}
+
+function login(){
+  if(pass.value!==ADMIN_PASSWORD) return alert("Невірний пароль");
+  modalBox.innerHTML=`
+  <h3>Редагування</h3>
+  <textarea id="hEdit" rows="4">${JSON.stringify(hourlyData,null,1)}</textarea>
+  <textarea id="dEdit" rows="4">${JSON.stringify(dailyData,null,1)}</textarea>
+  <button onclick="save()">Зберегти</button>
+  <button class="close" onclick="closeModal()">Закрити</button>`;
 }
 
-loadWeather();
-setInterval(loadWeather, 30 * 60 * 1000); // оновлення кожні 30 хв
+function save(){
+  try{
+    hourlyData=JSON.parse(hEdit.value);
+    dailyData=JSON.parse(dEdit.value);
+    render();
+    closeModal();
+  }catch{
+    alert("Помилка формату");
+  }
+}
 </script>
 
 </body>
