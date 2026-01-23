@@ -4,84 +4,37 @@
 <meta charset="UTF-8">
 <title>🌦 Мій прогноз</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 *{box-sizing:border-box}
 body{
   margin:0;
-  min-height:100vh;
   background:linear-gradient(180deg,#0b1d2b,#163a52,#1f5c7a);
-  font-family:system-ui,-apple-system;
+  font-family:system-ui;
   color:#fff;
 }
-
-.app{
-  max-width:420px;
-  margin:auto;
-  padding:14px 14px 80px;
-}
-
+.app{max-width:420px;margin:auto;padding:14px 14px 80px}
 .glass{
-  background:rgba(255,255,255,.12);
-  backdrop-filter:blur(10px);
+  background:rgba(255,255,255,.14);
+  backdrop-filter:blur(12px);
   border-radius:22px;
   padding:16px;
   margin-bottom:14px;
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
 }
-
-.now{
-  text-align:center;
-}
-.now .title{
-  font-size:14px;
-  opacity:.7;
-}
-.now .temp{
-  font-size:52px;
-  font-weight:800;
-  margin:4px 0;
-}
-.now .desc{
-  font-size:18px;
-}
-.now .time{
-  font-size:13px;
-  opacity:.6;
-  margin-top:6px;
-}
-
-.section-title{
-  font-size:16px;
-  margin-bottom:8px;
-  opacity:.9;
-}
-
-.scroll{
-  display:flex;
-  gap:10px;
-  overflow-x:auto;
-  padding-bottom:4px;
-}
-
-.hour-card, .day-card{
-  min-width:88px;
-  background:rgba(255,255,255,.15);
+.now{text-align:center}
+.now .temp{font-size:50px;font-weight:800}
+.now .desc{font-size:18px}
+.time{opacity:.6;font-size:13px}
+.title{font-size:16px;margin-bottom:8px}
+.scroll{display:flex;gap:10px;overflow-x:auto}
+.card{
+  min-width:90px;
+  background:rgba(255,255,255,.18);
   border-radius:16px;
-  padding:10px 8px;
+  padding:10px;
   text-align:center;
   font-size:13px;
 }
-
-.hour-card .icon,
-.day-card .icon{
-  font-size:22px;
-  margin:4px 0;
-}
-
-.hour-card .hour{
-  opacity:.7;
-}
+.icon{font-size:22px;margin:4px 0}
 
 .admin-btn{
   position:fixed;
@@ -91,13 +44,11 @@ body{
   height:50px;
   border-radius:50%;
   background:rgba(0,0,0,.5);
-  backdrop-filter:blur(8px);
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:22px;
   cursor:pointer;
-  box-shadow:0 8px 20px rgba(0,0,0,.4);
 }
 
 .modal{
@@ -107,18 +58,15 @@ body{
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:10;
 }
-
-.modal-box{
-  width:92%;
-  max-width:420px;
+.box{
   background:#0f2533;
   border-radius:20px;
   padding:16px;
+  width:92%;
+  max-width:420px;
 }
-
-input,textarea,button{
+textarea,input,button{
   width:100%;
   margin-top:10px;
   padding:10px;
@@ -126,25 +74,9 @@ input,textarea,button{
   border:none;
   font-size:14px;
 }
-
-textarea{
-  background:#122f40;
-  color:#fff;
-}
-
-input{
-  background:#122f40;
-  color:#fff;
-}
-
-button{
-  background:#2ecc71;
-  font-weight:700;
-}
-
-.close{
-  background:#ff4d4d;
-}
+textarea,input{background:#123448;color:#fff}
+button{background:#2ecc71;font-weight:700}
+.close{background:#ff4d4d}
 small{opacity:.6}
 </style>
 </head>
@@ -153,33 +85,32 @@ small{opacity:.6}
 
 <div class="app">
 
-  <!-- ЗАРАЗ -->
-  <div class="glass now">
-    <div class="title">Фейковий прогноз</div>
-    <div class="temp">☀️ +10°</div>
-    <div class="desc">Сонячно</div>
-    <div class="time" id="clock"></div>
-  </div>
+<!-- ЗАРАЗ -->
+<div class="glass now">
+  <div class="temp" id="nowTemp">--</div>
+  <div class="desc" id="nowDesc">Зараз</div>
+  <div class="time" id="clock"></div>
+</div>
 
-  <!-- ПОГОДИННО -->
-  <div class="glass">
-    <div class="section-title">⏰ Погодинно</div>
-    <div class="scroll" id="hourly"></div>
-  </div>
+<!-- ПОГОДИННО -->
+<div class="glass">
+  <div class="title">⏰ Погодні години</div>
+  <div class="scroll" id="hourly"></div>
+</div>
 
-  <!-- 7 ДНІВ -->
-  <div class="glass">
-    <div class="section-title">📅 7 днів</div>
-    <div class="scroll" id="daily"></div>
-  </div>
+<!-- 7 ДНІВ -->
+<div class="glass">
+  <div class="title">📅 7 днів</div>
+  <div class="scroll" id="daily"></div>
+</div>
 
 </div>
 
 <div class="admin-btn" onclick="openAdmin()">🔒</div>
 
 <div class="modal" id="modal">
-  <div class="modal-box" id="box">
-    <h3>Адмін доступ</h3>
+  <div class="box" id="box">
+    <h3>Адмін</h3>
     <input id="pass" placeholder="Пароль">
     <button onclick="login()">Увійти</button>
     <button class="close" onclick="closeAdmin()">Закрити</button>
@@ -189,7 +120,10 @@ small{opacity:.6}
 <script>
 const PASSWORD="3709";
 
-let hourlyText=`00:00 10° ☀️
+// ===== ПОГОДА ПО ДНЯХ (24 ГОДИНИ) =====
+let hourlyByDay=`
+[2026-01-23]
+00:00 10° 🌙
 01:00 9° 🌙
 02:00 9° 🌙
 03:00 8° 🌙
@@ -212,8 +146,10 @@ let hourlyText=`00:00 10° ☀️
 20:00 13° 🌙
 21:00 12° 🌙
 22:00 11° 🌙
-23:00 10° 🌙`;
+23:00 10° 🌙
+`;
 
+// ===== 7 ДНІВ =====
 let dailyText=`23.01 Пт 12°/5° ☀️
 24.01 Сб 10°/3° 🌧
 25.01 Нд 8°/2° ❄️
@@ -223,21 +159,40 @@ let dailyText=`23.01 Пт 12°/5° ☀️
 29.01 Чт 12°/6° 🌧
 30.01 Пт 14°/7° ☀️`;
 
+function parseHourly(){
+  const blocks=hourlyByDay.split(/\n(?=\[)/);
+  const map={};
+  blocks.forEach(b=>{
+    const lines=b.trim().split("\n");
+    if(!lines[0]) return;
+    const date=lines[0].replace(/\[|\]/g,"");
+    map[date]=lines.slice(1);
+  });
+  return map;
+}
+
 function render(){
   const now=new Date();
-  const hNow=now.getHours();
+  const today=now.toISOString().slice(0,10);
+  const hour=now.getHours();
+  const data=parseHourly();
+  const todayHours=data[today]||[];
 
   hourly.innerHTML="";
-  hourlyText.split("\n").forEach(l=>{
+  todayHours.forEach(l=>{
     const h=parseInt(l.slice(0,2));
-    if(h>=hNow){
-      const parts=l.split(" ");
+    if(h>=hour){
+      const p=l.split(" ");
       hourly.innerHTML+=`
-        <div class="hour-card">
-          <div class="hour">${parts[0]}</div>
-          <div class="icon">${parts[2]}</div>
-          <div>${parts[1]}</div>
+        <div class="card">
+          <div>${p[0]}</div>
+          <div class="icon">${p[2]}</div>
+          <div>${p[1]}</div>
         </div>`;
+      if(h===hour){
+        nowTemp.textContent=`${p[2]} ${p[1]}`;
+        nowDesc.textContent="Зараз";
+      }
     }
   });
 
@@ -245,12 +200,11 @@ function render(){
   let shown=0;
   dailyText.split("\n").forEach(l=>{
     if(shown>=7) return;
-    const d=l.split(" ")[0];
-    const [dd,mm]=d.split(".");
-    const date=new Date(now.getFullYear(),mm-1,dd);
+    const [d,m]=l.split(" ")[0].split(".");
+    const date=new Date(now.getFullYear(),m-1,d);
     if(date>=new Date(now.getFullYear(),now.getMonth(),now.getDate())){
       daily.innerHTML+=`
-        <div class="day-card">
+        <div class="card">
           <div>${l.split(" ").slice(0,2).join(" ")}</div>
           <div class="icon">${l.split(" ").pop()}</div>
           <div>${l.split(" ")[2]}</div>
@@ -264,10 +218,10 @@ render();
 function tick(){
   clock.textContent="Зараз: "+new Date().toLocaleTimeString("uk-UA");
 }
-tick(); setInterval(tick,1000);
-setInterval(render,60000);
+tick();
+setInterval(()=>{tick();render()},60000);
 
-// АДМІН
+// ===== АДМІН =====
 function openAdmin(){modal.style.display="flex"}
 function closeAdmin(){modal.style.display="none"}
 
@@ -275,8 +229,8 @@ function login(){
   if(pass.value!==PASSWORD) return alert("Невірний пароль");
   box.innerHTML=`
     <h3>Редагування</h3>
-    <small>⏰ Погодинно</small>
-    <textarea id="hEdit" rows="8">${hourlyText}</textarea>
+    <small>⏰ Погодинно по днях</small>
+    <textarea id="hEdit" rows="12">${hourlyByDay}</textarea>
     <small>📅 Дні</small>
     <textarea id="dEdit" rows="6">${dailyText}</textarea>
     <button onclick="save()">Зберегти</button>
@@ -284,7 +238,7 @@ function login(){
 }
 
 function save(){
-  hourlyText=hEdit.value.trim();
+  hourlyByDay=hEdit.value.trim();
   dailyText=dEdit.value.trim();
   render();
   closeAdmin();
