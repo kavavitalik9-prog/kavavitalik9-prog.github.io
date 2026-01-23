@@ -27,7 +27,7 @@ main{padding:14px}
 .off{background:var(--red)}
 .now{outline:2px solid #fff}
 
-/* ADMIN */
+/* Admin Panel */
 #adminPanel{
   background:#14161c;
   border-radius:12px;
@@ -38,7 +38,19 @@ main{padding:14px}
 input,textarea,button,select{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
 button{background:#2b6cff;color:#fff;cursor:pointer}
 small{opacity:.6;margin-top:4px;display:block}
-#adminBtn{cursor:pointer;float:right;margin-right:16px}
+
+/* Modal Password */
+#modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.7);
+  display:flex;justify-content:center;align-items:center;
+  z-index:1000;
+}
+#modalContent{
+  background:#1a1d24;padding:20px;border-radius:12px;width:280px;text-align:center;
+}
+#modal input{width:100%;margin-top:10px;padding:8px;border-radius:6px;border:none}
+#modal button{margin-top:10px;width:100%;padding:8px;border-radius:6px;background:#2b6cff;color:#fff;cursor:pointer}
 </style>
 </head>
 <body>
@@ -51,14 +63,10 @@ small{opacity:.6;margin-top:4px;display:block}
 
 <main id="groups"></main>
 
+<!-- Admin Panel під групами -->
 <div id="adminPanel" style="display:none">
 <h3>Адмін панель</h3>
-<div id="loginBox">
-<input id="pass" type="password" placeholder="Пароль">
-<button onclick="login()">Увійти</button>
-</div>
 
-<div id="adminContent" style="display:none">
 <h4>Редагування графіків</h4>
 <small>Введи години без світла через кому, формат 18:00-22:00</small>
 
@@ -87,6 +95,14 @@ small{opacity:.6;margin-top:4px;display:block}
 <button onclick="changePassword()">Змінити пароль</button>
 <small id="adminMsg"></small>
 </div>
+
+<!-- Modal для пароля -->
+<div id="modal">
+  <div id="modalContent">
+    <h3>Введіть пароль</h3>
+    <input type="password" id="modalPass" placeholder="Пароль">
+    <button onclick="modalLogin()">Увійти</button>
+  </div>
 </div>
 
 <script>
@@ -156,9 +172,6 @@ function render(){
    <div class="timeline">${timeline}</div>
   </div>`;
  });
- // Додаємо адмін-панель після останньої групи
-const main=document.getElementById("groups");
-if(document.getElementById("adminPanel")) main.appendChild(document.getElementById("adminPanel"));
 }
 
 function updateLast(){
@@ -172,23 +185,18 @@ function updateLast(){
  else el.textContent=`Останнє оновлення: ${Math.floor(diff/1440)} дн ${Math.floor((diff%1440)/60)} год`;
 }
 
-// admin functions
-const adminBtn=document.getElementById("adminBtn");
-const adminPanel=document.getElementById("adminPanel");
-const loginBox=document.getElementById("loginBox");
-const adminContent=document.getElementById("adminContent");
-const pass=document.getElementById("pass");
-const allDays=document.getElementById("allDays");
-
-adminBtn.onclick=()=>{adminPanel.style.display='block';};
-
-function login(){
- if(pass.value===PASSWORD){loginBox.style.display="none"; adminContent.style.display="block";}
- else alert("Невірний пароль");
+// Modal login
+function modalLogin(){
+ const val=document.getElementById("modalPass").value;
+ if(val===PASSWORD){
+   document.getElementById("modal").style.display="none";
+   document.getElementById("adminPanel").style.display="block";
+ } else alert("Невірний пароль");
 }
 
+// admin functions
 function save(){
- const applyAll=allDays.checked;
+ const applyAll=document.getElementById("allDays").checked;
  const day=document.getElementById("daySel").value;
  for(let i=1;i<=12;i++){
    const val=document.getElementById(`hours${i}`).value.trim();
@@ -207,7 +215,7 @@ function save(){
 
 function changePassword(){
  const newP=document.getElementById("newPass").value.trim();
- if(newP){PASSWORD=newP; localStorage.setItem("adminPass",newP); document.getElementById("adminMsg").textContent="Пароль змінено!";}
+ if(newP){PASSWORD=newP; localStorage.setItem("adminPass",newP); alert("Пароль змінено!");}
  else alert("Введи новий пароль!");
 }
 
