@@ -43,14 +43,19 @@ small{opacity:.6;margin-top:4px;display:block}
 #modal{
   position:fixed;top:0;left:0;width:100%;height:100%;
   background:rgba(0,0,0,0.7);
-  display:flex;justify-content:center;align-items:center;
+  display:none; /* спочатку приховано */
+  justify-content:center;align-items:center;
   z-index:1000;
 }
 #modalContent{
   background:#1a1d24;padding:20px;border-radius:12px;width:280px;text-align:center;
+  position:relative;
 }
 #modal input{width:100%;margin-top:10px;padding:8px;border-radius:6px;border:none}
 #modal button{margin-top:10px;width:100%;padding:8px;border-radius:6px;background:#2b6cff;color:#fff;cursor:pointer}
+#modalClose{
+  position:absolute;top:6px;right:10px;cursor:pointer;font-size:18px;color:#fff;
+}
 </style>
 </head>
 <body>
@@ -58,7 +63,7 @@ small{opacity:.6;margin-top:4px;display:block}
 <header>
 ⚡ Львівська область
 <div id="lastUpdate">Останнє оновлення: щойно</div>
-<div id="adminBtn">🔒</div>
+<div id="adminBtn" title="Адмін доступ">🔒</div>
 </header>
 
 <main id="groups"></main>
@@ -99,6 +104,7 @@ small{opacity:.6;margin-top:4px;display:block}
 <!-- Modal для пароля -->
 <div id="modal">
   <div id="modalContent">
+    <div id="modalClose" onclick="closeModal()">✖</div>
     <h3>Введіть пароль</h3>
     <input type="password" id="modalPass" placeholder="Пароль">
     <button onclick="modalLogin()">Увійти</button>
@@ -185,7 +191,17 @@ function updateLast(){
  else el.textContent=`Останнє оновлення: ${Math.floor(diff/1440)} дн ${Math.floor((diff%1440)/60)} год`;
 }
 
-// Modal login
+// Відкриття модалки
+document.getElementById("adminBtn").onclick = () => {
+  document.getElementById("modal").style.display="flex";
+}
+
+// Закриття модалки
+function closeModal(){
+  document.getElementById("modal").style.display="none";
+}
+
+// Login modal
 function modalLogin(){
  const val=document.getElementById("modalPass").value;
  if(val===PASSWORD){
