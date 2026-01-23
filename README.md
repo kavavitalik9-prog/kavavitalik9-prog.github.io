@@ -29,19 +29,16 @@ main{padding:14px}
 
 /* ADMIN */
 #adminPanel{
-  position:fixed;bottom:-100%;
-  left:0;right:0;
   background:#14161c;
-  border-top:1px solid #222;
+  border-radius:12px;
+  border:1px solid #222;
   padding:16px;
-  transition:.3s;
-  z-index:10;
+  margin-top:14px;
 }
-#adminPanel.open{bottom:0}
 input,textarea,button,select{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
 button{background:#2b6cff;color:#fff;cursor:pointer}
 small{opacity:.6;margin-top:4px;display:block}
-#adminBtn{cursor:pointer}
+#adminBtn{cursor:pointer;float:right;margin-right:16px}
 </style>
 </head>
 <body>
@@ -54,7 +51,7 @@ small{opacity:.6;margin-top:4px;display:block}
 
 <main id="groups"></main>
 
-<div id="adminPanel">
+<div id="adminPanel" style="display:none">
 <h3>Адмін панель</h3>
 <div id="loginBox">
 <input id="pass" type="password" placeholder="Пароль">
@@ -159,6 +156,9 @@ function render(){
    <div class="timeline">${timeline}</div>
   </div>`;
  });
+ // Додаємо адмін-панель після останньої групи
+const main=document.getElementById("groups");
+if(document.getElementById("adminPanel")) main.appendChild(document.getElementById("adminPanel"));
 }
 
 function updateLast(){
@@ -180,7 +180,7 @@ const adminContent=document.getElementById("adminContent");
 const pass=document.getElementById("pass");
 const allDays=document.getElementById("allDays");
 
-adminBtn.onclick=()=>adminPanel.classList.toggle("open");
+adminBtn.onclick=()=>{adminPanel.style.display='block';};
 
 function login(){
  if(pass.value===PASSWORD){loginBox.style.display="none"; adminContent.style.display="block";}
