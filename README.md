@@ -26,8 +26,19 @@ main{padding:14px}
 .hour{flex:1;height:14px;background:#333;border-radius:4px}
 .off{background:var(--red)}
 .now{outline:2px solid #fff}
-#adminContent{background:#1a1d24;padding:12px;margin-top:20px;border-radius:10px}
-input,textarea,button{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
+
+/* ADMIN */
+#adminPanel{
+  position:fixed;top:0;right:-100%;
+  width:320px;height:100%;
+  background:#14161c;
+  border-left:1px solid #222;
+  padding:16px;
+  transition:.3s;
+  z-index:10;
+}
+#adminPanel.open{right:0}
+input,textarea,button,select{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
 button{background:#2b6cff;color:#fff;cursor:pointer}
 small{opacity:.6;margin-top:4px;display:block}
 </style>
@@ -37,13 +48,22 @@ small{opacity:.6;margin-top:4px;display:block}
 <header>
 ⚡ Львівська область
 <div id="lastUpdate">Останнє оновлення: щойно</div>
+<div id="adminBtn">🔒</div>
 </header>
 
 <main id="groups"></main>
 
-<div id="adminContent">
-<h3>Редагування графіків</h3>
-<small>Вводь години без світла, формат 18:00-22:00, через кому</small>
+<div id="adminPanel">
+<h3>Адмін панель</h3>
+<div id="loginBox">
+<input id="pass" type="password" placeholder="Пароль">
+<button onclick="login()">Увійти</button>
+</div>
+
+<div id="adminContent" style="display:none">
+<h4>Редагування графіків</h4>
+<small>Введи години без світла через кому, формат 18:00-22:00</small>
+
 <textarea id="hours1" rows="2" placeholder="Група 1.1"></textarea>
 <textarea id="hours2" rows="2" placeholder="Група 1.2"></textarea>
 <textarea id="hours3" rows="2" placeholder="Група 2.1"></textarea>
@@ -56,15 +76,25 @@ small{opacity:.6;margin-top:4px;display:block}
 <textarea id="hours10" rows="2" placeholder="Група 5.2"></textarea>
 <textarea id="hours11" rows="2" placeholder="Група 6.1"></textarea>
 <textarea id="hours12" rows="2" placeholder="Група 6.2"></textarea>
+
 <select id="daySel">
   <option>Пн</option><option>Вт</option><option>Ср</option>
   <option>Чт</option><option>Пт</option><option>Сб</option><option>Нд</option>
 </select>
+<label><input type="checkbox" id="allDays"> Застосувати для всіх днів тижня</label>
 <button onclick="save()">Зберегти графіки</button>
+
+<h4>Змінити пароль</h4>
+<input id="newPass" type="password" placeholder="Новий пароль">
+<button onclick="changePassword()">Змінити пароль</button>
+<small id="adminMsg"></small>
+</div>
 </div>
 
 <script>
+// Дні і групи
 const days=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
+let PASSWORD=localStorage.getItem("adminPass")||"3709";
 const groups={};
 for(let g=1;g<=6;g++){for(let s=1;s<=2;s++){
   groups[`${g}.${s}`]={}; days.forEach(d=>groups[`${g}.${s}`][d]=[]);
@@ -130,7 +160,6 @@ function render(){
  });
 }
 
-// Оновлення часу
 function updateLast(){
  const el=document.getElementById("lastUpdate");
  const t=localStorage.getItem("lastUpdate");
@@ -142,17 +171,43 @@ function updateLast(){
  else el.textContent=`Останнє оновлення: ${Math.floor(diff/1440)} дн ${Math.floor((diff%1440)/60)} год`;
 }
 
-// Збереження графіків
+// admin functions
+const adminBtn=document.getElementById("adminBtn");
+const adminPanel=document.getElementById("adminPanel");
+const loginBox=document.getElementById("loginBox");
+const adminContent=document.getElementById("adminContent");
+const pass=document.getElementById("pass");
+const allDays=document.getElementById("allDays");
+
+adminBtn.onclick=()=>adminPanel.classList.toggle("open");
+
+function login(){
+ if(pass.value===PASSWORD){loginBox.style.display="none"; adminContent.style.display="block";}
+ else alert("Невірний пароль");
+}
+
 function save(){
- const day=daySel.value;
+ const applyAll=allDays.checked;
+ const day=document.getElementById("daySel").value;
  for(let i=1;i<=12;i++){
    const val=document.getElementById(`hours${i}`).value.trim();
-   if(val) groups[`${Math.ceil(i/2)}.${i%2===0?2:1}`][day]=val.split(",").map(s=>s.trim());
+   if(val){
+     const targets=applyAll?days:[day];
+     targets.forEach(d=>{
+       groups[`${Math.ceil(i/2)}.${i%2===0?2:1}`][d]=val.split(",").map(s=>s.trim());
+     });
+   }
  }
  localStorage.setItem("lastUpdate",Date.now());
  updateLast();
  render();
  alert("Графіки оновлено!");
+}
+
+function changePassword(){
+ const newP=document.getElementById("newPass").value.trim();
+ if(newP){PASSWORD=newP; localStorage.setItem("adminPass",newP); document.getElementById("adminMsg").textContent="Пароль змінено!";}
+ else alert("Введи новий пароль!");
 }
 
 render(); updateLast();
