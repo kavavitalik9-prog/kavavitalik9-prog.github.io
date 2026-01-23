@@ -29,18 +29,19 @@ main{padding:14px}
 
 /* ADMIN */
 #adminPanel{
-  position:fixed;top:0;right:-100%;
-  width:320px;height:100%;
+  position:fixed;bottom:-100%;
+  left:0;right:0;
   background:#14161c;
-  border-left:1px solid #222;
+  border-top:1px solid #222;
   padding:16px;
   transition:.3s;
   z-index:10;
 }
-#adminPanel.open{right:0}
+#adminPanel.open{bottom:0}
 input,textarea,button,select{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
 button{background:#2b6cff;color:#fff;cursor:pointer}
 small{opacity:.6;margin-top:4px;display:block}
+#adminBtn{cursor:pointer}
 </style>
 </head>
 <body>
