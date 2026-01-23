@@ -13,57 +13,21 @@
 }
 *{box-sizing:border-box;font-family:system-ui}
 body{margin:0;background:var(--bg);color:#fff}
-
-header{
-  padding:14px 16px;
-  border-bottom:1px solid #222;
-  font-weight:600;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  position:relative;
-}
-
-#adminBtn{
-  cursor:pointer;font-size:22px;opacity:.7
-}
-#adminBtn:hover{opacity:1}
-
+header{padding:14px 16px;border-bottom:1px solid #222;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 main{padding:14px}
-
-.group{
-  background:var(--card);
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:14px;
-}
+.group{background:var(--card);border-radius:14px;padding:12px;margin-bottom:14px}
 .group h3{margin:0 0 6px}
 .status{font-size:14px;display:flex;align-items:center;gap:6px}
 .green{color:var(--green)}
 .red{color:var(--red)}
 .blink{animation:blink 1.6s infinite}
 @keyframes blink{50%{opacity:.5}}
-
 .timeline{display:flex;gap:2px;margin-top:6px}
 .hour{flex:1;height:14px;background:#333;border-radius:4px}
 .off{background:var(--red)}
 .now{outline:2px solid #fff}
-
-/* ADMIN */
-#adminPanel{
-  position:fixed;top:0;right:-100%;
-  width:320px;height:100%;
-  background:#14161c;
-  border-left:1px solid #222;
-  padding:16px;
-  transition:.3s;
-  z-index:10;
-}
-#adminPanel.open{right:0}
-select,input,textarea,button{
- width:100%;margin-top:8px;
- padding:8px;border-radius:8px;border:none
-}
+#adminContent{background:#1a1d24;padding:12px;margin-top:20px;border-radius:10px}
+input,textarea,button{width:100%;margin-top:6px;padding:8px;border-radius:6px;border:none}
 button{background:#2b6cff;color:#fff;cursor:pointer}
 small{opacity:.6;margin-top:4px;display:block}
 </style>
@@ -72,31 +36,34 @@ small{opacity:.6;margin-top:4px;display:block}
 
 <header>
 ⚡ Львівська область
-<div id="adminBtn">🔒</div>
+<div id="lastUpdate">Останнє оновлення: щойно</div>
 </header>
 
 <main id="groups"></main>
 
-<div id="adminPanel">
-<h3>Адмін панель</h3>
-<input id="pass" type="password" placeholder="Пароль">
-<button onclick="login()">Увійти</button>
-
-<div id="adminContent" style="display:none">
-<small>Введи години без світла через кому, формат 18:00-22:00</small>
-<textarea id="hours" rows="6" placeholder="18:00-22:00, 01:00-03:00"></textarea>
+<div id="adminContent">
+<h3>Редагування графіків</h3>
+<small>Вводь години без світла, формат 18:00-22:00, через кому</small>
+<textarea id="hours1" rows="2" placeholder="Група 1.1"></textarea>
+<textarea id="hours2" rows="2" placeholder="Група 1.2"></textarea>
+<textarea id="hours3" rows="2" placeholder="Група 2.1"></textarea>
+<textarea id="hours4" rows="2" placeholder="Група 2.2"></textarea>
+<textarea id="hours5" rows="2" placeholder="Група 3.1"></textarea>
+<textarea id="hours6" rows="2" placeholder="Група 3.2"></textarea>
+<textarea id="hours7" rows="2" placeholder="Група 4.1"></textarea>
+<textarea id="hours8" rows="2" placeholder="Група 4.2"></textarea>
+<textarea id="hours9" rows="2" placeholder="Група 5.1"></textarea>
+<textarea id="hours10" rows="2" placeholder="Група 5.2"></textarea>
+<textarea id="hours11" rows="2" placeholder="Група 6.1"></textarea>
+<textarea id="hours12" rows="2" placeholder="Група 6.2"></textarea>
 <select id="daySel">
   <option>Пн</option><option>Вт</option><option>Ср</option>
   <option>Чт</option><option>Пт</option><option>Сб</option><option>Нд</option>
 </select>
-<label><input type="checkbox" id="allGroups" checked> Оновити для всіх груп</label>
-<button onclick="save()">Зберегти</button>
-<small id="lastUpdate">Останнє оновлення: щойно</small>
-</div>
+<button onclick="save()">Зберегти графіки</button>
 </div>
 
 <script>
-const PASSWORD="3709";
 const days=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
 const groups={};
 for(let g=1;g<=6;g++){for(let s=1;s<=2;s++){
@@ -116,12 +83,11 @@ function minutesUntilChange(offs){
    return [a*60,b*60];
  });
  periods.sort((a,b)=>a[0]-b[0]);
- // знайти наступну зміну
  for(let i=0;i<periods.length;i++){
    if(curr<periods[i][0]) return periods[i][0]-curr;
    if(curr>=periods[i][0] && curr<periods[i][1]) return periods[i][1]-curr;
  }
- return 24*60-curr; // до кінця дня
+ return 24*60-curr;
 }
 
 function render(){
@@ -176,33 +142,17 @@ function updateLast(){
  else el.textContent=`Останнє оновлення: ${Math.floor(diff/1440)} дн ${Math.floor((diff%1440)/60)} год`;
 }
 
-// ADMIN
-const adminBtn=document.getElementById("adminBtn");
-const adminPanel=document.getElementById("adminPanel");
-const adminContent=document.getElementById("adminContent");
-const pass=document.getElementById("pass");
-const hoursInput=document.getElementById("hours");
-const daySel=document.getElementById("daySel");
-const allGroups=document.getElementById("allGroups");
-
-adminBtn.onclick=()=>adminPanel.classList.toggle("open");
-
-function login(){
- if(pass.value===PASSWORD){adminContent.style.display="block";}
- else alert("Невірний пароль");
-}
-
+// Збереження графіків
 function save(){
- const text=hoursInput.value.trim();
  const day=daySel.value;
- let periods=text.split(",").map(s=>s.trim());
- if(allGroups.checked){
-   Object.keys(groups).forEach(g=>groups[g][day]=periods);
+ for(let i=1;i<=12;i++){
+   const val=document.getElementById(`hours${i}`).value.trim();
+   if(val) groups[`${Math.ceil(i/2)}.${i%2===0?2:1}`][day]=val.split(",").map(s=>s.trim());
  }
  localStorage.setItem("lastUpdate",Date.now());
  updateLast();
  render();
- alert("Збережено!");
+ alert("Графіки оновлено!");
 }
 
 render(); updateLast();
