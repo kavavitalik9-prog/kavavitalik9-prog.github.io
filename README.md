@@ -14,17 +14,11 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
 #map{flex:1}
 .admin-btn{font-size:22px;cursor:pointer}
 .admin{
-  position:fixed;
-  bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:390px;
+  width:100%;
   background:#020617;
   border-top:1px solid #334155;
   padding:12px;
   display:none;
-  max-height:50%;
-  overflow:auto;
 }
 .admin input, .admin button{width:100%;margin-top:8px;padding:8px;font-size:14px}
 .list{margin-top:10px;max-height:150px;overflow:auto}
@@ -39,15 +33,16 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
     <span class="admin-btn" id="adminBtn">🔒</span>
   </div>
   <div id="map"></div>
-</div>
 
-<div class="admin" id="adminPanel">
-  <input type="password" id="pass" placeholder="Пароль">
-  <input type="text" id="title" placeholder="Назва міста / села">
-  <input type="file" id="img" accept="image/*">
-  <button id="addBtn">Додати знімок</button>
-  <div class="list" id="list"></div>
-  <button onclick="closeAdmin()">Закрити</button>
+  <!-- Адмін-панель тепер ПІД картою -->
+  <div class="admin" id="adminPanel">
+    <input type="password" id="pass" placeholder="Пароль">
+    <input type="text" id="title" placeholder="Назва міста / села">
+    <input type="file" id="img" accept="image/*">
+    <button id="addBtn">Додати знімок</button>
+    <div class="list" id="list"></div>
+    <button onclick="closeAdmin()">Закрити</button>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -60,16 +55,16 @@ let layersCtrl=L.control.layers(null,null).addTo(map);
 let overlays=[];
 let data=JSON.parse(localStorage.getItem("maps")||"[]");
 
-// Функція малювання всіх знімків
 function redraw(){
   overlays.forEach(o=>{
     map.removeLayer(o.layer);
     map.removeLayer(o.label);
   });
   overlays=[];
-  layersCtrl._layers=[]; // очистка шарів
+  layersCtrl._layers=[]; 
   data.forEach((d,i)=>{
-    const layer=L.imageOverlay(d.src,d.bounds).addTo(map);
+    const layer=L.imageOverlay(d.src,d.bounds);
+    layer.addTo(map);
     const label=L.marker(d.center,{
       icon:L.divIcon({
         className:'',
@@ -82,7 +77,6 @@ function redraw(){
   renderList();
 }
 
-// Список для видалення
 function renderList(){
   const list=document.getElementById("list");
   list.innerHTML="";
@@ -96,7 +90,6 @@ function renderList(){
 
 redraw();
 
-// Адмін панель
 document.getElementById("adminBtn").onclick=()=>document.getElementById("adminPanel").style.display="block";
 function closeAdmin(){document.getElementById("adminPanel").style.display="none"; addMode=false;}
 
@@ -119,10 +112,9 @@ document.getElementById("addBtn").onclick=()=>{
     return;
   }
   addMode=true;
-  alert("Клікни на карту для вставки знімка");
+  alert("Клікни на потрібне місце на карті");
 };
 
-// Клік на карту
 map.on("click",e=>{
   if(!addMode) return;
   const title=document.getElementById("title").value||"Локація";
@@ -131,12 +123,7 @@ map.on("click",e=>{
     [e.latlng.lat-size,e.latlng.lng-size],
     [e.latlng.lat+size,e.latlng.lng+size]
   ];
-  data.push({
-    title,
-    src:imgData,
-    bounds,
-    center:e.latlng
-  });
+  data.push({title, src:imgData, bounds, center:e.latlng});
   localStorage.setItem("maps",JSON.stringify(data));
   imgData=null;
   addMode=false;
@@ -144,13 +131,11 @@ map.on("click",e=>{
   redraw();
 });
 
-// Видалення
 function del(i){
   data.splice(i,1);
   localStorage.setItem("maps",JSON.stringify(data));
   redraw();
 }
 </script>
-
 </body>
 </html>
