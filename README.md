@@ -2,49 +2,53 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Погода</title>
+<title>Погода Телефон</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;}
 body{
-  background:#020617;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   display:flex;
   justify-content:center;
-  padding:20px 0;
+  align-items:center;
+  min-height:100vh;
+  background:#111827;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   color:#fff;
-  height:100vh;
 }
 
-/* PHONE */
-.phone{
+/* === Телефонна рамка === */
+.phone-frame{
   width:390px;
   max-width:100%;
-  height:100vh;
+  height:800px;
+  border-radius:36px;
+  border:12px solid #1f2937;
+  box-shadow:0 0 40px rgba(0,0,0,0.5);
+  overflow:hidden;
   background:linear-gradient(180deg,#0f172a,#020617);
-  border-radius:28px;
-  box-shadow:0 25px 70px rgba(0,0,0,.7);
   display:flex;
   flex-direction:column;
-  overflow:hidden;
+  position:relative;
 }
 
-.container{
-  padding:16px;
+/* === Контент всередині телефону === */
+.phone-screen{
   flex:1;
-  overflow-y:auto; /* ось тут скрол */
+  overflow-y:auto;
+  padding:16px;
 }
 
-h1,h2{margin:10px 0}
-
+h1,h2{margin:10px 0;text-align:center;}
 .card{
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,0.08);
   border-radius:16px;
   padding:14px;
   margin-bottom:14px;
 }
-
-.now{font-size:42px;text-align:center}
+.now{
+  font-size:40px;
+  text-align:center;
+}
 
 /* hourly */
 .hourly{
@@ -74,30 +78,39 @@ h1,h2{margin:10px 0}
 }
 
 /* sun */
-.sun{display:flex;justify-content:space-between}
+.sun{
+  display:flex;
+  justify-content:space-between;
+}
 
-#updated{opacity:.6;font-size:13px;text-align:center}
+/* оновлення */
+#updated{
+  font-size:13px;
+  opacity:0.6;
+  text-align:center;
+}
 
-/* admin */
+/* адмінка */
 #adminBtn{
-  position:fixed;
-  bottom:20px;
+  position:absolute;
+  bottom:16px;
   right:16px;
-  width:52px;
-  height:52px;
+  width:50px;
+  height:50px;
   border-radius:50%;
   border:none;
   background:#2563eb;
-  color:#fff;
   font-size:22px;
+  color:#fff;
   cursor:pointer;
-  z-index:9999;
+  z-index:999;
 }
+
 #adminModal{
   display:none;
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.7);
+  background:rgba(0,0,0,0.7);
 }
 #adminBox{
   background:#020617;
@@ -119,8 +132,8 @@ textarea{min-height:70px}
 </head>
 <body>
 
-<div class="phone">
-  <div class="container">
+<div class="phone-frame">
+  <div class="phone-screen">
     <h1>🌦 Погода</h1>
     <div class="card now" id="now">—</div>
 
@@ -141,9 +154,9 @@ textarea{min-height:70px}
 
     <div id="updated">—</div>
   </div>
-</div>
 
-<button id="adminBtn">⚙</button>
+  <button id="adminBtn">⚙</button>
+</div>
 
 <div id="adminModal">
   <div id="adminBox">
