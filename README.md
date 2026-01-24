@@ -7,67 +7,91 @@
 <style>
 body{
   margin:0;
+  background:#020617;
   font-family:system-ui,Arial;
-  background:linear-gradient(180deg,#0f172a,#020617);
+  display:flex;
+  justify-content:center;
+  padding:20px 0;
   color:#fff;
 }
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:15px;
+
+/* === PHONE FRAME === */
+.phone{
+  width:390px;
+  max-width:100%;
+  background:linear-gradient(180deg,#0f172a,#020617);
+  border-radius:28px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+  overflow:hidden;
 }
+
+/* === CONTENT === */
+.container{
+  padding:16px;
+}
+
 h1,h2{margin:10px 0}
+
 .card{
   background:rgba(255,255,255,.08);
-  border-radius:14px;
-  padding:15px;
-  margin-bottom:15px;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:14px;
 }
+
 .now{
   font-size:42px;
   text-align:center;
 }
+
 .hourly{
   display:flex;
   gap:10px;
   overflow-x:auto;
 }
 .hour{
-  min-width:100px;
+  min-width:95px;
   background:rgba(255,255,255,.12);
+  border-radius:14px;
   padding:10px;
-  border-radius:12px;
   text-align:center;
 }
+
 .daily{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  grid-template-columns:repeat(2,1fr);
   gap:10px;
 }
 .day{
   background:rgba(255,255,255,.12);
+  border-radius:14px;
   padding:10px;
-  border-radius:12px;
   text-align:center;
 }
+
 .sun{
   display:flex;
   justify-content:space-between;
+}
+
+#updated{
+  opacity:.6;
+  font-size:13px;
   text-align:center;
 }
-#updated{opacity:.7;font-size:14px}
 
+/* === ADMIN === */
 #adminBtn{
   position:fixed;
-  bottom:16px;
-  right:16px;
+  bottom:22px;
+  right:calc(50% - 195px + 16px);
   width:52px;
   height:52px;
   border-radius:50%;
   border:none;
-  font-size:22px;
   background:#2563eb;
   color:#fff;
+  font-size:22px;
   cursor:pointer;
 }
 
@@ -78,53 +102,48 @@ h1,h2{margin:10px 0}
   background:rgba(0,0,0,.7);
 }
 #adminBox{
-  max-width:520px;
-  margin:60px auto;
   background:#020617;
+  max-width:360px;
+  margin:80px auto;
   padding:15px;
-  border-radius:14px;
+  border-radius:16px;
 }
 input,textarea,button{
   width:100%;
   padding:8px;
   margin:5px 0;
-  border-radius:8px;
+  border-radius:10px;
   border:none;
 }
 textarea{min-height:70px}
-.close{
-  text-align:right;
-  cursor:pointer;
-}
+.close{text-align:right;cursor:pointer}
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>🌦 Мій прогноз погоди</h1>
+<div class="phone">
+  <div class="container">
+    <h1>🌦 Погода</h1>
 
-  <div class="card now" id="now">--</div>
+    <div class="card now" id="now">—</div>
 
-  <div class="card">
-    <h2>⏰ Погодинно (24 години)</h2>
-    <div class="hourly" id="hourly"></div>
-  </div>
-
-  <div class="card">
-    <h2>📅 7 днів</h2>
-    <div class="daily" id="daily"></div>
-  </div>
-
-  <div class="card sun">
-    <div>
-      🌅<br><b id="sunrise">—</b><br><small>Схід</small>
+    <div class="card">
+      <h2>⏰ Погодинно</h2>
+      <div class="hourly" id="hourly"></div>
     </div>
-    <div>
-      🌇<br><b id="sunset">—</b><br><small>Захід</small>
-    </div>
-  </div>
 
-  <div id="updated">—</div>
+    <div class="card">
+      <h2>📅 7 днів</h2>
+      <div class="daily" id="daily"></div>
+    </div>
+
+    <div class="card sun">
+      <div>🌅 <b id="sunrise">—</b></div>
+      <div>🌇 <b id="sunset">—</b></div>
+    </div>
+
+    <div id="updated">—</div>
+  </div>
 </div>
 
 <button id="adminBtn">⚙</button>
@@ -134,24 +153,21 @@ textarea{min-height:70px}
     <div class="close" onclick="closeAdmin()">❌</div>
 
     <div id="loginBox">
-      <h3>Адмін доступ</h3>
       <input type="password" id="pass" placeholder="Пароль">
       <button onclick="login()">Увійти</button>
     </div>
 
     <div id="panel" style="display:none">
-      <h3>Редагування</h3>
-
-      <label>Погода зараз</label>
+      <label>Зараз</label>
       <input id="nowInput">
 
-      <label>Погодинно (00–23, кожен рядок)</label>
+      <label>Погодинно (00–23)</label>
       <textarea id="hourlyInput"></textarea>
 
-      <label>7 днів (кожен рядок)</label>
+      <label>7 днів</label>
       <textarea id="dailyInput"></textarea>
 
-      <label>Схід / Захід (напр. 07:48|16:32)</label>
+      <label>Схід|Захід</label>
       <input id="sunInput">
 
       <button onclick="save()">💾 Зберегти</button>
@@ -178,43 +194,25 @@ let data = JSON.parse(localStorage.getItem("weatherData")) || {
 
 function render(){
   now.textContent=data.now;
-
   hourly.innerHTML="";
-  let start=new Date().getHours();
+  let h=new Date().getHours();
   for(let i=0;i<24;i++){
-    let h=(start+i)%24;
-    let el=document.createElement("div");
-    el.className="hour";
-    el.innerHTML=`<b>${String(h).padStart(2,"0")}:00</b><br>${data.hourly[h]||""}`;
-    hourly.appendChild(el);
+    let hr=(h+i)%24;
+    hourly.innerHTML+=`<div class="hour"><b>${String(hr).padStart(2,"0")}:00</b><br>${data.hourly[hr]}</div>`;
   }
-
-  daily.innerHTML="";
-  data.daily.slice(0,7).forEach(d=>{
-    let el=document.createElement("div");
-    el.className="day";
-    el.textContent=d;
-    daily.appendChild(el);
-  });
-
+  daily.innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
   let [r,s]=data.sun.split("|");
-  sunrise.textContent=r||"—";
-  sunset.textContent=s||"—";
+  sunrise.textContent=r;
+  sunset.textContent=s;
 
-  let diff=Math.floor((Date.now()-data.updated)/60000);
-  updated.textContent=
-    diff<1?"Оновлено щойно":
-    diff<60?`Оновлено ${diff} хв тому`:
-    diff<1440?`Оновлено ${Math.floor(diff/60)} год тому`:
-    `Оновлено ${Math.floor(diff/1440)} дн тому`;
+  let m=Math.floor((Date.now()-data.updated)/60000);
+  updated.textContent=m<1?"Оновлено щойно":m<60?`Оновлено ${m} хв тому`:`Оновлено ${Math.floor(m/60)} год тому`;
 }
-
 render();
 setInterval(render,60000);
 
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
-
 function login(){
   if(pass.value==="3709"){
     loginBox.style.display="none";
@@ -225,7 +223,6 @@ function login(){
     sunInput.value=data.sun;
   }
 }
-
 function save(){
   data.now=nowInput.value;
   data.hourly=hourlyInput.value.split("\n");
