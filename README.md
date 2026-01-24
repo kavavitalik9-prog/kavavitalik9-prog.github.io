@@ -17,18 +17,23 @@ body{
   color:#fff;
 }
 
-/* PHONE */
+/* === PHONE FRAME === */
 .phone{
   width:390px;
   max-width:100%;
+  height:100dvh;
   background:linear-gradient(180deg,#0f172a,#020617);
   border-radius:28px;
   box-shadow:0 25px 70px rgba(0,0,0,.7);
+  display:flex;
+  flex-direction:column;
   overflow:hidden;
 }
 
 .container{
   padding:16px;
+  flex:1;
+  overflow-y:auto;
 }
 
 h1,h2{
@@ -90,7 +95,7 @@ h1,h2{
 #adminBtn{
   position:fixed;
   bottom:20px;
-  right:calc(50% - 195px + 14px);
+  right:16px;
   width:52px;
   height:52px;
   border-radius:50%;
@@ -99,6 +104,7 @@ h1,h2{
   color:#fff;
   font-size:22px;
   cursor:pointer;
+  z-index:9999;
 }
 
 #adminModal{
