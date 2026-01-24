@@ -49,16 +49,35 @@ header{
   color:white;
   padding:12px;
   display:none;
+  max-height:60%;
+  overflow:auto;
 }
-.admin-panel input, .admin-panel button{
+.admin-panel input,
+.admin-panel button{
   width:100%;
   margin-top:8px;
   padding:8px;
   font-size:14px;
 }
+.overlay-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#020617;
+  border:1px solid #334155;
+  padding:6px;
+  margin-top:6px;
+  font-size:12px;
+}
+.overlay-item button{
+  width:auto;
+  padding:4px 8px;
+  font-size:12px;
+}
 .note{
   font-size:12px;
   opacity:.7;
+  margin-top:6px;
 }
 </style>
 </head>
@@ -76,9 +95,13 @@ header{
   <div class="admin-panel" id="adminPanel">
     <input type="password" id="pass" placeholder="Пароль">
     <input type="file" id="imgInput" accept="image/*">
-    <button onclick="enableAdd()">Додати знімок</button>
+    <button onclick="enableAdd()">Додати новий знімок</button>
+
+    <div class="note">Щоб перемістити знімок — видали старий і додай новий</div>
+
+    <div id="overlayList"></div>
+
     <button onclick="closeAdmin()">Закрити</button>
-    <div class="note">Натисни на карту, щоб поставити знімок</div>
   </div>
 </div>
 
@@ -96,12 +119,31 @@ let addMode=false;
 let currentImage=null;
 let overlays=[];
 
-const saved = JSON.parse(localStorage.getItem("overlays")||"[]");
+let saved = JSON.parse(localStorage.getItem("overlays")||"[]");
 
-saved.forEach(o=>{
-  const img = L.imageOverlay(o.src, o.bounds).addTo(map);
-  overlays.push(img);
-});
+function drawOverlays(){
+  overlays.forEach(o=>map.removeLayer(o));
+  overlays=[];
+  saved.forEach(o=>{
+    const img=L.imageOverlay(o.src,o.bounds).addTo(map);
+    overlays.push(img);
+  });
+  renderList();
+}
+
+function renderList(){
+  const list=document.getElementById("overlayList");
+  list.innerHTML="";
+  saved.forEach((o,i)=>{
+    const div=document.createElement("div");
+    div.className="overlay-item";
+    div.innerHTML=`Знімок ${i+1}
+      <button onclick="removeOverlay(${i})">❌</button>`;
+    list.appendChild(div);
+  });
+}
+
+drawOverlays();
 
 document.getElementById("adminBtn").onclick=()=>{
   document.getElementById("adminPanel").style.display="block";
@@ -109,7 +151,6 @@ document.getElementById("adminBtn").onclick=()=>{
 
 function closeAdmin(){
   document.getElementById("adminPanel").style.display="none";
-  admin=false;
   addMode=false;
 }
 
@@ -124,6 +165,7 @@ document.getElementById("pass").onchange=e=>{
 
 document.getElementById("imgInput").onchange=e=>{
   const file=e.target.files[0];
+  if(!file) return;
   const reader=new FileReader();
   reader.onload=ev=>currentImage=ev.target.result;
   reader.readAsDataURL(file);
@@ -135,6 +177,7 @@ function enableAdd(){
     return;
   }
   addMode=true;
+  alert("Клікни по карті, щоб вставити знімок");
 }
 
 map.on("click",e=>{
@@ -146,15 +189,20 @@ map.on("click",e=>{
     [e.latlng.lat+size,e.latlng.lng+size]
   ];
 
-  const overlay=L.imageOverlay(currentImage,bounds).addTo(map);
-  overlays.push(overlay);
-
   saved.push({src:currentImage,bounds});
   localStorage.setItem("overlays",JSON.stringify(saved));
 
+  currentImage=null;
   addMode=false;
-  alert("Знімок додано");
+
+  drawOverlays();
 });
+
+function removeOverlay(i){
+  saved.splice(i,1);
+  localStorage.setItem("overlays",JSON.stringify(saved));
+  drawOverlays();
+}
 </script>
 
 </body>
