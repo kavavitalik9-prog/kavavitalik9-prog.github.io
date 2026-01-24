@@ -45,56 +45,59 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
 const map = L.map('map').setView([49.8, 24.0], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-let admin = false, imgData = null;
-let images = JSON.parse(localStorage.getItem("maps")||"[]");
-let tempOverlay = null;
+let admin=false, imgData=null, editingIndex=null;
+let images=JSON.parse(localStorage.getItem("maps")||"[]");
+let overlays=[];
 
-// Відображення існуючих знімків
 function redraw(){
   map.eachLayer(l=>{if(l.options && l.options.imgOverlay) map.removeLayer(l);});
+  overlays=[];
   images.forEach((d,i)=>{
-    const bounds = [
-      [d.lat, d.lng],
-      [d.lat+d.height, d.lng+d.width]
-    ];
-    const overlay = L.imageOverlay(d.src,bounds,{opacity:d.opacity,imgOverlay:true}).addTo(map);
-    overlay.on('click',()=>{if(confirm("Видалити цей знімок?")){images.splice(i,1);saveImages();redraw();}});
+    const bounds=[[d.lat,d.lng],[d.lat+d.height,d.lng+d.width]];
+    const overlay=L.imageOverlay(d.src,bounds,{opacity:d.opacity,imgOverlay:true}).addTo(map);
+
+    overlay.on('click',()=>{
+      if(!admin) return;
+      editingIndex=i;
+      document.getElementById('opacity').value=d.opacity;
+      document.getElementById('width').value=d.width*100;
+      document.getElementById('height').value=d.height*100;
+      imgData=d.src;
+      alert("Тепер ви редагуєте цей знімок. Зробіть зміни і натисніть Зберегти");
+    });
+
+    overlay.on('dblclick',()=>{if(confirm("Видалити цей знімок?")){images.splice(i,1);saveImages();redraw();}});
+
+    overlays.push(overlay);
   });
   renderList();
 }
 
 function renderList(){
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+  const list=document.getElementById("list");
+  list.innerHTML="";
   images.forEach((d,i)=>{
-    const div = document.createElement("div");
+    const div=document.createElement("div");
     div.className="item";
     div.innerHTML=`Знімок ${i+1} <button onclick="deleteImage(${i})">❌</button>`;
     list.appendChild(div);
   });
 }
 
-function deleteImage(i){
-  images.splice(i,1);
-  saveImages();
-  redraw();
-}
-
-function saveImages(){
-  localStorage.setItem("maps",JSON.stringify(images));
-}
+function deleteImage(i){images.splice(i,1);saveImages();redraw();}
+function saveImages(){localStorage.setItem("maps",JSON.stringify(images));}
 
 redraw();
 
-document.getElementById("adminBtn").onclick = ()=>document.getElementById("adminPanel").style.display="block";
-function closeAdmin(){document.getElementById("adminPanel").style.display="none"; if(tempOverlay){map.removeLayer(tempOverlay); tempOverlay=null;} }
+document.getElementById("adminBtn").onclick=()=>document.getElementById("adminPanel").style.display="block";
+function closeAdmin(){document.getElementById("adminPanel").style.display="none";}
 
-document.getElementById("pass").onchange = e=>{
-  admin = e.target.value==="3709";
+document.getElementById("pass").onchange=e=>{
+  admin=e.target.value==="3709";
   alert(admin?"Адмін доступ OK":"Невірний пароль");
 };
 
-document.getElementById("img").onchange = e=>{
+document.getElementById("img").onchange=e=>{
   const f=e.target.files[0];
   if(!f) return;
   const r=new FileReader();
@@ -102,20 +105,20 @@ document.getElementById("img").onchange = e=>{
   r.readAsDataURL(f);
 };
 
-document.getElementById("previewBtn").onclick = ()=>{
+let tempOverlay=null;
+
+// Попередній перегляд
+document.getElementById("previewBtn").onclick=()=>{
   if(!admin || !imgData){ alert("Пароль або картинка відсутні"); return;}
-  alert("Клікніть на карту, щоб поставити попередній перегляд");
+  alert("Клікніть на карту, щоб поставити/редагувати знімок");
   map.once('click', e=>{
     if(tempOverlay) map.removeLayer(tempOverlay);
     const opacity=parseFloat(document.getElementById("opacity").value);
     const width=parseFloat(document.getElementById("width").value)/100;
     const height=parseFloat(document.getElementById("height").value)/100;
-    const bounds = [
-      [e.lat, e.lng],
-      [e.lat+height, e.lng+width]
-    ];
-    tempOverlay = L.imageOverlay(imgData,bounds,{opacity:opacity,imgOverlay:true}).addTo(map);
-    tempOverlay.dragging = true;
+    const bounds=[[e.lat,e.lng],[e.lat+height,e.lng+width]];
+    tempOverlay=L.imageOverlay(imgData,bounds,{opacity:opacity,imgOverlay:true}).addTo(map);
+    tempOverlay.dragging=true;
     map.on('mousemove', moveTemp);
     map.once('click', stopMoveTemp);
   });
@@ -125,34 +128,27 @@ function moveTemp(e){
   if(!tempOverlay) return;
   const width=parseFloat(document.getElementById("width").value)/100;
   const height=parseFloat(document.getElementById("height").value)/100;
-  const bounds = [
-    [e.lat, e.lng],
-    [e.lat+height, e.lng+width]
-  ];
+  const bounds=[[e.lat,e.lng],[e.lat+height,e.lng+width]];
   tempOverlay.setBounds(bounds);
 }
 
-function stopMoveTemp(){
-  map.off('mousemove', moveTemp);
-}
+function stopMoveTemp(){map.off('mousemove', moveTemp);}
 
-// Збереження остаточного знімка
-document.getElementById("saveBtn").onclick = ()=>{
-  if(!tempOverlay){alert("Спочатку поставте попередній перегляд"); return;}
-  const bounds = tempOverlay.getBounds();
+// Збереження знімка (новий або редагований)
+document.getElementById("saveBtn").onclick=()=>{
+  if(!tempOverlay && editingIndex===null){alert("Спочатку зробіть попередній перегляд"); return;}
+  const bounds=tempOverlay ? tempOverlay.getBounds() : [[images[editingIndex].lat,images[editingIndex].lng],[images[editingIndex].lat+images[editingIndex].height,images[editingIndex].lng+images[editingIndex].width]];
   const opacity=parseFloat(document.getElementById("opacity").value);
-  const width = bounds.getEast()-bounds.getWest();
-  const height = bounds.getNorth()-bounds.getSouth();
-  images.push({
-    src: imgData,
-    lat: bounds.getSouthWest().lat,
-    lng: bounds.getSouthWest().lng,
-    width: width,
-    height: height,
-    opacity: opacity
-  });
+  const width=bounds[1][1]-bounds[0][1];
+  const height=bounds[1][0]-bounds[0][0];
+  if(editingIndex!==null){
+    images[editingIndex]={src:imgData,lat:bounds[0][0],lng:bounds[0][1],width,height,opacity};
+    editingIndex=null;
+  } else {
+    images.push({src:imgData,lat:bounds[0][0],lng:bounds[0][1],width,height,opacity});
+  }
   saveImages();
-  tempOverlay=null;
+  if(tempOverlay){map.removeLayer(tempOverlay); tempOverlay=null;}
   imgData=null;
   redraw();
 };
