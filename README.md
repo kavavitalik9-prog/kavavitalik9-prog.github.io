@@ -2,35 +2,38 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Мій прогноз погоди</title>
+<title>Погода</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
+*{box-sizing:border-box}
 body{
   margin:0;
   background:#020617;
-  font-family:system-ui,Arial;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   display:flex;
   justify-content:center;
   padding:20px 0;
   color:#fff;
 }
 
-/* === PHONE FRAME === */
+/* PHONE */
 .phone{
   width:390px;
   max-width:100%;
   background:linear-gradient(180deg,#0f172a,#020617);
   border-radius:28px;
-  box-shadow:0 20px 60px rgba(0,0,0,.7);
+  box-shadow:0 25px 70px rgba(0,0,0,.7);
   overflow:hidden;
 }
 
-/* === CONTENT === */
 .container{
   padding:16px;
 }
 
-h1,h2{margin:10px 0}
+h1,h2{
+  margin:10px 0;
+}
 
 .card{
   background:rgba(255,255,255,.08);
@@ -44,19 +47,21 @@ h1,h2{margin:10px 0}
   text-align:center;
 }
 
+/* hourly */
 .hourly{
   display:flex;
   gap:10px;
   overflow-x:auto;
 }
 .hour{
-  min-width:95px;
+  min-width:92px;
   background:rgba(255,255,255,.12);
   border-radius:14px;
   padding:10px;
   text-align:center;
 }
 
+/* daily */
 .daily{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -69,6 +74,7 @@ h1,h2{margin:10px 0}
   text-align:center;
 }
 
+/* sun */
 .sun{
   display:flex;
   justify-content:space-between;
@@ -80,11 +86,11 @@ h1,h2{margin:10px 0}
   text-align:center;
 }
 
-/* === ADMIN === */
+/* admin */
 #adminBtn{
   position:fixed;
-  bottom:22px;
-  right:calc(50% - 195px + 16px);
+  bottom:20px;
+  right:calc(50% - 195px + 14px);
   width:52px;
   height:52px;
   border-radius:50%;
@@ -119,10 +125,12 @@ textarea{min-height:70px}
 .close{text-align:right;cursor:pointer}
 </style>
 </head>
+
 <body>
 
 <div class="phone">
   <div class="container">
+
     <h1>🌦 Погода</h1>
 
     <div class="card now" id="now">—</div>
@@ -143,6 +151,7 @@ textarea{min-height:70px}
     </div>
 
     <div id="updated">—</div>
+
   </div>
 </div>
 
@@ -150,7 +159,7 @@ textarea{min-height:70px}
 
 <div id="adminModal">
   <div id="adminBox">
-    <div class="close" onclick="closeAdmin()">❌</div>
+    <div class="close" onclick="closeAdmin()">✖</div>
 
     <div id="loginBox">
       <input type="password" id="pass" placeholder="Пароль">
@@ -161,7 +170,7 @@ textarea{min-height:70px}
       <label>Зараз</label>
       <input id="nowInput">
 
-      <label>Погодинно (00–23)</label>
+      <label>Погодинно (24 рядки)</label>
       <textarea id="hourlyInput"></textarea>
 
       <label>7 днів</label>
@@ -176,6 +185,8 @@ textarea{min-height:70px}
 </div>
 
 <script>
+const PASS = "3709";
+
 let data = JSON.parse(localStorage.getItem("weatherData")) || {
   now:"10° ☀️",
   hourly:Array(24).fill("10° ☀️"),
@@ -193,28 +204,43 @@ let data = JSON.parse(localStorage.getItem("weatherData")) || {
 };
 
 function render(){
-  now.textContent=data.now;
-  hourly.innerHTML="";
-  let h=new Date().getHours();
-  for(let i=0;i<24;i++){
-    let hr=(h+i)%24;
-    hourly.innerHTML+=`<div class="hour"><b>${String(hr).padStart(2,"0")}:00</b><br>${data.hourly[hr]}</div>`;
-  }
-  daily.innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
-  let [r,s]=data.sun.split("|");
-  sunrise.textContent=r;
-  sunset.textContent=s;
+  document.getElementById("now").textContent=data.now;
 
-  let m=Math.floor((Date.now()-data.updated)/60000);
-  updated.textContent=m<1?"Оновлено щойно":m<60?`Оновлено ${m} хв тому`:`Оновлено ${Math.floor(m/60)} год тому`;
+  const hourlyEl=document.getElementById("hourly");
+  hourlyEl.innerHTML="";
+  const start=new Date().getHours();
+
+  for(let i=0;i<24;i++){
+    const h=(start+i)%24;
+    hourlyEl.innerHTML+=`
+      <div class="hour">
+        <b>${String(h).padStart(2,"0")}:00</b><br>
+        ${data.hourly[h]||"—"}
+      </div>`;
+  }
+
+  document.getElementById("daily").innerHTML =
+    data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
+
+  const [sr,ss]=data.sun.split("|");
+  sunrise.textContent=sr;
+  sunset.textContent=ss;
+
+  const min=Math.floor((Date.now()-data.updated)/60000);
+  updated.textContent =
+    min<1?"Оновлено щойно":
+    min<60?`Оновлено ${min} хв тому`:
+    `Оновлено ${Math.floor(min/60)} год тому`;
 }
+
 render();
 setInterval(render,60000);
 
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
+
 function login(){
-  if(pass.value==="3709"){
+  if(pass.value===PASS){
     loginBox.style.display="none";
     panel.style.display="block";
     nowInput.value=data.now;
@@ -223,6 +249,7 @@ function login(){
     sunInput.value=data.sun;
   }
 }
+
 function save(){
   data.now=nowInput.value;
   data.hourly=hourlyInput.value.split("\n");
