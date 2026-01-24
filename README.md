@@ -4,24 +4,23 @@
 <meta charset="UTF-8">
 <title>Погода</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-*{box-sizing:border-box}
+*{box-sizing:border-box;margin:0;padding:0}
 body{
-  margin:0;
   background:#020617;
   font-family:system-ui,-apple-system,Segoe UI,Roboto;
   display:flex;
   justify-content:center;
   padding:20px 0;
   color:#fff;
+  height:100vh;
 }
 
-/* === PHONE FRAME === */
+/* PHONE */
 .phone{
   width:390px;
   max-width:100%;
-  height:100dvh;
+  height:100vh;
   background:linear-gradient(180deg,#0f172a,#020617);
   border-radius:28px;
   box-shadow:0 25px 70px rgba(0,0,0,.7);
@@ -33,12 +32,10 @@ body{
 .container{
   padding:16px;
   flex:1;
-  overflow-y:auto;
+  overflow-y:auto; /* ось тут скрол */
 }
 
-h1,h2{
-  margin:10px 0;
-}
+h1,h2{margin:10px 0}
 
 .card{
   background:rgba(255,255,255,.08);
@@ -47,10 +44,7 @@ h1,h2{
   margin-bottom:14px;
 }
 
-.now{
-  font-size:42px;
-  text-align:center;
-}
+.now{font-size:42px;text-align:center}
 
 /* hourly */
 .hourly{
@@ -80,16 +74,9 @@ h1,h2{
 }
 
 /* sun */
-.sun{
-  display:flex;
-  justify-content:space-between;
-}
+.sun{display:flex;justify-content:space-between}
 
-#updated{
-  opacity:.6;
-  font-size:13px;
-  text-align:center;
-}
+#updated{opacity:.6;font-size:13px;text-align:center}
 
 /* admin */
 #adminBtn{
@@ -106,7 +93,6 @@ h1,h2{
   cursor:pointer;
   z-index:9999;
 }
-
 #adminModal{
   display:none;
   position:fixed;
@@ -131,14 +117,11 @@ textarea{min-height:70px}
 .close{text-align:right;cursor:pointer}
 </style>
 </head>
-
 <body>
 
 <div class="phone">
   <div class="container">
-
     <h1>🌦 Погода</h1>
-
     <div class="card now" id="now">—</div>
 
     <div class="card">
@@ -157,7 +140,6 @@ textarea{min-height:70px}
     </div>
 
     <div id="updated">—</div>
-
   </div>
 </div>
 
@@ -166,34 +148,28 @@ textarea{min-height:70px}
 <div id="adminModal">
   <div id="adminBox">
     <div class="close" onclick="closeAdmin()">✖</div>
-
     <div id="loginBox">
       <input type="password" id="pass" placeholder="Пароль">
       <button onclick="login()">Увійти</button>
     </div>
-
     <div id="panel" style="display:none">
       <label>Зараз</label>
       <input id="nowInput">
-
       <label>Погодинно (24 рядки)</label>
       <textarea id="hourlyInput"></textarea>
-
       <label>7 днів</label>
       <textarea id="dailyInput"></textarea>
-
       <label>Схід|Захід</label>
       <input id="sunInput">
-
       <button onclick="save()">💾 Зберегти</button>
     </div>
   </div>
 </div>
 
 <script>
-const PASS = "3709";
+const PASS="3709";
 
-let data = JSON.parse(localStorage.getItem("weatherData")) || {
+let data=JSON.parse(localStorage.getItem("weatherData"))||{
   now:"10° ☀️",
   hourly:Array(24).fill("10° ☀️"),
   daily:[
@@ -214,29 +190,20 @@ function render(){
 
   const hourlyEl=document.getElementById("hourly");
   hourlyEl.innerHTML="";
-  const start=new Date().getHours();
-
+  let start=new Date().getHours();
   for(let i=0;i<24;i++){
     const h=(start+i)%24;
-    hourlyEl.innerHTML+=`
-      <div class="hour">
-        <b>${String(h).padStart(2,"0")}:00</b><br>
-        ${data.hourly[h]||"—"}
-      </div>`;
+    hourlyEl.innerHTML+=`<div class="hour"><b>${String(h).padStart(2,"0")}:00</b><br>${data.hourly[h]||"—"}</div>`;
   }
 
-  document.getElementById("daily").innerHTML =
-    data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
+  document.getElementById("daily").innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
 
   const [sr,ss]=data.sun.split("|");
   sunrise.textContent=sr;
   sunset.textContent=ss;
 
   const min=Math.floor((Date.now()-data.updated)/60000);
-  updated.textContent =
-    min<1?"Оновлено щойно":
-    min<60?`Оновлено ${min} хв тому`:
-    `Оновлено ${Math.floor(min/60)} год тому`;
+  updated.textContent=min<1?"Оновлено щойно":min<60?`Оновлено ${min} хв тому`:`Оновлено ${Math.floor(min/60)} год тому`;
 }
 
 render();
@@ -244,7 +211,6 @@ setInterval(render,60000);
 
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
-
 function login(){
   if(pass.value===PASS){
     loginBox.style.display="none";
@@ -255,7 +221,6 @@ function login(){
     sunInput.value=data.sun;
   }
 }
-
 function save(){
   data.now=nowInput.value;
   data.hourly=hourlyInput.value.split("\n");
