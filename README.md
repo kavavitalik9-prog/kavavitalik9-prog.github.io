@@ -220,13 +220,13 @@ function render(){
 render();
 setInterval(render,60000);
 
+// адмінка
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
 function login(){
   if(pass.value===PASS){
     loginBox.style.display="none";
     panel.style.display="block";
-
     hourlyInput.value=Object.entries(data.hourlyDays).map(([d,h])=>`${d}\n${h.join("\n")}`).join("\n\n");
     dailyInput.value=data.daily.join("\n");
     sunInput.value=Object.entries(data.sunDays).map(([d,v])=>`${d}: ${v.replace("|"," ")}`).join("\n");
