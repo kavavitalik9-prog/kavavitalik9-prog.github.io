@@ -30,7 +30,6 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
     <input type="password" id="pass" placeholder="Пароль">
     <input type="file" id="img" accept="image/*">
     <label>Прозорість: <input type="range" id="opacity" min="0.1" max="1" step="0.05" value="0.7"></label>
-    <label>Розмір (%): <input type="range" id="size" min="10" max="200" step="5" value="100"></label>
     <button id="addBtn">Додати знімок</button>
     <div class="list" id="list"></div>
     <button onclick="closeAdmin()">Закрити</button>
@@ -38,106 +37,101 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-distortableimage@0.7.0/dist/leaflet.distortableimage.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-distortableimage@0.7.0/dist/leaflet.distortableimage.min.css"/>
 
 <script>
 const map = L.map('map').setView([49.8, 24.0], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-let admin = false, imgData = null;
+let admin=false, imgData=null;
 let images = JSON.parse(localStorage.getItem("maps")||"[]");
-let overlays = [];
+let overlays=[];
 
 function redraw(){
-  overlays.forEach(o=>map.removeLayer(o.overlay));
+  overlays.forEach(o=>map.removeLayer(o));
   overlays=[];
   images.forEach((d,i)=>{
-    const overlay = L.distortableImageOverlay(d.src, {
-      corners: d.corners,
-      opacity: d.opacity
-    }).addTo(map);
-
-    overlay.on('edit',()=>saveImages());
-    overlay.on('dblclick',()=>{ // видалення подвійним кліком
-      if(confirm("Видалити цей знімок?")){
-        overlays[i].overlay.remove();
-        overlays.splice(i,1);
-        images.splice(i,1);
-        saveImages();
-        redraw();
+    const bounds = [
+      [d.lat, d.lng],
+      [d.lat+0.05, d.lng+0.05]
+    ];
+    const img = L.imageOverlay(d.src, bounds, {opacity:d.opacity}).addTo(map);
+    img.dragging = false;
+    
+    // перетягування
+    img.on('mousedown', function(e){
+      img.dragging=true;
+      const start = e.latlng;
+      function move(ev){
+        if(!img.dragging) return;
+        const dLat = ev.latlng.lat - start.lat;
+        const dLng = ev.latlng.lng - start.lng;
+        const newBounds = [
+          [bounds[0][0]+dLat, bounds[0][1]+dLng],
+          [bounds[1][0]+dLat, bounds[1][1]+dLng]
+        ];
+        img.setBounds(newBounds);
       }
+      function up(){img.dragging=false; map.off('mousemove',move); map.off('mouseup',up); saveImages();}
+      map.on('mousemove', move);
+      map.on('mouseup', up);
     });
 
-    overlays.push({overlay});
+    overlays.push(img);
   });
   renderList();
 }
 
 function renderList(){
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+  const list=document.getElementById("list");
+  list.innerHTML="";
   images.forEach((d,i)=>{
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `Знімок ${i+1} <button onclick="del(${i})">❌</button>`;
+    const div=document.createElement("div");
+    div.className="item";
+    div.innerHTML=`Знімок ${i+1} <button onclick="del(${i})">❌</button>`;
     list.appendChild(div);
   });
 }
 
 redraw();
 
-document.getElementById("adminBtn").onclick = ()=>document.getElementById("adminPanel").style.display="block";
+document.getElementById("adminBtn").onclick=()=>document.getElementById("adminPanel").style.display="block";
 function closeAdmin(){document.getElementById("adminPanel").style.display="none";}
 
-document.getElementById("pass").onchange = e=>{
+document.getElementById("pass").onchange=e=>{
   admin = e.target.value==="3709";
   alert(admin?"Адмін доступ OK":"Невірний пароль");
 };
 
-document.getElementById("img").onchange = e=>{
+document.getElementById("img").onchange=e=>{
   const f = e.target.files[0];
   if(!f) return;
   const r = new FileReader();
-  r.onload = x => imgData = x.target.result;
+  r.onload=x=>imgData=x.target.result;
   r.readAsDataURL(f);
 };
 
-document.getElementById("addBtn").onclick = ()=>{
+document.getElementById("addBtn").onclick=()=>{
   if(!admin || !imgData){ alert("Пароль або картинка відсутні"); return; }
-  const opacity = parseFloat(document.getElementById("opacity").value);
-  const sizePercent = parseInt(document.getElementById("size").value);
-  const center = map.getCenter();
-  const delta = 0.05 * (sizePercent/100);
-  const corners = [
-    [center.lat, center.lng],
-    [center.lat, center.lng + delta],
-    [center.lat + delta, center.lng + delta],
-    [center.lat + delta, center.lng]
-  ];
-  const overlay = L.distortableImageOverlay(imgData, {
-    corners: corners,
-    opacity: opacity
-  }).addTo(map);
-
-  overlay.on('edit',()=>saveImages());
-  overlays.push({overlay});
-  images.push({src: imgData, corners: overlay.getCorners(), opacity});
-  saveImages();
-  imgData = null;
+  alert("Клікніть на карту, щоб поставити знімок");
+  map.once('click', e=>{
+    const opacity=parseFloat(document.getElementById("opacity").value);
+    const lat=e.latlng.lat;
+    const lng=e.latlng.lng;
+    images.push({src: imgData, lat, lng, opacity});
+    saveImages();
+    imgData=null;
+    redraw();
+  });
 };
 
 function saveImages(){
-  const arr = overlays.map(o=>({src: o.overlay._url, corners: o.overlay.getCorners(), opacity: o.overlay.options.opacity}));
-  localStorage.setItem("maps", JSON.stringify(arr));
+  localStorage.setItem("maps", JSON.stringify(images));
 }
 
 function del(i){
   images.splice(i,1);
-  overlays[i].overlay.remove();
-  overlays.splice(i,1);
   saveImages();
-  renderList();
+  redraw();
 }
 </script>
 </body>
