@@ -5,7 +5,7 @@
 <title>Погода Телефон</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0}
 body{
   display:flex;
   justify-content:center;
@@ -15,8 +15,6 @@ body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto;
   color:#fff;
 }
-
-/* === Телефонна рамка === */
 .phone-frame{
   width:390px;
   max-width:100%;
@@ -30,14 +28,11 @@ body{
   flex-direction:column;
   position:relative;
 }
-
-/* === Контент всередині телефону === */
 .phone-screen{
   flex:1;
   overflow-y:auto;
   padding:16px;
 }
-
 h1,h2{margin:10px 0;text-align:center;}
 .card{
   background:rgba(255,255,255,0.08);
@@ -49,8 +44,6 @@ h1,h2{margin:10px 0;text-align:center;}
   font-size:40px;
   text-align:center;
 }
-
-/* hourly */
 .hourly{
   display:flex;
   gap:10px;
@@ -63,8 +56,6 @@ h1,h2{margin:10px 0;text-align:center;}
   padding:10px;
   text-align:center;
 }
-
-/* daily */
 .daily{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -76,21 +67,17 @@ h1,h2{margin:10px 0;text-align:center;}
   padding:10px;
   text-align:center;
 }
-
-/* sun */
 .sun{
   display:flex;
   justify-content:space-between;
+  flex-direction:column;
+  gap:5px;
 }
-
-/* оновлення */
 #updated{
   font-size:13px;
   opacity:0.6;
   text-align:center;
 }
-
-/* адмінка */
 #adminBtn{
   position:absolute;
   bottom:16px;
@@ -105,7 +92,6 @@ h1,h2{margin:10px 0;text-align:center;}
   cursor:pointer;
   z-index:999;
 }
-
 #adminModal{
   display:none;
   position:fixed;
@@ -136,22 +122,22 @@ textarea{min-height:70px}
   <div class="phone-screen">
     <h1>🌦 Погода</h1>
     <div class="card now" id="now">—</div>
-
     <div class="card">
       <h2>⏰ Погодинно</h2>
       <div class="hourly" id="hourly"></div>
     </div>
-
     <div class="card">
       <h2>📅 7 днів</h2>
       <div class="daily" id="daily"></div>
     </div>
-
     <div class="card sun">
-      <div>🌅 <b id="sunrise">—</b></div>
-      <div>🌇 <b id="sunset">—</b></div>
+      <div>
+        🌅 <b id="sunrise">—</b> <span id="toSunrise">—</span>
+      </div>
+      <div>
+        🌇 <b id="sunset">—</b> <span id="toSunset">—</span>
+      </div>
     </div>
-
     <div id="updated">—</div>
   </div>
 
@@ -166,14 +152,12 @@ textarea{min-height:70px}
       <button onclick="login()">Увійти</button>
     </div>
     <div id="panel" style="display:none">
-      <label>Зараз</label>
-      <input id="nowInput">
-      <label>Погодинно (24 рядки)</label>
-      <textarea id="hourlyInput"></textarea>
-      <label>7 днів</label>
-      <textarea id="dailyInput"></textarea>
-      <label>Схід|Захід</label>
-      <input id="sunInput">
+      <label>Додати погодинну погоду [YYYY-MM-DD]</label>
+      <textarea id="hourlyInput" placeholder="Наприклад: 00:00: 10° ☀️"></textarea>
+      <label>7 днів (дата: min/max 🌤)</label>
+      <textarea id="dailyInput" placeholder="Наприклад: 2026-01-24: 12°/5° ☀️"></textarea>
+      <label>Схід|Захід (дата: HH:MM HH:MM)</label>
+      <textarea id="sunInput" placeholder="Наприклад: 24.01: 06:00 16:00"></textarea>
       <button onclick="save()">💾 Зберегти</button>
     </div>
   </div>
@@ -181,40 +165,59 @@ textarea{min-height:70px}
 
 <script>
 const PASS="3709";
-
 let data=JSON.parse(localStorage.getItem("weatherData"))||{
-  now:"10° ☀️",
-  hourly:Array(24).fill("10° ☀️"),
-  daily:[
-    "Пт 23.01: 12° / 5° ☀️",
-    "Сб 24.01: 11° / 4° 🌤",
-    "Нд 25.01: 9° / 2° ☁️",
-    "Пн 26.01: 8° / 1° 🌧",
-    "Вт 27.01: 7° / 0° 🌧",
-    "Ср 28.01: 6° / -1° ❄️",
-    "Чт 29.01: 5° / -2° ❄️"
-  ],
-  sun:"07:48|16:32",
+  now:"",
+  hourlyDays:{}, // {"2026-01-24": ["00:00: 10° ☀️", ...]}
+  daily:[],
+  sunDays:{}, // {"24.01":"06:00|16:00"}
   updated:Date.now()
 };
 
+function formatTimeDiff(ms){
+  const totalMin=Math.max(0,Math.floor(ms/60000));
+  const h=Math.floor(totalMin/60);
+  const m=totalMin%60;
+  return h>0?`${h} год ${m} хв`:`${m} хв`;
+}
+
 function render(){
-  document.getElementById("now").textContent=data.now;
+  const nowDate=new Date();
+  const dateStr=nowDate.toISOString().slice(0,10); // YYYY-MM-DD
+  const hour=nowDate.getHours();
+
+  // погодинна
+  let hours=data.hourlyDays[dateStr]||Array(24).fill("—");
+  document.getElementById("now").textContent=hours[hour]||"—";
 
   const hourlyEl=document.getElementById("hourly");
   hourlyEl.innerHTML="";
-  let start=new Date().getHours();
   for(let i=0;i<24;i++){
-    const h=(start+i)%24;
-    hourlyEl.innerHTML+=`<div class="hour"><b>${String(h).padStart(2,"0")}:00</b><br>${data.hourly[h]||"—"}</div>`;
+    hourlyEl.innerHTML+=`<div class="hour"><b>${String(i).padStart(2,"0")}:00</b><br>${hours[i]||"—"}</div>`;
   }
 
+  // 7 днів
   document.getElementById("daily").innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
 
-  const [sr,ss]=data.sun.split("|");
+  // схід/захід
+  const todayKey=nowDate.toISOString().slice(5,10).replace("-","."); // "MM.DD"
+  const sun=data.sunDays[todayKey]||"—|—";
+  const [sr,ss]=sun.split("|");
   sunrise.textContent=sr;
   sunset.textContent=ss;
 
+  // підрахунок часу до сходу/заходу
+  const [srH,srM]=sr.split(":").map(Number);
+  const [ssH,ssM]=ss.split(":").map(Number);
+  const sunriseDate=new Date(nowDate); sunriseDate.setHours(srH,srM,0,0);
+  const sunsetDate=new Date(nowDate); sunsetDate.setHours(ssH,ssM,0,0);
+
+  const toSR=srH>=0?formatTimeDiff(sunriseDate-nowDate):"—";
+  const toSS=ssH>=0?formatTimeDiff(sunsetDate-nowDate):"—";
+
+  document.getElementById("toSunrise").textContent=toSR!=="0 хв"?`(${toSR})`:"(Зараз!)";
+  document.getElementById("toSunset").textContent=toSS!=="0 хв"?`(${toSS})`:"(Зараз!)";
+
+  // оновлення
   const min=Math.floor((Date.now()-data.updated)/60000);
   updated.textContent=min<1?"Оновлено щойно":min<60?`Оновлено ${min} хв тому`:`Оновлено ${Math.floor(min/60)} год тому`;
 }
@@ -222,29 +225,52 @@ function render(){
 render();
 setInterval(render,60000);
 
+// адмінка
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
 function login(){
   if(pass.value===PASS){
     loginBox.style.display="none";
     panel.style.display="block";
-    nowInput.value=data.now;
-    hourlyInput.value=data.hourly.join("\n");
+
+    hourlyInput.value=Object.entries(data.hourlyDays).map(([d,h])=>`${d}\n${h.join("\n")}`).join("\n\n");
     dailyInput.value=data.daily.join("\n");
-    sunInput.value=data.sun;
+    sunInput.value=Object.entries(data.sunDays).map(([d,v])=>`${d}: ${v.replace("|"," ")}`).join("\n");
   }
 }
+
 function save(){
-  data.now=nowInput.value;
-  data.hourly=hourlyInput.value.split("\n");
-  data.daily=dailyInput.value.split("\n");
-  data.sun=sunInput.value;
+  // погодинна
+  const lines=hourlyInput.value.split("\n");
+  let currentDate="";
+  data.hourlyDays={};
+  lines.forEach(l=>{
+    l=l.trim();
+    if(!l) return;
+    if(l.match(/^\d{4}-\d{2}-\d{2}$/)){
+      currentDate=l;
+      data.hourlyDays[currentDate]=Array(24).fill("—");
+    } else if(l.match(/^\d{2}:\d{2}:/)){
+      const h=parseInt(l.split(":")[0]);
+      data.hourlyDays[currentDate][h]=l.split(": ").slice(1).join(": ");
+    }
+  });
+
+  // 7 днів
+  data.daily=dailyInput.value.split("\n").map(l=>l.trim()).filter(Boolean);
+
+  // схід/захід
+  data.sunDays={};
+  sunInput.value.split("\n").forEach(l=>{
+    const m=l.match(/^(\d{2}\.\d{2}):\s*(\d{2}:\d{2})\s+(\d{2}:\d{2})$/);
+    if(m) data.sunDays[m[1]]=m[2]+"|"+m[3];
+  });
+
   data.updated=Date.now();
   localStorage.setItem("weatherData",JSON.stringify(data));
   closeAdmin();
   render();
 }
 </script>
-
 </body>
 </html>
