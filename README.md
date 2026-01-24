@@ -12,7 +12,8 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
 #map{flex:1;position:relative}
 .admin-btn{font-size:22px;cursor:pointer}
 .admin{width:100%;background:#020617;border-top:1px solid #334155;padding:12px;display:none}
-.admin input, .admin button{width:100%;margin-top:8px;padding:8px;font-size:14px}
+.admin input, .admin button, .admin label{width:100%;margin-top:8px;padding:8px;font-size:14px;color:#fff;background:#111;border:none;border-radius:4px}
+.admin input[type=range]{width:100%}
 .list{margin-top:10px;max-height:150px;overflow:auto}
 .item{display:flex;justify-content:space-between;border:1px solid #334155;padding:6px;margin-top:6px;font-size:12px}
 </style>
@@ -29,6 +30,7 @@ body{margin:0;background:#020617;font-family:system-ui;display:flex;justify-cont
     <input type="password" id="pass" placeholder="Пароль">
     <input type="file" id="img" accept="image/*">
     <label>Прозорість: <input type="range" id="opacity" min="0.1" max="1" step="0.05" value="0.7"></label>
+    <label>Розмір (%): <input type="range" id="size" min="10" max="200" step="5" value="100"></label>
     <button id="addBtn">Додати знімок</button>
     <div class="list" id="list"></div>
     <button onclick="closeAdmin()">Закрити</button>
@@ -48,16 +50,26 @@ let images = JSON.parse(localStorage.getItem("maps")||"[]");
 let overlays = [];
 
 function redraw(){
-  overlays.forEach(o=>map.removeLayer(o));
+  overlays.forEach(o=>map.removeLayer(o.overlay));
   overlays=[];
-  images.forEach((d)=>{
+  images.forEach((d,i)=>{
     const overlay = L.distortableImageOverlay(d.src, {
       corners: d.corners,
-      opacity: d.opacity,
-      selected: false
+      opacity: d.opacity
     }).addTo(map);
+
     overlay.on('edit',()=>saveImages());
-    overlays.push(overlay);
+    overlay.on('dblclick',()=>{ // видалення подвійним кліком
+      if(confirm("Видалити цей знімок?")){
+        overlays[i].overlay.remove();
+        overlays.splice(i,1);
+        images.splice(i,1);
+        saveImages();
+        redraw();
+      }
+    });
+
+    overlays.push({overlay});
   });
   renderList();
 }
@@ -94,30 +106,35 @@ document.getElementById("img").onchange = e=>{
 document.getElementById("addBtn").onclick = ()=>{
   if(!admin || !imgData){ alert("Пароль або картинка відсутні"); return; }
   const opacity = parseFloat(document.getElementById("opacity").value);
+  const sizePercent = parseInt(document.getElementById("size").value);
+  const center = map.getCenter();
+  const delta = 0.05 * (sizePercent/100);
+  const corners = [
+    [center.lat, center.lng],
+    [center.lat, center.lng + delta],
+    [center.lat + delta, center.lng + delta],
+    [center.lat + delta, center.lng]
+  ];
   const overlay = L.distortableImageOverlay(imgData, {
-    corners: [
-      map.getCenter(),
-      [map.getCenter().lat, map.getCenter().lng+0.05],
-      [map.getCenter().lat+0.05, map.getCenter().lng+0.05],
-      [map.getCenter().lat+0.05, map.getCenter().lng]
-    ],
+    corners: corners,
     opacity: opacity
   }).addTo(map);
+
   overlay.on('edit',()=>saveImages());
-  overlays.push(overlay);
+  overlays.push({overlay});
   images.push({src: imgData, corners: overlay.getCorners(), opacity});
   saveImages();
   imgData = null;
 };
 
 function saveImages(){
-  const arr = overlays.map(o=>({src: o._url, corners: o.getCorners(), opacity: o.options.opacity}));
+  const arr = overlays.map(o=>({src: o.overlay._url, corners: o.overlay.getCorners(), opacity: o.overlay.options.opacity}));
   localStorage.setItem("maps", JSON.stringify(arr));
 }
 
 function del(i){
   images.splice(i,1);
-  overlays[i].remove();
+  overlays[i].overlay.remove();
   overlays.splice(i,1);
   saveImages();
   renderList();
