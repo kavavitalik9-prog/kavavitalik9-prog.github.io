@@ -2,285 +2,160 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Погода Телефон</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мої карти</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
 body{
+  margin:0;
+  background:#0f172a;
   display:flex;
   justify-content:center;
-  align-items:center;
-  min-height:100vh;
-  background:#111827;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-  color:#fff;
+  font-family:system-ui;
 }
-.phone-frame{
+.phone{
   width:390px;
-  max-width:100%;
-  height:800px;
-  border-radius:36px;
-  border:12px solid #1f2937;
-  box-shadow:0 0 40px rgba(0,0,0,0.5);
+  height:100dvh;
+  background:#020617;
+  border-radius:26px;
   overflow:hidden;
-  background:linear-gradient(180deg,#0f172a,#020617);
   display:flex;
   flex-direction:column;
-  position:relative;
 }
-.phone-screen{
-  flex:1;
-  overflow-y:auto;
-  padding:16px;
-}
-h1,h2{margin:10px 0;text-align:center;}
-.card{
-  background:rgba(255,255,255,0.08);
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:14px;
-}
-.now{
-  font-size:40px;
-  text-align:center;
-}
-.hourly{
-  display:flex;
-  gap:10px;
-  overflow-x:auto;
-}
-.hour{
-  min-width:92px;
-  background:rgba(255,255,255,.12);
-  border-radius:14px;
-  padding:10px;
-  text-align:center;
-}
-.daily{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-}
-.day{
-  background:rgba(255,255,255,.12);
-  border-radius:14px;
-  padding:10px;
-  text-align:center;
-}
-.sun{
+header{
+  padding:12px;
+  background:#020617;
+  color:white;
+  font-weight:700;
   display:flex;
   justify-content:space-between;
-  flex-direction:column;
-  gap:5px;
+  align-items:center;
 }
-#updated{
-  font-size:13px;
-  opacity:0.6;
-  text-align:center;
+#map{
+  flex:1;
 }
-#adminBtn{
-  position:absolute;
-  bottom:16px;
-  right:16px;
-  width:50px;
-  height:50px;
-  border-radius:50%;
-  border:none;
-  background:#2563eb;
-  font-size:22px;
-  color:#fff;
+.admin-btn{
   cursor:pointer;
-  z-index:999;
+  font-size:20px;
 }
-#adminModal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.7);
-}
-#adminBox{
+.admin-panel{
+  position:absolute;
+  bottom:0;
+  left:0;
+  right:0;
   background:#020617;
-  max-width:360px;
-  margin:80px auto;
-  padding:15px;
-  border-radius:16px;
+  color:white;
+  padding:12px;
+  display:none;
 }
-input,textarea,button{
+.admin-panel input, .admin-panel button{
   width:100%;
+  margin-top:8px;
   padding:8px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
+  font-size:14px;
 }
-textarea{min-height:70px}
-.close{text-align:right;cursor:pointer}
+.note{
+  font-size:12px;
+  opacity:.7;
+}
 </style>
 </head>
+
 <body>
 
-<div class="phone-frame">
-  <div class="phone-screen">
-    <h1>🌦 Погода</h1>
-    <div class="card now" id="now">—</div>
-    <div class="card">
-      <h2>⏰ Погодинно</h2>
-      <div class="hourly" id="hourly"></div>
-    </div>
-    <div class="card">
-      <h2>📅 7 днів</h2>
-      <div class="daily" id="daily"></div>
-    </div>
-    <div class="card sun">
-      <div>
-        🌅 <b id="sunrise">—</b> <span id="toSunrise">—</span>
-      </div>
-      <div>
-        🌇 <b id="sunset">—</b> <span id="toSunset">—</span>
-      </div>
-    </div>
-    <div id="updated">—</div>
-  </div>
+<div class="phone">
+  <header>
+    🗺 Мої карти
+    <span class="admin-btn" id="adminBtn">🔒</span>
+  </header>
 
-  <button id="adminBtn">⚙</button>
-</div>
+  <div id="map"></div>
 
-<div id="adminModal">
-  <div id="adminBox">
-    <div class="close" onclick="closeAdmin()">✖</div>
-    <div id="loginBox">
-      <input type="password" id="pass" placeholder="Пароль">
-      <button onclick="login()">Увійти</button>
-    </div>
-    <div id="panel" style="display:none">
-      <label>Додати погодинну погоду [YYYY-MM-DD]</label>
-      <textarea id="hourlyInput" placeholder="00:00: 10° ☀️"></textarea>
-      <label>7 днів (дата: min/max 🌤)</label>
-      <textarea id="dailyInput" placeholder="2026-01-24: 12°/5° ☀️"></textarea>
-      <label>Схід|Захід (дата: HH:MM HH:MM)</label>
-      <textarea id="sunInput" placeholder="24.01: 06:00 16:00"></textarea>
-      <button onclick="save()">💾 Зберегти</button>
-    </div>
+  <div class="admin-panel" id="adminPanel">
+    <input type="password" id="pass" placeholder="Пароль">
+    <input type="file" id="imgInput" accept="image/*">
+    <button onclick="enableAdd()">Додати знімок</button>
+    <button onclick="closeAdmin()">Закрити</button>
+    <div class="note">Натисни на карту, щоб поставити знімок</div>
   </div>
 </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const PASS="3709";
+const map = L.map('map').setView([49.8,24.0], 7);
 
-// Початкові дані, щоб одразу все було видно
-let data=JSON.parse(localStorage.getItem("weatherData"))||{
-  hourlyDays:{
-    "2026-01-24":[
-      "10° ☀️","10° ☀️","9° ☀️","9° ☀️","8° ☀️","8° ☀️","8° 🌤","10° 🌤",
-      "12° ☀️","14° ☀️","15° ☀️","16° ☀️","16° 🌤","15° 🌤","14° ☀️","12° ☀️",
-      "11° ☀️","10° ☀️","9° ☀️","9° ☀️","8° 🌙","8° 🌙","8° 🌙","7° 🌙"
-    ]
-  },
-  daily:[
-    "2026-01-24: 16°/8° ☀️",
-    "2026-01-25: 15°/7° 🌤",
-    "2026-01-26: 14°/6° ☁️",
-    "2026-01-27: 12°/5° ❄️",
-    "2026-01-28: 13°/6° ☀️",
-    "2026-01-29: 15°/7° ☀️",
-    "2026-01-30: 14°/6° 🌤"
-  ],
-  sunDays:{
-    "01.24":"06:30|16:45"
-  },
-  updated:Date.now()
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19
+}).addTo(map);
+
+let admin=false;
+let addMode=false;
+let currentImage=null;
+let overlays=[];
+
+const saved = JSON.parse(localStorage.getItem("overlays")||"[]");
+
+saved.forEach(o=>{
+  const img = L.imageOverlay(o.src, o.bounds).addTo(map);
+  overlays.push(img);
+});
+
+document.getElementById("adminBtn").onclick=()=>{
+  document.getElementById("adminPanel").style.display="block";
 };
 
-function formatTimeDiff(ms){
-  const totalMin=Math.max(0,Math.floor(ms/60000));
-  const h=Math.floor(totalMin/60);
-  const m=totalMin%60;
-  return h>0?`${h} год ${m} хв`:`${m} хв`;
+function closeAdmin(){
+  document.getElementById("adminPanel").style.display="none";
+  admin=false;
+  addMode=false;
 }
 
-function render(){
-  const nowDate=new Date();
-  const dateStr=nowDate.toISOString().slice(0,10);
-  const hour=nowDate.getHours();
-
-  let hours=data.hourlyDays[dateStr]||Array(24).fill("—");
-  document.getElementById("now").textContent=hours[hour]||"—";
-
-  const hourlyEl=document.getElementById("hourly");
-  hourlyEl.innerHTML="";
-  for(let i=0;i<24;i++){
-    hourlyEl.innerHTML+=`<div class="hour"><b>${String(i).padStart(2,"0")}:00</b><br>${hours[i]||"—"}</div>`;
-  }
-
-  document.getElementById("daily").innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
-
-  const todayKey="01.24";
-  const sun=data.sunDays[todayKey]||"—|—";
-  const [sr,ss]=sun.split("|");
-  sunrise.textContent=sr;
-  sunset.textContent=ss;
-
-  const [srH,srM]=sr.split(":").map(Number);
-  const [ssH,ssM]=ss.split(":").map(Number);
-  const sunriseDate=new Date(nowDate); sunriseDate.setHours(srH,srM,0,0);
-  const sunsetDate=new Date(nowDate); sunsetDate.setHours(ssH,ssM,0,0);
-
-  const toSR=srH>=0?formatTimeDiff(sunriseDate-nowDate):"—";
-  const toSS=ssH>=0?formatTimeDiff(sunsetDate-nowDate):"—";
-
-  document.getElementById("toSunrise").textContent=toSR!=="0 хв"?`(${toSR})`:"(Зараз!)";
-  document.getElementById("toSunset").textContent=toSS!=="0 хв"?`(${toSS})`:"(Зараз!)";
-
-  const min=Math.floor((Date.now()-data.updated)/60000);
-  updated.textContent=min<1?"Оновлено щойно":min<60?`Оновлено ${min} хв тому`:`Оновлено ${Math.floor(min/60)} год тому`;
-}
-
-render();
-setInterval(render,60000);
-
-// Адмінка
-adminBtn.onclick=()=>adminModal.style.display="block";
-function closeAdmin(){adminModal.style.display="none";}
-function login(){
-  if(pass.value===PASS){
-    loginBox.style.display="none";
-    panel.style.display="block";
-    hourlyInput.value=Object.entries(data.hourlyDays).map(([d,h])=>`${d}\n${h.join("\n")}`).join("\n\n");
-    dailyInput.value=data.daily.join("\n");
-    sunInput.value=Object.entries(data.sunDays).map(([d,v])=>`${d}: ${v.replace("|"," ")}`).join("\n");
-  } else {
+document.getElementById("pass").onchange=e=>{
+  if(e.target.value==="3709"){
+    admin=true;
+    alert("Адмін доступ увімкнено");
+  }else{
     alert("Невірний пароль");
   }
+};
+
+document.getElementById("imgInput").onchange=e=>{
+  const file=e.target.files[0];
+  const reader=new FileReader();
+  reader.onload=ev=>currentImage=ev.target.result;
+  reader.readAsDataURL(file);
+};
+
+function enableAdd(){
+  if(!admin || !currentImage){
+    alert("Немає доступу або картинки");
+    return;
+  }
+  addMode=true;
 }
 
-function save(){
-  const lines=hourlyInput.value.split("\n");
-  let currentDate="";
-  data.hourlyDays={};
-  lines.forEach(l=>{
-    l=l.trim();
-    if(!l) return;
-    if(l.match(/^\d{4}-\d{2}-\d{2}$/)){
-      currentDate=l;
-      data.hourlyDays[currentDate]=Array(24).fill("—");
-    } else if(l.match(/^\d{2}:\d{2}:/)){
-      const h=parseInt(l.split(":")[0]);
-      data.hourlyDays[currentDate][h]=l.split(": ").slice(1).join(": ");
-    }
-  });
+map.on("click",e=>{
+  if(!addMode) return;
 
-  data.daily=dailyInput.value.split("\n").map(l=>l.trim()).filter(Boolean);
+  const size=0.05;
+  const bounds=[
+    [e.latlng.lat-size,e.latlng.lng-size],
+    [e.latlng.lat+size,e.latlng.lng+size]
+  ];
 
-  data.sunDays={};
-  sunInput.value.split("\n").forEach(l=>{
-    const m=l.match(/^(\d{2}\.\d{2}):\s*(\d{2}:\d{2})\s+(\d{2}:\d{2})$/);
-    if(m) data.sunDays[m[1]]=m[2]+"|"+m[3];
-  });
+  const overlay=L.imageOverlay(currentImage,bounds).addTo(map);
+  overlays.push(overlay);
 
-  data.updated=Date.now();
-  localStorage.setItem("weatherData",JSON.stringify(data));
-  closeAdmin();
-  render();
-}
+  saved.push({src:currentImage,bounds});
+  localStorage.setItem("overlays",JSON.stringify(saved));
+
+  addMode=false;
+  alert("Знімок додано");
+});
 </script>
+
 </body>
 </html>
