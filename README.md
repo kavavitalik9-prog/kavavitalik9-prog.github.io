@@ -220,7 +220,6 @@ function render(){
 render();
 setInterval(render,60000);
 
-// адмінка
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
 function login(){
