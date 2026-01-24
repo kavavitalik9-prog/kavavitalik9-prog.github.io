@@ -153,11 +153,11 @@ textarea{min-height:70px}
     </div>
     <div id="panel" style="display:none">
       <label>Додати погодинну погоду [YYYY-MM-DD]</label>
-      <textarea id="hourlyInput" placeholder="Наприклад: 00:00: 10° ☀️"></textarea>
+      <textarea id="hourlyInput" placeholder="00:00: 10° ☀️"></textarea>
       <label>7 днів (дата: min/max 🌤)</label>
-      <textarea id="dailyInput" placeholder="Наприклад: 2026-01-24: 12°/5° ☀️"></textarea>
+      <textarea id="dailyInput" placeholder="2026-01-24: 12°/5° ☀️"></textarea>
       <label>Схід|Захід (дата: HH:MM HH:MM)</label>
-      <textarea id="sunInput" placeholder="Наприклад: 24.01: 06:00 16:00"></textarea>
+      <textarea id="sunInput" placeholder="24.01: 06:00 16:00"></textarea>
       <button onclick="save()">💾 Зберегти</button>
     </div>
   </div>
@@ -167,9 +167,9 @@ textarea{min-height:70px}
 const PASS="3709";
 let data=JSON.parse(localStorage.getItem("weatherData"))||{
   now:"",
-  hourlyDays:{}, // {"2026-01-24": ["00:00: 10° ☀️", ...]}
+  hourlyDays:{},
   daily:[],
-  sunDays:{}, // {"24.01":"06:00|16:00"}
+  sunDays:{},
   updated:Date.now()
 };
 
@@ -182,10 +182,9 @@ function formatTimeDiff(ms){
 
 function render(){
   const nowDate=new Date();
-  const dateStr=nowDate.toISOString().slice(0,10); // YYYY-MM-DD
+  const dateStr=nowDate.toISOString().slice(0,10);
   const hour=nowDate.getHours();
 
-  // погодинна
   let hours=data.hourlyDays[dateStr]||Array(24).fill("—");
   document.getElementById("now").textContent=hours[hour]||"—";
 
@@ -195,17 +194,14 @@ function render(){
     hourlyEl.innerHTML+=`<div class="hour"><b>${String(i).padStart(2,"0")}:00</b><br>${hours[i]||"—"}</div>`;
   }
 
-  // 7 днів
   document.getElementById("daily").innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
 
-  // схід/захід
-  const todayKey=nowDate.toISOString().slice(5,10).replace("-","."); // "MM.DD"
+  const todayKey=nowDate.toISOString().slice(5,10).replace("-",".");
   const sun=data.sunDays[todayKey]||"—|—";
   const [sr,ss]=sun.split("|");
   sunrise.textContent=sr;
   sunset.textContent=ss;
 
-  // підрахунок часу до сходу/заходу
   const [srH,srM]=sr.split(":").map(Number);
   const [ssH,ssM]=ss.split(":").map(Number);
   const sunriseDate=new Date(nowDate); sunriseDate.setHours(srH,srM,0,0);
@@ -217,7 +213,6 @@ function render(){
   document.getElementById("toSunrise").textContent=toSR!=="0 хв"?`(${toSR})`:"(Зараз!)";
   document.getElementById("toSunset").textContent=toSS!=="0 хв"?`(${toSS})`:"(Зараз!)";
 
-  // оновлення
   const min=Math.floor((Date.now()-data.updated)/60000);
   updated.textContent=min<1?"Оновлено щойно":min<60?`Оновлено ${min} хв тому`:`Оновлено ${Math.floor(min/60)} год тому`;
 }
@@ -225,7 +220,6 @@ function render(){
 render();
 setInterval(render,60000);
 
-// адмінка
 adminBtn.onclick=()=>adminModal.style.display="block";
 function closeAdmin(){adminModal.style.display="none";}
 function login(){
@@ -236,11 +230,12 @@ function login(){
     hourlyInput.value=Object.entries(data.hourlyDays).map(([d,h])=>`${d}\n${h.join("\n")}`).join("\n\n");
     dailyInput.value=data.daily.join("\n");
     sunInput.value=Object.entries(data.sunDays).map(([d,v])=>`${d}: ${v.replace("|"," ")}`).join("\n");
+  } else {
+    alert("Невірний пароль");
   }
 }
 
 function save(){
-  // погодинна
   const lines=hourlyInput.value.split("\n");
   let currentDate="";
   data.hourlyDays={};
@@ -256,10 +251,8 @@ function save(){
     }
   });
 
-  // 7 днів
   data.daily=dailyInput.value.split("\n").map(l=>l.trim()).filter(Boolean);
 
-  // схід/захід
   data.sunDays={};
   sunInput.value.split("\n").forEach(l=>{
     const m=l.match(/^(\d{2}\.\d{2}):\s*(\d{2}:\d{2})\s+(\d{2}:\d{2})$/);
