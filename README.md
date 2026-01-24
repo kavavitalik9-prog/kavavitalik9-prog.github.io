@@ -165,11 +165,28 @@ textarea{min-height:70px}
 
 <script>
 const PASS="3709";
+
+// Початкові дані, щоб одразу все було видно
 let data=JSON.parse(localStorage.getItem("weatherData"))||{
-  now:"",
-  hourlyDays:{},
-  daily:[],
-  sunDays:{},
+  hourlyDays:{
+    "2026-01-24":[
+      "10° ☀️","10° ☀️","9° ☀️","9° ☀️","8° ☀️","8° ☀️","8° 🌤","10° 🌤",
+      "12° ☀️","14° ☀️","15° ☀️","16° ☀️","16° 🌤","15° 🌤","14° ☀️","12° ☀️",
+      "11° ☀️","10° ☀️","9° ☀️","9° ☀️","8° 🌙","8° 🌙","8° 🌙","7° 🌙"
+    ]
+  },
+  daily:[
+    "2026-01-24: 16°/8° ☀️",
+    "2026-01-25: 15°/7° 🌤",
+    "2026-01-26: 14°/6° ☁️",
+    "2026-01-27: 12°/5° ❄️",
+    "2026-01-28: 13°/6° ☀️",
+    "2026-01-29: 15°/7° ☀️",
+    "2026-01-30: 14°/6° 🌤"
+  ],
+  sunDays:{
+    "01.24":"06:30|16:45"
+  },
   updated:Date.now()
 };
 
@@ -196,7 +213,7 @@ function render(){
 
   document.getElementById("daily").innerHTML=data.daily.slice(0,7).map(d=>`<div class="day">${d}</div>`).join("");
 
-  const todayKey=nowDate.toISOString().slice(5,10).replace("-",".");
+  const todayKey="01.24";
   const sun=data.sunDays[todayKey]||"—|—";
   const [sr,ss]=sun.split("|");
   sunrise.textContent=sr;
