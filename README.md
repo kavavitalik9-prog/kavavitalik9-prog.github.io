@@ -5,11 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>График отключений — Львовская область</title>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
 <style>
 *{box-sizing:border-box}
 body{
   margin:0;
-  background:#0f172a;
+  background:#020617;
   font-family:system-ui,sans-serif;
   color:#fff;
   display:flex;
@@ -17,7 +19,7 @@ body{
 }
 .app{
   width:100%;
-  max-width:420px;
+  max-width:430px;
   min-height:100vh;
   padding:12px;
 }
@@ -25,13 +27,15 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
+  margin-bottom:6px;
 }
 h1{font-size:18px;margin:0}
 .lock{font-size:20px;cursor:pointer}
+
 .date{
   display:flex;
   gap:8px;
-  margin:10px 0;
+  margin:8px 0;
 }
 .date button{
   flex:1;
@@ -42,54 +46,98 @@ h1{font-size:18px;margin:0}
   color:#fff;
 }
 .date button.active{background:#2563eb}
+
 .updated{
   font-size:11px;
   opacity:.7;
   margin-bottom:6px;
 }
-.table{overflow-x:auto}
+
+/* ===== ТАБЛИЦА ===== */
+.graph{
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:10px;
+  padding:8px;
+}
+
+.hours{
+  display:grid;
+  grid-template-columns:48px repeat(24, 1fr);
+  font-size:10px;
+  margin-bottom:6px;
+}
+.hours div{
+  text-align:center;
+  opacity:.6;
+}
+
 .row{
   display:grid;
-  grid-template-columns:52px repeat(24,1fr);
-  margin-bottom:4px;
+  grid-template-columns:48px repeat(24, 1fr);
+  margin-bottom:3px;
 }
 .group{
-  font-size:12px;
   display:flex;
   align-items:center;
   justify-content:center;
+  font-size:12px;
   background:#020617;
 }
-.hour{height:18px;background:#22c55e}
-.hour.off{background:#ef4444}
-.hours{
-  display:grid;
-  grid-template-columns:52px repeat(24,1fr);
-  font-size:10px;
-  opacity:.6;
-  margin-bottom:6px;
+.cell{
+  height:18px;
+  border-radius:3px;
+  background:#22c55e;
 }
-.hours div{text-align:center}
+.cell.off{
+  background:#ef4444;
+}
+
+/* ===== КНОПКИ ===== */
+.actions{
+  display:flex;
+  gap:8px;
+  margin-top:8px;
+}
+.actions button{
+  flex:1;
+  padding:8px;
+  border:none;
+  border-radius:6px;
+  background:#1e293b;
+  color:#fff;
+  font-size:13px;
+}
+
+/* ===== АДМИН ===== */
 .admin{
   display:none;
   margin-top:10px;
   padding:10px;
   border:1px solid #334155;
-  border-radius:8px;
+  border-radius:10px;
   background:#020617;
 }
 .admin input,.admin textarea,.admin button{
   width:100%;
   margin-top:6px;
   padding:8px;
-  background:#0f172a;
+  background:#020617;
   border:1px solid #334155;
   color:#fff;
   border-radius:6px;
   font-size:13px;
 }
-.admin label{font-size:12px;opacity:.8}
-.footer{font-size:11px;opacity:.6;margin-top:8px}
+.admin label{
+  font-size:12px;
+  opacity:.7;
+}
+
+.footer{
+  font-size:11px;
+  opacity:.6;
+  margin-top:6px;
+}
 </style>
 </head>
 
@@ -107,8 +155,15 @@ h1{font-size:18px;margin:0}
 </div>
 
 <div class="updated" id="updated"></div>
-<div class="table" id="table"></div>
 
+<!-- ===== ГРАФИК ===== -->
+<div class="graph" id="graph"></div>
+
+<div class="actions">
+  <button id="export">📸 Экспорт PNG</button>
+</div>
+
+<!-- ===== АДМИН ===== -->
 <div class="admin" id="admin">
   <b>Админка</b>
   <input type="password" id="pass" placeholder="Пароль">
@@ -150,12 +205,13 @@ function timeAgo(){
 
 function render(){
   updated.textContent="Обновлено: "+timeAgo();
-  table.innerHTML="";
+  graph.innerHTML="";
+
   const h=document.createElement("div");
   h.className="hours";
   h.innerHTML="<div></div>";
   for(let i=0;i<24;i++) h.innerHTML+=`<div>${i}</div>`;
-  table.appendChild(h);
+  graph.appendChild(h);
 
   groups.forEach(g=>{
     const row=document.createElement("div");
@@ -166,20 +222,22 @@ function render(){
       (data[day][g]||[]).forEach(p=>{
         if(i>=p[0] && i<p[1]) off=true;
       });
-      row.innerHTML+=`<div class="hour ${off?"off":""}"></div>`;
+      row.innerHTML+=`<div class="cell ${off?"off":""}"></div>`;
     }
-    table.appendChild(row);
+    graph.appendChild(row);
   });
 }
 
+/* ===== ДАТА ===== */
 today.onclick=()=>{day="today";today.classList.add("active");tomorrow.classList.remove("active");render();}
 tomorrow.onclick=()=>{day="tomorrow";tomorrow.classList.add("active");today.classList.remove("active");render();}
 today.click();
 
+/* ===== АДМИН ===== */
 lock.onclick=()=>admin.style.display=admin.style.display==="block"?"none":"block";
 
 fields.innerHTML=groups.map(g=>`
-<label>${g} (нет света)</label>
+<label>${g} — нет света</label>
 <textarea id="f_${g}" rows="2" placeholder="10:00-13:00"></textarea>
 `).join("");
 
@@ -196,6 +254,16 @@ save.onclick=()=>{
   localStorage.setItem("last",last);
   render();
   alert("Сохранено");
+};
+
+/* ===== ЭКСПОРТ ===== */
+export.onclick=()=>{
+  html2canvas(graph,{backgroundColor:"#020617",scale:2}).then(c=>{
+    const a=document.createElement("a");
+    a.download="grafik_lviv.png";
+    a.href=c.toDataURL();
+    a.click();
+  });
 };
 
 render();
