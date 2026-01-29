@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Графики отключения света — Львовская область</title>
+<title>График отключений — Львовская область</title>
 
 <style>
 *{box-sizing:border-box}
 body{
   margin:0;
-  font-family:system-ui, sans-serif;
   background:#0f172a;
+  font-family:system-ui,sans-serif;
   color:#fff;
   display:flex;
   justify-content:center;
 }
 .app{
   width:100%;
-  max-width:430px;
+  max-width:420px;
   min-height:100vh;
   padding:12px;
 }
@@ -26,41 +26,31 @@ body{
   justify-content:space-between;
   align-items:center;
 }
-h1{
-  font-size:18px;
-  margin:0;
-}
-.lock{
-  font-size:20px;
-  cursor:pointer;
-}
-.date-select{
+h1{font-size:18px;margin:0}
+.lock{font-size:20px;cursor:pointer}
+.date{
   display:flex;
   gap:8px;
   margin:10px 0;
 }
-.date-select button{
+.date button{
   flex:1;
   padding:8px;
-  background:#1e293b;
-  color:#fff;
   border:none;
   border-radius:6px;
+  background:#1e293b;
+  color:#fff;
 }
-.date-select button.active{
-  background:#2563eb;
-}
+.date button.active{background:#2563eb}
 .updated{
   font-size:11px;
   opacity:.7;
   margin-bottom:6px;
 }
-.table{
-  overflow-x:auto;
-}
+.table{overflow-x:auto}
 .row{
   display:grid;
-  grid-template-columns:52px repeat(24, 1fr);
+  grid-template-columns:52px repeat(24,1fr);
   margin-bottom:4px;
 }
 .group{
@@ -70,46 +60,36 @@ h1{
   justify-content:center;
   background:#020617;
 }
-.hour{
-  height:18px;
-  background:#22c55e;
-}
-.hour.off{
-  background:#ef4444;
-}
+.hour{height:18px;background:#22c55e}
+.hour.off{background:#ef4444}
 .hours{
   display:grid;
-  grid-template-columns:52px repeat(24, 1fr);
+  grid-template-columns:52px repeat(24,1fr);
   font-size:10px;
+  opacity:.6;
   margin-bottom:6px;
 }
-.hours div{
-  text-align:center;
-  opacity:.6;
-}
+.hours div{text-align:center}
 .admin{
   display:none;
-  background:#020617;
+  margin-top:10px;
+  padding:10px;
   border:1px solid #334155;
   border-radius:8px;
-  padding:10px;
-  margin-top:10px;
+  background:#020617;
 }
-.admin input, .admin textarea, .admin button{
+.admin input,.admin textarea,.admin button{
   width:100%;
   margin-top:6px;
   padding:8px;
   background:#0f172a;
-  color:#fff;
   border:1px solid #334155;
+  color:#fff;
   border-radius:6px;
   font-size:13px;
 }
-.footer{
-  font-size:11px;
-  opacity:.6;
-  margin-top:8px;
-}
+.admin label{font-size:12px;opacity:.8}
+.footer{font-size:11px;opacity:.6;margin-top:8px}
 </style>
 </head>
 
@@ -118,29 +98,24 @@ h1{
 
 <div class="top">
   <h1>⚡ Львовская область</h1>
-  <div class="lock" id="lockBtn">🔒</div>
+  <div class="lock" id="lock">🔒</div>
 </div>
 
-<div class="date-select">
-  <button id="todayBtn">Сегодня</button>
-  <button id="tomorrowBtn">Завтра</button>
+<div class="date">
+  <button id="today">Сегодня</button>
+  <button id="tomorrow">Завтра</button>
 </div>
 
 <div class="updated" id="updated"></div>
-
 <div class="table" id="table"></div>
 
 <div class="admin" id="admin">
   <b>Админка</b>
   <input type="password" id="pass" placeholder="Пароль">
 
-  <textarea id="editor" rows="8"
-placeholder="Формат:
-1.1=7-11,14-18,21-24
-1.2=0-4,7-11
-..."></textarea>
+  <div id="fields"></div>
 
-  <button id="saveAdmin">Сохранить график</button>
+  <button id="save">Сохранить</button>
 </div>
 
 <div class="footer">
@@ -150,58 +125,46 @@ placeholder="Формат:
 </div>
 
 <script>
-// ===== ДАННЫЕ =====
-const defaultData={
-today:{
-"1.1":[[7,11],[14,18],[21,24]],
-"1.2":[[0,4],[7,11],[14,18],[21,24]],
-"2.1":[[4,7],[11,14],[18,22]],
-"2.2":[[0,4],[7,11],[14,18],[21,24]],
-"3.1":[[0,4],[11,14],[18,21]],
-"3.2":[[4,7],[11,14],[18,21]],
-"4.1":[[4,7],[11,14],[18,21]],
-"4.2":[[0,4],[7,11],[14,18],[21,24]],
-"5.1":[[0,4],[7,11],[14,18]],
-"5.2":[[4,7],[11,14],[18,21]],
-"6.1":[[4,7],[11,14],[18,21]],
-"6.2":[[6,11],[14,18],[21,24]]
-},
-tomorrow:{}
-};
-
-let data=JSON.parse(localStorage.getItem("powerData"))||defaultData;
-let lastUpdate=localStorage.getItem("lastUpdate")||Date.now();
+const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
+let data=JSON.parse(localStorage.getItem("power"))||{today:{},tomorrow:{}};
+let last=localStorage.getItem("last")||Date.now();
 let day="today";
 
-// ===== ВРЕМЯ =====
-function timeAgo(){
-  const diff=Math.floor((Date.now()-lastUpdate)/1000);
-  if(diff<60) return "только что";
-  if(diff<3600) return Math.floor(diff/60)+" мин назад";
-  if(diff<86400) return Math.floor(diff/3600)+" ч назад";
-  return Math.floor(diff/86400)+" дн назад";
+function parse(text){
+  if(!text.trim()) return [];
+  return text.split("\n").map(l=>{
+    const [a,b]=l.split("-");
+    const [h1,m1]=a.split(":").map(Number);
+    const [h2,m2]=b.split(":").map(Number);
+    return [h1+(m1||0)/60,h2+(m2||0)/60];
+  });
 }
 
-// ===== РЕНДЕР =====
-const table=document.getElementById("table");
+function timeAgo(){
+  const d=(Date.now()-last)/1000;
+  if(d<60) return "только что";
+  if(d<3600) return Math.floor(d/60)+" мин назад";
+  if(d<86400) return Math.floor(d/3600)+" ч назад";
+  return Math.floor(d/86400)+" дн назад";
+}
+
 function render(){
+  updated.textContent="Обновлено: "+timeAgo();
   table.innerHTML="";
-  document.getElementById("updated").textContent="Обновлено: "+timeAgo();
+  const h=document.createElement("div");
+  h.className="hours";
+  h.innerHTML="<div></div>";
+  for(let i=0;i<24;i++) h.innerHTML+=`<div>${i}</div>`;
+  table.appendChild(h);
 
-  const hours=document.createElement("div");
-  hours.className="hours";
-  hours.innerHTML="<div></div>";
-  for(let i=0;i<24;i++) hours.innerHTML+=`<div>${i}</div>`;
-  table.appendChild(hours);
-
-  Object.keys(data[day]).forEach(g=>{
+  groups.forEach(g=>{
     const row=document.createElement("div");
     row.className="row";
     row.innerHTML=`<div class="group">${g}</div>`;
-    for(let h=0;h<24;h++){
+    for(let i=0;i<24;i++){
       let off=false;
-      data[day][g].forEach(p=>{
-        if(h>=p[0] && h<p[1]) off=true;
+      (data[day][g]||[]).forEach(p=>{
+        if(i>=p[0] && i<p[1]) off=true;
       });
       row.innerHTML+=`<div class="hour ${off?"off":""}"></div>`;
     }
@@ -209,43 +172,32 @@ function render(){
   });
 }
 
-// ===== ДАТЫ =====
-todayBtn.onclick=()=>{
-day="today";
-todayBtn.classList.add("active");
-tomorrowBtn.classList.remove("active");
-render();
-};
-tomorrowBtn.onclick=()=>{
-day="tomorrow";
-tomorrowBtn.classList.add("active");
-todayBtn.classList.remove("active");
-render();
-};
-todayBtn.click();
+today.onclick=()=>{day="today";today.classList.add("active");tomorrow.classList.remove("active");render();}
+tomorrow.onclick=()=>{day="tomorrow";tomorrow.classList.add("active");today.classList.remove("active");render();}
+today.click();
 
-// ===== АДМИН =====
-lockBtn.onclick=()=>{
-document.getElementById("admin").style.display=
-document.getElementById("admin").style.display==="block"?"none":"block";
+lock.onclick=()=>admin.style.display=admin.style.display==="block"?"none":"block";
+
+fields.innerHTML=groups.map(g=>`
+<label>${g} (нет света)</label>
+<textarea id="f_${g}" rows="2" placeholder="10:00-13:00"></textarea>
+`).join("");
+
+save.onclick=()=>{
+  if(pass.value!=="3709"){alert("Неверный пароль");return;}
+  data[day]={};
+  groups.forEach(g=>{
+    const v=document.getElementById("f_"+g).value;
+    const p=parse(v);
+    if(p.length) data[day][g]=p;
+  });
+  last=Date.now();
+  localStorage.setItem("power",JSON.stringify(data));
+  localStorage.setItem("last",last);
+  render();
+  alert("Сохранено");
 };
 
-saveAdmin.onclick=()=>{
-if(pass.value!=="3709"){alert("Неверный пароль");return;}
-const lines=editor.value.trim().split("\n");
-const obj={};
-lines.forEach(l=>{
-const [g,v]=l.split("=");
-if(!g||!v) return;
-obj[g]=v.split(",").map(p=>p.split("-").map(Number));
-});
-data[day]=obj;
-lastUpdate=Date.now();
-localStorage.setItem("powerData",JSON.stringify(data));
-localStorage.setItem("lastUpdate",lastUpdate);
-render();
-alert("Сохранено");
-};
 render();
 </script>
 </body>
