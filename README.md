@@ -105,27 +105,42 @@ h1{font-size:18px;margin:0 0 4px}
 <script>
 const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
 
-/* ===== ОБНОВЛЕННЫЙ ГРАФИК СЕГОДНЯ ===== */
+/* ===== ДАННЫЕ (в минутах) ===== */
 const todayData={
-  "1.1":[],
-  "1.2":[],
-  "2.1":[[19,21]],
-  "2.2":[[0,3]],
-  "3.1":[[21,24]],
-  "3.2":[],
-  "4.1":[],
-  "4.2":[],
-  "5.1":[[0,3]],
-  "5.2":[[19,21]],
-  "6.1":[],
-  "6.2":[[21,24]]
+ "1.1":[],
+ "1.2":[],
+ "2.1":[[19*60,20*60]],
+ "2.2":[[0,3*60]],
+ "3.1":[[22*60,24*60]],
+ "3.2":[],
+ "4.1":[],
+ "4.2":[],
+ "5.1":[[0,3*60]],
+ "5.2":[[19*60,20*60]],
+ "6.1":[],
+ "6.2":[[22*60,24*60]]
+};
+
+const tomorrowData={
+ "1.1":[[8*60,11*60]],
+ "1.2":[[14*60+30,18*60]],
+ "2.1":[[0,4*60]],
+ "2.2":[[11*60,14*60+30]],
+ "3.1":[[21*60+30,24*60]],
+ "3.2":[[18*60,21*60+30]],
+ "4.1":[[21*60+30,24*60]],
+ "4.2":[[4*60,7*60+30]],
+ "5.1":[[14*60+30,18*60]],
+ "5.2":[[7*60+30,11*60]],
+ "6.1":[[11*60,14*60+30]],
+ "6.2":[[18*60,21*60+30]]
 };
 
 let mode="today";
 
 /* ===== ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ ===== */
 const lastUpdate=new Date();
-lastUpdate.setHours(18,18,0,0);
+lastUpdate.setHours(19,56,0,0);
 
 function updateText(){
   const now=new Date();
@@ -138,80 +153,74 @@ function updateText(){
   diff%=3600;
   const m=Math.floor(diff/60);
 
-  let text="Последнее обновление: ";
-  if(d>0) text+=`${d} дн `;
-  if(h>0 || d>0) text+=`${h} ч `;
-  text+=`${m} мин назад`;
-
-  updated.textContent=text;
+  let t="Последнее обновление: ";
+  if(d>0) t+=`${d} дн `;
+  if(h>0||d>0) t+=`${h} ч `;
+  t+=`${m} мин назад`;
+  updated.textContent=t;
 }
 
-/* ===== ВСПОМОГАТЕЛЬНОЕ ===== */
-function isOff(g,h){
-  return (todayData[g]||[]).some(p=>h>=p[0]&&h<p[1]);
+function dataSet(){
+  return mode==="today"?todayData:tomorrowData;
+}
+
+function isOff(g,min){
+  return (dataSet()[g]||[]).some(p=>min>=p[0]&&min<p[1]);
 }
 
 /* ===== КАРТОЧКИ ===== */
 function renderCards(){
   cards.innerHTML="";
-  if(mode==="tomorrow"){
-    cards.innerHTML=`<div class="card">⏳ <b>ГРАФИК ЕЩЕ ФОРМИРУЕТСЯ</b></div>`;
-    return;
-  }
-
   const now=new Date();
-  const h=now.getHours();
-  const m=now.getMinutes();
+  const cur=now.getHours()*60+now.getMinutes();
 
   groups.forEach(g=>{
-    const off=todayData[g]||[];
-    const status=isOff(g,h);
-    let next=null;
-
-    off.forEach(p=>{
-      if(status && h<p[1]) next=p[1];
-      if(!status && h<p[0]) next=p[0];
-    });
-
+    const off=dataSet()[g]||[];
     const c=document.createElement("div");
     c.className="card";
     c.innerHTML=`<h3>${g}</h3>`;
 
     if(off.length===0){
-      c.innerHTML+=`<div class="line on">🟢 00:00–24:00</div>`;
+      c.innerHTML+=`<div class="line on">🟢 00:00–23:59</div>`;
     }else{
       let last=0;
       off.forEach(p=>{
-        if(last<p[0]) c.innerHTML+=`<div class="line on">🟢 ${last}:00–${p[0]}:00</div>`;
-        c.innerHTML+=`<div class="line off">🔴 ${p[0]}:00–${p[1]}:00</div>`;
+        if(last<p[0])
+          c.innerHTML+=`<div class="line on">🟢 ${fmt(last)}–${fmt(p[0])}</div>`;
+        c.innerHTML+=`<div class="line off">🔴 ${fmt(p[0])}–${fmt(p[1])}</div>`;
         last=p[1];
       });
-      if(last<24) c.innerHTML+=`<div class="line on">🟢 ${last}:00–24:00</div>`;
+      if(last<1440)
+        c.innerHTML+=`<div class="line on">🟢 ${fmt(last)}–23:59</div>`;
     }
 
-    if(next!==null){
-      const diff=(next*60)-(h*60+m);
-      const hh=Math.floor(diff/60);
-      const mm=diff%60;
-      c.innerHTML+=`<div class="timer">⏱ ${hh} ч ${mm} мин</div>`;
+    if(mode==="today"){
+      let next=null;
+      off.forEach(p=>{
+        if(cur<p[0]) next=p[0];
+        if(cur>=p[0]&&cur<p[1]) next=p[1];
+      });
+      if(next!==null){
+        const diff=next-cur;
+        c.innerHTML+=`<div class="timer">⏱ ${Math.floor(diff/60)} ч ${diff%60} мин</div>`;
+      }
     }
 
     cards.appendChild(c);
   });
 }
 
-/* ===== ТАБЛИЦА ===== */
+/* ===== ТАБЛИЦА (по часам) ===== */
 function renderTable(){
   table.innerHTML="";
-
   table.innerHTML+=`<div></div>`;
   for(let i=0;i<24;i++) table.innerHTML+=`<div class="head">${i}</div>`;
   table.innerHTML+=`<div></div>`;
 
   groups.forEach(g=>{
     table.innerHTML+=`<div class="side">${g}</div>`;
-    for(let i=0;i<24;i++){
-      const off=mode==="today" && isOff(g,i);
+    for(let h=0;h<24;h++){
+      const off=isOff(g,h*60+30);
       table.innerHTML+=`<div class="cell ${off?"off":""}"></div>`;
     }
     table.innerHTML+=`<div class="side">${g}</div>`;
@@ -220,6 +229,11 @@ function renderTable(){
   table.innerHTML+=`<div></div>`;
   for(let i=0;i<24;i++) table.innerHTML+=`<div class="head">${i}</div>`;
   table.innerHTML+=`<div></div>`;
+}
+
+function fmt(m){
+  return String(Math.floor(m/60)).padStart(2,"0")+":"+
+         String(m%60).padStart(2,"0");
 }
 
 function render(){
