@@ -18,7 +18,13 @@ body{
   margin:auto;
   padding:12px;
 }
-h1{font-size:18px;margin:0 0 8px}
+h1{font-size:18px;margin:0 0 4px}
+
+.updated{
+  font-size:12px;
+  opacity:.7;
+  margin-bottom:8px;
+}
 
 .tabs{
   display:flex;
@@ -66,7 +72,7 @@ h1{font-size:18px;margin:0 0 8px}
   background:#22c55e;
 }
 .cell.off{background:#ef4444}
-.row-gap{height:4px}
+
 .footer{
   font-size:11px;
   opacity:.6;
@@ -79,6 +85,7 @@ h1{font-size:18px;margin:0 0 8px}
 <div class="app">
 
 <h1>⚡ График отключений</h1>
+<div class="updated" id="updated"></div>
 
 <div class="tabs">
   <button id="today">Сегодня</button>
@@ -96,12 +103,14 @@ h1{font-size:18px;margin:0 0 8px}
 </div>
 
 <script>
-const groups=["1.1","1.2","2.1","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
+const groups=["1.1","1.2","2.1","2.2","3.1","3.2","4.1","4.2","5.1","5.2","6.1","6.2"];
 
+/* ===== ОБНОВЛЕННЫЙ ГРАФИК СЕГОДНЯ ===== */
 const todayData={
-  "1.1":[[19,22]],
+  "1.1":[],
   "1.2":[],
   "2.1":[[19,21]],
+  "2.2":[[0,3]],
   "3.1":[[21,24]],
   "3.2":[],
   "4.1":[],
@@ -114,10 +123,35 @@ const todayData={
 
 let mode="today";
 
-function getStatus(g,h){
+/* ===== ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ ===== */
+const lastUpdate=new Date();
+lastUpdate.setHours(18,18,0,0);
+
+function updateText(){
+  const now=new Date();
+  let diff=Math.floor((now-lastUpdate)/1000);
+  if(diff<0) diff=0;
+
+  const d=Math.floor(diff/86400);
+  diff%=86400;
+  const h=Math.floor(diff/3600);
+  diff%=3600;
+  const m=Math.floor(diff/60);
+
+  let text="Последнее обновление: ";
+  if(d>0) text+=`${d} дн `;
+  if(h>0 || d>0) text+=`${h} ч `;
+  text+=`${m} мин назад`;
+
+  updated.textContent=text;
+}
+
+/* ===== ВСПОМОГАТЕЛЬНОЕ ===== */
+function isOff(g,h){
   return (todayData[g]||[]).some(p=>h>=p[0]&&h<p[1]);
 }
 
+/* ===== КАРТОЧКИ ===== */
 function renderCards(){
   cards.innerHTML="";
   if(mode==="tomorrow"){
@@ -130,11 +164,11 @@ function renderCards(){
   const m=now.getMinutes();
 
   groups.forEach(g=>{
-    const offRanges=todayData[g]||[];
-    let status=getStatus(g,h);
+    const off=todayData[g]||[];
+    const status=isOff(g,h);
     let next=null;
 
-    offRanges.forEach(p=>{
+    off.forEach(p=>{
       if(status && h<p[1]) next=p[1];
       if(!status && h<p[0]) next=p[0];
     });
@@ -143,28 +177,33 @@ function renderCards(){
     c.className="card";
     c.innerHTML=`<h3>${g}</h3>`;
 
-    offRanges.forEach(p=>{
-      c.innerHTML+=`<div class="line off">🔴 ${p[0]}:00–${p[1]}:00</div>`;
-    });
-    if(!offRanges.length){
+    if(off.length===0){
       c.innerHTML+=`<div class="line on">🟢 00:00–24:00</div>`;
+    }else{
+      let last=0;
+      off.forEach(p=>{
+        if(last<p[0]) c.innerHTML+=`<div class="line on">🟢 ${last}:00–${p[0]}:00</div>`;
+        c.innerHTML+=`<div class="line off">🔴 ${p[0]}:00–${p[1]}:00</div>`;
+        last=p[1];
+      });
+      if(last<24) c.innerHTML+=`<div class="line on">🟢 ${last}:00–24:00</div>`;
     }
 
     if(next!==null){
       const diff=(next*60)-(h*60+m);
       const hh=Math.floor(diff/60);
       const mm=diff%60;
-      c.innerHTML+=`<div class="timer">⏱ ${hh}ч ${mm}м</div>`;
+      c.innerHTML+=`<div class="timer">⏱ ${hh} ч ${mm} мин</div>`;
     }
 
     cards.appendChild(c);
   });
 }
 
+/* ===== ТАБЛИЦА ===== */
 function renderTable(){
   table.innerHTML="";
 
-  // верхнее время
   table.innerHTML+=`<div></div>`;
   for(let i=0;i<24;i++) table.innerHTML+=`<div class="head">${i}</div>`;
   table.innerHTML+=`<div></div>`;
@@ -172,13 +211,12 @@ function renderTable(){
   groups.forEach(g=>{
     table.innerHTML+=`<div class="side">${g}</div>`;
     for(let i=0;i<24;i++){
-      const off=mode==="today" && getStatus(g,i);
+      const off=mode==="today" && isOff(g,i);
       table.innerHTML+=`<div class="cell ${off?"off":""}"></div>`;
     }
     table.innerHTML+=`<div class="side">${g}</div>`;
   });
 
-  // нижнее время
   table.innerHTML+=`<div></div>`;
   for(let i=0;i<24;i++) table.innerHTML+=`<div class="head">${i}</div>`;
   table.innerHTML+=`<div></div>`;
@@ -203,7 +241,8 @@ tomorrow.onclick=()=>{
 };
 
 today.click();
-setInterval(renderCards,60000);
+updateText();
+setInterval(updateText,60000);
 </script>
 </body>
 </html>
