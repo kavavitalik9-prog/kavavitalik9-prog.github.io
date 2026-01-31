@@ -2,221 +2,148 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YCB-89</title>
-
 <style>
 body{
-  margin:0;
   background:#020617;
   color:#e5e7eb;
-  font-family:system-ui,sans-serif;
+  font-family:system-ui;
   display:flex;
   justify-content:center;
-  align-items:center;
-  height:100vh;
+  padding-top:20px;
 }
 .radio{
   width:360px;
-  background:#020617;
   border:1px solid #334155;
-  border-radius:18px;
-  padding:16px;
+  border-radius:16px;
+  padding:14px;
 }
-.title{
-  text-align:center;
-  font-size:22px;
-  font-weight:700;
-  letter-spacing:2px;
-}
-.status{
-  text-align:center;
-  font-size:12px;
-  color:#22c55e;
-}
-.time{
-  text-align:center;
-  font-size:12px;
-  opacity:.7;
-  margin-bottom:10px;
-}
-.controls{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  margin:12px 0;
-}
-button{
-  border:none;
-  border-radius:12px;
-  padding:10px;
-  background:#2563eb;
-  color:white;
+h1{text-align:center;margin:4px 0;}
+.time{text-align:center;font-size:12px;opacity:.7;}
+button,input{
+  width:100%;
+  margin-top:6px;
+  background:#020617;
+  color:#e5e7eb;
+  border:1px solid #334155;
+  border-radius:8px;
+  padding:8px;
 }
 .admin-btn{
   text-align:center;
-  font-size:12px;
   opacity:.4;
-  cursor:pointer;
+  font-size:12px;
+  margin-top:10px;
 }
-.admin{
-  margin-top:12px;
-  border-top:1px solid #334155;
-  padding-top:12px;
-  font-size:13px;
-}
-.hidden{ display:none; }
-
-.meter{
-  width:100%;
-  height:10px;
-  background:#020617;
-  border:1px solid #334155;
-  border-radius:6px;
-  overflow:hidden;
-}
-.meter div{
-  height:100%;
-  width:0%;
-  background:#22c55e;
-}
-
-textarea,input{
-  width:100%;
-  background:#020617;
-  border:1px solid #334155;
-  color:#e5e7eb;
-  border-radius:8px;
-  padding:6px;
-}
-label{ font-size:12px; opacity:.7; }
+.admin{margin-top:10px;border-top:1px solid #334155;padding-top:10px;}
+.hidden{display:none;}
+small{opacity:.6;}
 </style>
 </head>
 
 <body>
 <div class="radio">
 
-<div class="title">📻 YCB-89</div>
-<div class="status">● ЭФИР АКТИВЕН</div>
-<div class="time" id="mskTime"></div>
+<h1>📻 YCB-89</h1>
+<div class="time" id="clock"></div>
 
-<div class="controls">
-  <button id="start">▶ ПУСК</button>
-</div>
+<div id="status">● ОЖИДАНИЕ</div>
 
 <div class="admin-btn" id="openAdmin">admin</div>
 
 <div class="admin hidden" id="admin">
-<b>АДМИН ПАНЕЛЬ</b><br><br>
+<b>АДМИН</b><br>
 
-<button id="micBtn">🎙 МИКРОФОН</button><br><br>
+<label>Аудиофайл</label>
+<input type="file" id="file" accept="audio/*">
 
-<label>Сила сигнала</label>
-<div class="meter"><div id="vu"></div></div><br>
+<label>Время старта (МСК)</label>
+<input type="time" id="startTime">
 
-<label>ИИ-сообщение</label>
-<textarea id="ttsText" rows="2">Говорит YCB восемь девять</textarea>
-<button id="sayNow">▶ ДИКТОВАТЬ</button><br><br>
+<button id="save">💾 СОХРАНИТЬ</button>
 
-<label>Сообщение по времени (МСК)</label>
-<input id="ttsTime" placeholder="HH:MM">
-<button id="addMsg">⏰ ДОБАВИТЬ</button>
+<hr>
 
+<label>Текст сообщения</label>
+<input id="msgText">
+
+<label>Время (МСК)</label>
+<input type="time" id="msgTime">
+
+<button id="saveMsg">⏰ СОХРАНИТЬ</button>
+
+<small>
+⚠ Работает пока сайт открыт
+</small>
 </div>
+
+<audio id="player"></audio>
 
 </div>
 
 <script>
-/* ====== ВРЕМЯ МСК ====== */
-function updateTime(){
-  const d=new Date(Date.now()+3*3600000);
-  mskTime.textContent=
-    "МСК "+d.toISOString().substring(11,19);
+const clock=document.getElementById("clock");
+const status=document.getElementById("status");
+const player=document.getElementById("player");
+
+function mskNow(){
+  return new Date(Date.now()+3*3600000);
 }
-setInterval(updateTime,1000); updateTime();
+setInterval(()=>{
+  const d=mskNow();
+  clock.textContent="МСК "+d.toISOString().substr(11,8);
+},1000);
 
-/* ====== AUDIO ====== */
-const ctx=new AudioContext();
-const master=ctx.createGain();
-master.connect(ctx.destination);
-
-/* ШУМ */
-const noise=ctx.createBufferSource();
-const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-const data=buf.getChannelData(0);
-for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
-noise.buffer=buf;
-noise.loop=true;
-const noiseGain=ctx.createGain();
-noiseGain.gain.value=0.15;
-noise.connect(noiseGain).connect(master);
-
-/* МИКРОФОН */
-let micStream, micGain, analyser;
-const vu=document.getElementById("vu");
-
-/* VU */
-function drawVU(){
-  if(!analyser) return;
-  const a=new Uint8Array(analyser.frequencyBinCount);
-  analyser.getByteFrequencyData(a);
-  const v=a.reduce((s,x)=>s+x,0)/a.length;
-  vu.style.width=Math.min(100,v/2)+"%";
-  requestAnimationFrame(drawVU);
-}
-
-/* КНОПКИ */
-start.onclick=()=>{
-  ctx.resume();
-  noise.start();
-  start.disabled=true;
-};
-
+/* ===== ADMIN ===== */
 openAdmin.onclick=()=>{
-  if(prompt("Пароль:")==="3709")
+  if(prompt("Пароль")==="3709")
     admin.classList.toggle("hidden");
 };
 
-micBtn.onclick=async()=>{
-  if(micStream){
-    micStream.getTracks().forEach(t=>t.stop());
-    micStream=null;
-    micBtn.textContent="🎙 МИКРОФОН";
-    return;
-  }
-  micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-  const src=ctx.createMediaStreamSource(micStream);
-  micGain=ctx.createGain();
-  analyser=ctx.createAnalyser();
-  src.connect(analyser);
-  analyser.connect(micGain).connect(master);
-  micBtn.textContent="⛔ ВЫКЛ";
-  drawVU();
+/* ===== STORAGE ===== */
+let schedule=JSON.parse(localStorage.getItem("audioSchedule")||"null");
+let msgs=JSON.parse(localStorage.getItem("msgs")||"[]");
+
+save.onclick=()=>{
+  if(!file.files[0]) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    schedule={
+      time:startTime.value,
+      data:reader.result,
+      played:false
+    };
+    localStorage.setItem("audioSchedule",JSON.stringify(schedule));
+    alert("Сохранено");
+  };
+  reader.readAsDataURL(file.files[0]);
 };
 
-/* ====== ИИ ГОЛОС ====== */
-sayNow.onclick=()=>speak(ttsText.value);
-
-function speak(text){
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang="ru-RU";
-  u.rate=0.9;
-  speechSynthesis.speak(u);
-}
-
-/* ====== СООБЩЕНИЯ ПО ВРЕМЕНИ ====== */
-const msgs=[];
-addMsg.onclick=()=>{
-  msgs.push({t:ttsTime.value,txt:ttsText.value});
+saveMsg.onclick=()=>{
+  msgs.push({t:msgTime.value,txt:msgText.value,done:false});
+  localStorage.setItem("msgs",JSON.stringify(msgs));
 };
 
+/* ===== LOOP ===== */
 setInterval(()=>{
-  const d=new Date(Date.now()+3*3600000);
-  const now=d.toISOString().substring(11,16);
+  const now=mskNow().toISOString().substr(11,5);
+
+  if(schedule && !schedule.played && schedule.time<=now){
+    player.src=schedule.data;
+    player.play();
+    status.textContent="🔊 ЭФИР";
+    schedule.played=true;
+    localStorage.setItem("audioSchedule",JSON.stringify(schedule));
+  }
+
   msgs.forEach(m=>{
-    if(m.t===now){
-      speak(m.txt);
-      m.t=null;
+    if(!m.done && m.t<=now){
+      const u=new SpeechSynthesisUtterance(m.txt);
+      u.lang="ru-RU";
+      speechSynthesis.speak(u);
+      m.done=true;
+      localStorage.setItem("msgs",JSON.stringify(msgs));
     }
   });
 },1000);
