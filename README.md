@@ -113,7 +113,7 @@ analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Плавный водопад ===== */
+/* ===== Плавный водопад с % и подписанными значениями ===== */
 const barsCount = 64;
 let noiseHeights = new Array(barsCount).fill(0);
 let audioHeights = new Array(barsCount).fill(0);
@@ -127,33 +127,42 @@ function drawSpectrum(){
     // шум
     let targetNoise = (air.on && !air.noisePaused) ? air.noiseVolume/1000 * canvas.height : 0;
     noiseHeights[i] += (targetNoise - noiseHeights[i]) * 0.1;
-    if(noiseHeights[i] > 0.5){
+    if(noiseHeights[i]>0.5){
       ctx2.fillStyle="#22c55e";
       ctx2.fillRect(i*barWidth,canvas.height-noiseHeights[i],barWidth/3,noiseHeights[i]);
+      ctx2.fillStyle="#e5e7eb";
+      ctx2.font="8px system-ui";
+      ctx2.fillText(Math.round((noiseHeights[i]/canvas.height)*100)+"%",i*barWidth,canvas.height-noiseHeights[i]-2);
     }
 
     // аудио
     let targetAudio = (air.on && air.currentAudio && !player.paused) ? air.audioVolume/1000 * canvas.height : 0;
     audioHeights[i] += (targetAudio - audioHeights[i]) * 0.1;
-    if(audioHeights[i] > 0.5){
+    if(audioHeights[i]>0.5){
       ctx2.fillStyle="#3b82f6";
       ctx2.fillRect(i*barWidth + barWidth/3, canvas.height-audioHeights[i], barWidth/3, audioHeights[i]);
+      ctx2.fillStyle="#e5e7eb";
+      ctx2.font="8px system-ui";
+      ctx2.fillText(Math.round((audioHeights[i]/canvas.height)*100)+"%",i*barWidth + barWidth/3, canvas.height-audioHeights[i]-2);
     }
 
     // сообщение
     let targetMsg = (air.on && speechSynthesis.speaking) ? air.msgVolume/1000 * canvas.height : 0;
     msgHeights[i] += (targetMsg - msgHeights[i]) * 0.1;
-    if(msgHeights[i] > 0.5){
+    if(msgHeights[i]>0.5){
       ctx2.fillStyle="#facc15";
       ctx2.fillRect(i*barWidth + 2*barWidth/3, canvas.height-msgHeights[i], barWidth/3, msgHeights[i]);
+      ctx2.fillStyle="#e5e7eb";
+      ctx2.font="8px system-ui";
+      ctx2.fillText(Math.round((msgHeights[i]/canvas.height)*100)+"%",i*barWidth + 2*barWidth/3, canvas.height-msgHeights[i]-2);
     }
   }
 
-  // шкала слева
+  // шкала слева 0%-100% по 10%
   ctx2.fillStyle="#e5e7eb";
   ctx2.font="10px system-ui";
-  for(let p=0;p<=1000;p+=100){
-    const y = canvas.height - p/1000*canvas.height;
+  for(let p=0;p<=100;p+=10){
+    const y = canvas.height - (p/100)*canvas.height;
     ctx2.fillText(p+"%",2,y+10);
     ctx2.beginPath();
     ctx2.moveTo(20,y);
