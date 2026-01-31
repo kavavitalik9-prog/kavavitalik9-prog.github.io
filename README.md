@@ -19,9 +19,35 @@ body{
   border-radius:16px;
   padding:14px;
 }
-h1{text-align:center;margin:4px 0;}
+h1{text-align:center;margin:6px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
-button,input{
+.status{text-align:center;margin:8px 0;font-weight:600;}
+.meter{
+  height:10px;
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:6px;
+  overflow:hidden;
+}
+.meter>div{
+  height:100%;
+  width:0%;
+  background:#22c55e;
+  transition:.1s;
+}
+.admin-btn{
+  text-align:center;
+  opacity:.4;
+  font-size:12px;
+  margin-top:10px;
+}
+.admin{
+  margin-top:10px;
+  border-top:1px solid #334155;
+  padding-top:10px;
+}
+.hidden{display:none;}
+button{
   width:100%;
   margin-top:6px;
   background:#020617;
@@ -30,15 +56,6 @@ button,input{
   border-radius:8px;
   padding:8px;
 }
-.admin-btn{
-  text-align:center;
-  opacity:.4;
-  font-size:12px;
-  margin-top:10px;
-}
-.admin{margin-top:10px;border-top:1px solid #334155;padding-top:10px;}
-.hidden{display:none;}
-small{opacity:.6;}
 </style>
 </head>
 
@@ -48,52 +65,52 @@ small{opacity:.6;}
 <h1>📻 YCB-89</h1>
 <div class="time" id="clock"></div>
 
-<div id="status">● ОЖИДАНИЕ</div>
+<div class="status" id="status">● НЕТ СИГНАЛА</div>
+
+<div class="meter"><div id="level"></div></div>
 
 <div class="admin-btn" id="openAdmin">admin</div>
 
 <div class="admin hidden" id="admin">
-<b>АДМИН</b><br>
-
-<label>Аудиофайл</label>
-<input type="file" id="file" accept="audio/*">
-
-<label>Время старта (МСК)</label>
-<input type="time" id="startTime">
-
-<button id="save">💾 СОХРАНИТЬ</button>
-
-<hr>
-
-<label>Текст сообщения</label>
-<input id="msgText">
-
-<label>Время (МСК)</label>
-<input type="time" id="msgTime">
-
-<button id="saveMsg">⏰ СОХРАНИТЬ</button>
-
-<small>
-⚠ Работает пока сайт открыт
-</small>
+<button id="toggle">▶ ВКЛЮЧИТЬ ЭФИР</button>
+<button id="mic">🎙 МИКРОФОН</button>
 </div>
-
-<audio id="player"></audio>
 
 </div>
 
 <script>
-const clock=document.getElementById("clock");
-const status=document.getElementById("status");
-const player=document.getElementById("player");
-
-function mskNow(){
-  return new Date(Date.now()+3*3600000);
+/* ===== ВРЕМЯ МСК ===== */
+function msk(){
+  return new Date(Date.now()+3*3600000)
+    .toISOString().substr(11,8);
 }
+setInterval(()=>clock.textContent="МСК "+msk(),1000);
+
+/* ===== AUDIO ===== */
+const ctx=new AudioContext();
+const noise=ctx.createBufferSource();
+const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+const data=buffer.getChannelData(0);
+for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+noise.buffer=buffer;
+noise.loop=true;
+
+const gain=ctx.createGain();
+const analyser=ctx.createAnalyser();
+analyser.fftSize=256;
+
+noise.connect(gain).connect(analyser).connect(ctx.destination);
+
+let on=false;
+let micStream=null;
+
+/* ===== УРОВЕНЬ ===== */
 setInterval(()=>{
-  const d=mskNow();
-  clock.textContent="МСК "+d.toISOString().substr(11,8);
-},1000);
+  const a=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(a);
+  const v=a.reduce((s,x)=>s+x,0)/a.length;
+  level.style.width=Math.min(100,v/2)+"%";
+},100);
 
 /* ===== ADMIN ===== */
 openAdmin.onclick=()=>{
@@ -101,52 +118,34 @@ openAdmin.onclick=()=>{
     admin.classList.toggle("hidden");
 };
 
-/* ===== STORAGE ===== */
-let schedule=JSON.parse(localStorage.getItem("audioSchedule")||"null");
-let msgs=JSON.parse(localStorage.getItem("msgs")||"[]");
-
-save.onclick=()=>{
-  if(!file.files[0]) return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    schedule={
-      time:startTime.value,
-      data:reader.result,
-      played:false
-    };
-    localStorage.setItem("audioSchedule",JSON.stringify(schedule));
-    alert("Сохранено");
-  };
-  reader.readAsDataURL(file.files[0]);
-};
-
-saveMsg.onclick=()=>{
-  msgs.push({t:msgTime.value,txt:msgText.value,done:false});
-  localStorage.setItem("msgs",JSON.stringify(msgs));
-};
-
-/* ===== LOOP ===== */
-setInterval(()=>{
-  const now=mskNow().toISOString().substr(11,5);
-
-  if(schedule && !schedule.played && schedule.time<=now){
-    player.src=schedule.data;
-    player.play();
-    status.textContent="🔊 ЭФИР";
-    schedule.played=true;
-    localStorage.setItem("audioSchedule",JSON.stringify(schedule));
+toggle.onclick=async()=>{
+  await ctx.resume();
+  if(!on){
+    noise.start();
+    gain.gain.value=0.3;
+    status.textContent="● В ЭФИРЕ";
+    toggle.textContent="⏸ ПАУЗА";
+    on=true;
+  }else{
+    gain.gain.value=0;
+    status.textContent="● В ЭФИРЕ (ПАУЗА)";
+    toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
+    on=false;
   }
+};
 
-  msgs.forEach(m=>{
-    if(!m.done && m.t<=now){
-      const u=new SpeechSynthesisUtterance(m.txt);
-      u.lang="ru-RU";
-      speechSynthesis.speak(u);
-      m.done=true;
-      localStorage.setItem("msgs",JSON.stringify(msgs));
-    }
-  });
-},1000);
+mic.onclick=async()=>{
+  if(!micStream){
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const micSrc=ctx.createMediaStreamSource(micStream);
+    micSrc.connect(gain);
+    mic.textContent="⛔ ВЫКЛ МИКРОФОН";
+  }else{
+    micStream.getTracks().forEach(t=>t.stop());
+    micStream=null;
+    mic.textContent="🎙 МИКРОФОН";
+  }
+};
 </script>
 </body>
 </html>
