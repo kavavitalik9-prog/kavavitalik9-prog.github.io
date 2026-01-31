@@ -6,7 +6,7 @@
 <title>YCB-89 Локальное Радио</title>
 <style>
 body{background:#020617;color:#e5e7eb;font-family:system-ui;display:flex;justify-content:center;padding:20px;}
-.radio{width:360px;border:1px solid #334155;border-radius:16px;padding:14px;}
+.radio{width:400px;border:1px solid #334155;border-radius:16px;padding:14px;}
 h1{text-align:center;margin:4px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
 .status{text-align:center;margin:8px 0;font-weight:600;}
@@ -15,7 +15,10 @@ h1{text-align:center;margin:4px 0;}
 .hidden{display:none;}
 button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:8px;padding:8px;}
 label{font-size:12px;margin-top:6px;display:block;}
-canvas{width:100%;height:120px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;display:block;}
+canvas{width:100%;height:150px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;display:block;}
+.legend{display:flex;justify-content:space-around;margin-top:4px;font-size:12px;}
+.legend div{display:flex;align-items:center;}
+.legend span{width:12px;height:12px;margin-right:4px;display:inline-block;}
 </style>
 </head>
 <body>
@@ -25,6 +28,11 @@ canvas{width:100%;height:120px;margin-top:10px;background:#020617;border:1px sol
 <div class="status" id="status">● НЕТ СИГНАЛА</div>
 
 <canvas id="spectrum"></canvas>
+<div class="legend">
+  <div><span style="background:#22c55e"></span>Шум</div>
+  <div><span style="background:#3b82f6"></span>Аудио</div>
+  <div><span style="background:#facc15"></span>Сообщение</div>
+</div>
 
 <div class="admin-btn" id="openAdmin">admin</div>
 
@@ -105,19 +113,26 @@ analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Спектр с шкалой слева ===== */
+/* ===== Спектр с 3 источниками ===== */
 function drawSpectrum(){
-  const a = new Uint8Array(analyser.frequencyBinCount);
-  analyser.getByteFrequencyData(a);
-
   ctx2.clearRect(0,0,canvas.width,canvas.height);
+  const barWidth = canvas.width/64; // 64 полоски для всех
 
-  // полоски
-  const barWidth = canvas.width/a.length;
-  for(let i=0;i<a.length;i++){
-    const barHeight = a[i]*2; 
+  for(let i=0;i<64;i++){
+    // шум
+    let hNoise = air.noiseVolume/1000 * canvas.height + (Math.random()*20-10);
     ctx2.fillStyle="#22c55e";
-    ctx2.fillRect(i*barWidth,canvas.height-barHeight,barWidth,barHeight);
+    ctx2.fillRect(i*barWidth,canvas.height-hNoise,barWidth/3,hNoise);
+
+    // аудио
+    let hAudio = air.audioVolume/1000 * canvas.height + (Math.random()*20-10);
+    ctx2.fillStyle="#3b82f6";
+    ctx2.fillRect(i*barWidth + barWidth/3,canvas.height-hAudio,barWidth/3,hAudio);
+
+    // сообщение
+    let hMsg = air.msgVolume/1000 * canvas.height + (Math.random()*20-10);
+    ctx2.fillStyle="#facc15";
+    ctx2.fillRect(i*barWidth + 2*barWidth/3,canvas.height-hMsg,barWidth/3,hMsg);
   }
 
   // шкала слева
@@ -132,7 +147,11 @@ function drawSpectrum(){
     ctx2.strokeStyle="#334155";
     ctx2.stroke();
   }
+  // 0% снизу
+  ctx2.fillText("0%",2,canvas.height-2);
 }
+
+/* ===== Обновление спектра ===== */
 setInterval(drawSpectrum,50);
 
 /* ===== Эфир ===== */
@@ -192,17 +211,11 @@ function syncVolume(input, range, key){
   input.oninput = ()=>{ 
     air[key] = parseInt(input.value); 
     range.value = input.value;
-    updateVolumes();
   }
   range.oninput = ()=>{ 
     air[key] = parseInt(range.value); 
     input.value = range.value;
-    updateVolumes();
   }
-}
-function updateVolumes(){
-  noiseGain.gain.value = air.on && !air.noisePaused ? air.noiseVolume/1000 : 0;
-  playerGain.gain.value = air.audioVolume/1000;
 }
 
 syncVolume(document.getElementById("noiseVolumeInput"),document.getElementById("noiseVolumeRange"),'noiseVolume');
