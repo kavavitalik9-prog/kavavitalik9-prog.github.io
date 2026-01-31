@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YCB-89</title>
+
 <style>
 body{
   background:#020617;
@@ -11,7 +12,7 @@ body{
   font-family:system-ui;
   display:flex;
   justify-content:center;
-  padding-top:20px;
+  padding:20px;
 }
 .radio{
   width:360px;
@@ -19,9 +20,10 @@ body{
   border-radius:16px;
   padding:14px;
 }
-h1{text-align:center;margin:6px 0;}
+h1{text-align:center;margin:4px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
 .status{text-align:center;margin:8px 0;font-weight:600;}
+
 .meter{
   height:10px;
   background:#020617;
@@ -35,11 +37,13 @@ h1{text-align:center;margin:6px 0;}
   background:#22c55e;
   transition:.1s;
 }
+
 .admin-btn{
   text-align:center;
   opacity:.4;
   font-size:12px;
   margin-top:10px;
+  cursor:pointer;
 }
 .admin{
   margin-top:10px;
@@ -47,7 +51,8 @@ h1{text-align:center;margin:6px 0;}
   padding-top:10px;
 }
 .hidden{display:none;}
-button{
+
+button,input{
   width:100%;
   margin-top:6px;
   background:#020617;
@@ -56,6 +61,7 @@ button{
   border-radius:8px;
   padding:8px;
 }
+small{opacity:.6}
 </style>
 </head>
 
@@ -72,8 +78,24 @@ button{
 <div class="admin-btn" id="openAdmin">admin</div>
 
 <div class="admin hidden" id="admin">
+
 <button id="toggle">▶ ВКЛЮЧИТЬ ЭФИР</button>
-<button id="mic">🎙 МИКРОФОН</button>
+
+<hr>
+
+<b>🔊 Звук</b>
+<input type="file" id="audioFile" accept="audio/*">
+<button id="playAudio">▶ ПУСТИТЬ ЗВУК</button>
+
+<hr>
+
+<b>🗣 Сообщение</b>
+<input id="msgText" placeholder="Текст">
+<button id="say">📢 ПРОИЗНЕСТИ</button>
+
+<small>
+Шум всегда работает, если эфир включён
+</small>
 </div>
 
 </div>
@@ -86,31 +108,59 @@ function msk(){
 }
 setInterval(()=>clock.textContent="МСК "+msk(),1000);
 
-/* ===== AUDIO ===== */
+/* ===== AUDIO CONTEXT ===== */
 const ctx=new AudioContext();
-const noise=ctx.createBufferSource();
-const buffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-const data=buffer.getChannelData(0);
+
+/* --- ШУМ --- */
+const noiseBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+const data=noiseBuf.getChannelData(0);
 for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
-noise.buffer=buffer;
+
+const noise=ctx.createBufferSource();
+noise.buffer=noiseBuf;
 noise.loop=true;
 
-const gain=ctx.createGain();
+const noiseGain=ctx.createGain();
+noiseGain.gain.value=0;
+
 const analyser=ctx.createAnalyser();
 analyser.fftSize=256;
 
-noise.connect(gain).connect(analyser).connect(ctx.destination);
+noise.connect(noiseGain).connect(analyser).connect(ctx.destination);
 
-let on=false;
-let micStream=null;
-
-/* ===== УРОВЕНЬ ===== */
+/* --- УРОВЕНЬ --- */
 setInterval(()=>{
   const a=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
   const v=a.reduce((s,x)=>s+x,0)/a.length;
   level.style.width=Math.min(100,v/2)+"%";
 },100);
+
+/* ===== СОСТОЯНИЕ ===== */
+let on=localStorage.getItem("on")==="1";
+
+/* ===== ВОССТАНОВЛЕНИЕ ===== */
+(async()=>{
+  await ctx.resume();
+  noise.start();
+  if(on) startAir(); else stopAir();
+})();
+
+/* ===== ФУНКЦИИ ===== */
+function startAir(){
+  noiseGain.gain.value=0.3;
+  status.textContent="● В ЭФИРЕ";
+  toggle.textContent="⏸ ВЫКЛЮЧИТЬ ЭФИР";
+  on=true;
+  localStorage.setItem("on","1");
+}
+function stopAir(){
+  noiseGain.gain.value=0;
+  status.textContent="● НЕТ СИГНАЛА";
+  toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
+  on=false;
+  localStorage.setItem("on","0");
+}
 
 /* ===== ADMIN ===== */
 openAdmin.onclick=()=>{
@@ -120,31 +170,28 @@ openAdmin.onclick=()=>{
 
 toggle.onclick=async()=>{
   await ctx.resume();
-  if(!on){
-    noise.start();
-    gain.gain.value=0.3;
-    status.textContent="● В ЭФИРЕ";
-    toggle.textContent="⏸ ПАУЗА";
-    on=true;
-  }else{
-    gain.gain.value=0;
-    status.textContent="● В ЭФИРЕ (ПАУЗА)";
-    toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
-    on=false;
-  }
+  on ? stopAir() : startAir();
 };
 
-mic.onclick=async()=>{
-  if(!micStream){
-    micStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    const micSrc=ctx.createMediaStreamSource(micStream);
-    micSrc.connect(gain);
-    mic.textContent="⛔ ВЫКЛ МИКРОФОН";
-  }else{
-    micStream.getTracks().forEach(t=>t.stop());
-    micStream=null;
-    mic.textContent="🎙 МИКРОФОН";
-  }
+/* ===== ЗВУК ===== */
+playAudio.onclick=async()=>{
+  if(!on) return alert("Эфир выключен");
+  if(!audioFile.files[0]) return;
+
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const a=new Audio(reader.result);
+    a.play();
+  };
+  reader.readAsDataURL(audioFile.files[0]);
+};
+
+/* ===== TTS ===== */
+say.onclick=()=>{
+  if(!on) return alert("Эфир выключен");
+  const u=new SpeechSynthesisUtterance(msgText.value);
+  u.lang="ru-RU";
+  speechSynthesis.speak(u);
 };
 </script>
 </body>
