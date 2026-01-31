@@ -159,3 +159,62 @@ document.getElementById("say").onclick=()=>{
 </script>
 </body>
 </html>
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Папка для аудио
+const upload = multer({ dest: "public/uploads/" });
+app.use(express.static("public"));
+
+// Состояние эфира
+let airState = {
+  on: false,
+  currentAudio: null,
+  messages: []
+};
+
+// Рассылка состояния всем
+function broadcastState() {
+  const data = JSON.stringify({ type: "state", air: airState });
+  wss.clients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) client.send(data);
+  });
+}
+
+// WebSocket соединение
+wss.on("connection", ws => {
+  ws.send(JSON.stringify({ type: "state", air: airState }));
+
+  ws.on("message", msg => {
+    try {
+      const data = JSON.parse(msg);
+      if (data.type === "setAir") {
+        airState.on = data.on;
+        broadcastState();
+      } else if (data.type === "addMessage") {
+        airState.messages.push({ text: data.text, time: Date.now() });
+        broadcastState();
+      } else if (data.type === "setAudio") {
+        airState.currentAudio = data.file;
+        broadcastState();
+      }
+    } catch(e) {}
+  });
+});
+
+// Загрузка аудио
+app.post("/upload", upload.single("audio"), (req,res)=>{
+  const fileName = req.file.filename + path.extname(req.file.originalname);
+  fs.renameSync(req.file.path, path.join("public/uploads", fileName));
+  res.json({file: fileName});
+});
+
+server.listen(3000, ()=>console.log("Сервер запущен на http://localhost:3000"));
