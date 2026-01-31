@@ -16,6 +16,7 @@ h1{text-align:center;margin:4px 0;}
 .admin{margin-top:10px;border-top:1px solid #334155;padding-top:10px;}
 .hidden{display:none;}
 button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:8px;padding:8px;}
+canvas{width:100%;height:100px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;}
 </style>
 </head>
 <body>
@@ -24,6 +25,8 @@ button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1
 <div class="time" id="clock"></div>
 <div class="status" id="status">● НЕТ СИГНАЛА</div>
 <div class="meter"><div id="level"></div></div>
+<canvas id="spectrum"></canvas>
+
 <div class="admin-btn" id="openAdmin">admin</div>
 
 <div class="admin hidden" id="admin">
@@ -45,76 +48,92 @@ button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1
 </div>
 
 <script>
+/* ===== ВРЕМЯ МСК ===== */
 const clock=document.getElementById("clock");
-setInterval(()=>clock.textContent="МСК "+new Date(Date.now()+3*3600000).toISOString().substr(11,8),1000);
+setInterval(()=>{
+  const d=new Date(Date.now()+3*3600000);
+  clock.textContent="МСК "+d.toISOString().substr(11,8);
+},100);
 
-/* WebSocket */
+/* ===== WebSocket ===== */
 const ws = new WebSocket(`ws://${location.host}`);
 let air={on:false,currentAudio:null,messages:[]};
-ws.onmessage = e=>{
+ws.onmessage=e=>{
   const msg=JSON.parse(e.data);
-  if(msg.type==="state"){
-    air = msg.air;
-    updateState();
-  }
+  if(msg.type==="state"){ air=msg.air; updateState(); }
 };
 
-/* AudioContext шум */
-const ctx = new (window.AudioContext||window.webkitAudioContext)();
-const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
-const data = noiseBuf.getChannelData(0);
+/* ===== AudioContext и шум ===== */
+const ctx=new (window.AudioContext||window.webkitAudioContext)();
+const noiseBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+const data=noiseBuf.getChannelData(0);
 for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
-const noise = ctx.createBufferSource();
-noise.buffer = noiseBuf;
-noise.loop = true;
-const gain = ctx.createGain();
-gain.gain.value = 0;
+const noise=ctx.createBufferSource();
+noise.buffer=noiseBuf;
+noise.loop=true;
+const gain=ctx.createGain();
+gain.gain.value=0;
 noise.connect(gain).connect(ctx.destination);
 noise.start();
 
-/* Уровень */
-const analyser = ctx.createAnalyser();
+/* ===== Анализатор ===== */
+const analyser=ctx.createAnalyser();
 gain.connect(analyser);
+analyser.fftSize=256;
+const canvas=document.getElementById("spectrum");
+const ctx2=canvas.getContext("2d");
+
+/* ===== Индикатор уровня и спектр ===== */
 setInterval(()=>{
   const a=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
   const v=a.reduce((s,x)=>s+x,0)/a.length;
-  document.getElementById("level").style.width = Math.min(100,v/2)+"%";
+  document.getElementById("level").style.width=Math.min(100,v/2)+"%";
+
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  const barWidth=canvas.width/a.length;
+  for(let i=0;i<a.length;i++){
+    const barHeight=a[i];
+    ctx2.fillStyle="#22c55e";
+    ctx2.fillRect(i*barWidth,canvas.height-barHeight,barWidth,barHeight);
+  }
 },100);
 
-const statusEl = document.getElementById("status");
-const toggle = document.getElementById("toggle");
-
-/* Эфир */
+/* ===== Эфир ===== */
+const statusEl=document.getElementById("status");
+const toggle=document.getElementById("toggle");
 function updateState(){
   if(air.on){
-    gain.gain.value = 0.15;
+    gain.gain.value=0.15;
     statusEl.textContent="● В ЭФИРЕ";
     toggle.textContent="⏸ ВЫКЛЮЧИТЬ ЭФИР";
   }else{
-    gain.gain.value = 0;
+    gain.gain.value=0;
     statusEl.textContent="● НЕТ СИГНАЛА";
     toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
   }
+  if(air.currentAudio){
+    player.src="/uploads/"+air.currentAudio;
+    player.play();
+  }
 }
 
-/* ADMIN */
+/* ===== ADMIN ===== */
 const admin=document.getElementById("admin");
 document.getElementById("openAdmin").onclick=()=>{
-  if(prompt("Пароль")==="3709") admin.classList.toggle("hidden");
+  const pass=prompt("Введите пароль:");
+  if(pass==="3709") admin.classList.toggle("hidden");
+  else alert("Неверный пароль!");
 };
 
+/* ===== Кнопки ===== */
 toggle.onclick=async()=>{
   await ctx.resume();
-  ws.send(JSON.stringify({type:"setAir",on:!air.on}));
+  ws.send(JSON.stringify({type:"setAir", on:!air.on}));
 };
+document.getElementById("save").onclick=()=>ws.send(JSON.stringify({type:"setAir", on:air.on}));
 
-document.getElementById("save").onclick=()=>{
-  ws.send(JSON.stringify({type:"setAir",on:air.on}));
-  alert("Состояние сохранено для всех");
-};
-
-/* Плей аудио */
+/* ===== Аудио ===== */
 const player=document.getElementById("player");
 document.getElementById("playAudio").onclick=()=>{
   if(!air.on) return alert("Эфир выключен");
@@ -122,22 +141,20 @@ document.getElementById("playAudio").onclick=()=>{
   if(!file) return;
   const fd=new FormData();
   fd.append("audio",file);
-  fetch("/upload",{method:"POST",body:fd})
-    .then(r=>r.json())
-    .then(j=>{
-      player.src="/uploads/"+j.file;
-      player.play();
-      ws.send(JSON.stringify({type:"setAudio",file:j.file}));
-    });
+  fetch("/upload",{method:"POST",body:fd}).then(r=>r.json()).then(j=>{
+    player.src="/uploads/"+j.file;
+    player.play();
+    ws.send(JSON.stringify({type:"setAudio", file:j.file}));
+  });
 };
 
-/* TTS */
+/* ===== TTS Сообщение ===== */
 document.getElementById("say").onclick=()=>{
   if(!air.on) return alert("Эфир выключен");
   const text=document.getElementById("msgText").value;
   if(!text) return;
   speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-  ws.send(JSON.stringify({type:"addMessage",text:text}));
+  ws.send(JSON.stringify({type:"addMessage", text:text}));
 };
 </script>
 </body>
