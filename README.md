@@ -33,16 +33,12 @@ body{
   text-align:center;
   font-size:12px;
   color:#22c55e;
-  margin-bottom:10px;
 }
-button{
-  width:70px;
-  height:70px;
-  border-radius:50%;
-  border:none;
-  font-size:24px;
-  background:#2563eb;
-  color:white;
+.time{
+  text-align:center;
+  font-size:12px;
+  opacity:.7;
+  margin-bottom:10px;
 }
 .controls{
   display:flex;
@@ -50,27 +46,50 @@ button{
   gap:12px;
   margin:12px 0;
 }
-.volume input{ width:100%; }
-.admin{
+button{
+  border:none;
+  border-radius:12px;
+  padding:10px;
+  background:#2563eb;
+  color:white;
+}
+.admin-btn{
   text-align:center;
   font-size:12px;
   opacity:.4;
-  margin-top:10px;
   cursor:pointer;
 }
-.admin-panel{
+.admin{
   margin-top:12px;
   border-top:1px solid #334155;
   padding-top:12px;
   font-size:13px;
 }
 .hidden{ display:none; }
-.list{
-  font-size:12px;
-  margin-top:6px;
-  opacity:.8;
+
+.meter{
+  width:100%;
+  height:10px;
+  background:#020617;
+  border:1px solid #334155;
+  border-radius:6px;
+  overflow:hidden;
 }
-.mic-on{ background:#dc2626!important; }
+.meter div{
+  height:100%;
+  width:0%;
+  background:#22c55e;
+}
+
+textarea,input{
+  width:100%;
+  background:#020617;
+  border:1px solid #334155;
+  color:#e5e7eb;
+  border-radius:8px;
+  padding:6px;
+}
+label{ font-size:12px; opacity:.7; }
 </style>
 </head>
 
@@ -79,101 +98,128 @@ button{
 
 <div class="title">📻 YCB-89</div>
 <div class="status">● ЭФИР АКТИВЕН</div>
+<div class="time" id="mskTime"></div>
 
 <div class="controls">
-  <button id="play">▶</button>
-  <button id="mic">🎙</button>
+  <button id="start">▶ ПУСК</button>
 </div>
 
-<div class="volume">
-🔊 <input type="range" min="0" max="100" value="60">
+<div class="admin-btn" id="openAdmin">admin</div>
+
+<div class="admin hidden" id="admin">
+<b>АДМИН ПАНЕЛЬ</b><br><br>
+
+<button id="micBtn">🎙 МИКРОФОН</button><br><br>
+
+<label>Сила сигнала</label>
+<div class="meter"><div id="vu"></div></div><br>
+
+<label>ИИ-сообщение</label>
+<textarea id="ttsText" rows="2">Говорит YCB восемь девять</textarea>
+<button id="sayNow">▶ ДИКТОВАТЬ</button><br><br>
+
+<label>Сообщение по времени (МСК)</label>
+<input id="ttsTime" placeholder="HH:MM">
+<button id="addMsg">⏰ ДОБАВИТЬ</button>
+
 </div>
-
-<div class="admin" id="openAdmin">admin</div>
-
-<div class="admin-panel hidden" id="adminPanel">
-<b>Админ панель</b><br><br>
-
-<input type="file" id="addSound" accept="audio/*" multiple><br>
-<div class="list" id="soundList"></div><br>
-
-<label>
-<input type="checkbox" id="randomMode"> случайный сигнал (УВБ)
-</label>
-</div>
-
-<audio id="audio" loop></audio>
 
 </div>
 
 <script>
-const audio = document.getElementById("audio");
-const playBtn = document.getElementById("play");
-const micBtn = document.getElementById("mic");
-const vol = document.querySelector("input[type=range]");
-const adminPanel = document.getElementById("adminPanel");
-const listDiv = document.getElementById("soundList");
-const randomMode = document.getElementById("randomMode");
-
-let playing = false;
-let sounds = JSON.parse(localStorage.getItem("sounds")||"[]");
-let micStream = null;
-
-// восстановление
-if(sounds[0]) audio.src = sounds[0];
-
-// play
-playBtn.onclick = ()=>{
-  playing = !playing;
-  playBtn.textContent = playing ? "⏸" : "▶";
-  playing ? audio.play() : audio.pause();
-};
-
-vol.oninput = ()=> audio.volume = vol.value/100;
-
-// админка
-openAdmin.onclick = ()=>{
-  const p = prompt("Пароль:");
-  if(p==="3709") adminPanel.classList.toggle("hidden");
-};
-
-// добавить звуки
-addSound.onchange = e=>{
-  for(const f of e.target.files){
-    const url = URL.createObjectURL(f);
-    sounds.push(url);
-  }
-  localStorage.setItem("sounds", JSON.stringify(sounds));
-  renderList();
-};
-
-function renderList(){
-  listDiv.innerHTML = sounds.map((s,i)=>`▶ сигнал ${i+1}`).join("<br>");
+/* ====== ВРЕМЯ МСК ====== */
+function updateTime(){
+  const d=new Date(Date.now()+3*3600000);
+  mskTime.textContent=
+    "МСК "+d.toISOString().substring(11,19);
 }
-renderList();
+setInterval(updateTime,1000); updateTime();
 
-// случайный УВБ
-setInterval(()=>{
-  if(!randomMode.checked || !playing || sounds.length<2) return;
-  audio.src = sounds[Math.floor(Math.random()*sounds.length)];
-  audio.play();
-}, 60000 + Math.random()*60000);
+/* ====== AUDIO ====== */
+const ctx=new AudioContext();
+const master=ctx.createGain();
+master.connect(ctx.destination);
 
-// микрофон
-micBtn.onclick = async ()=>{
+/* ШУМ */
+const noise=ctx.createBufferSource();
+const buf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
+const data=buf.getChannelData(0);
+for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
+noise.buffer=buf;
+noise.loop=true;
+const noiseGain=ctx.createGain();
+noiseGain.gain.value=0.15;
+noise.connect(noiseGain).connect(master);
+
+/* МИКРОФОН */
+let micStream, micGain, analyser;
+const vu=document.getElementById("vu");
+
+/* VU */
+function drawVU(){
+  if(!analyser) return;
+  const a=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(a);
+  const v=a.reduce((s,x)=>s+x,0)/a.length;
+  vu.style.width=Math.min(100,v/2)+"%";
+  requestAnimationFrame(drawVU);
+}
+
+/* КНОПКИ */
+start.onclick=()=>{
+  ctx.resume();
+  noise.start();
+  start.disabled=true;
+};
+
+openAdmin.onclick=()=>{
+  if(prompt("Пароль:")==="3709")
+    admin.classList.toggle("hidden");
+};
+
+micBtn.onclick=async()=>{
   if(micStream){
     micStream.getTracks().forEach(t=>t.stop());
     micStream=null;
-    micBtn.classList.remove("mic-on");
-    audio.muted=false;
+    micBtn.textContent="🎙 МИКРОФОН";
     return;
   }
-  micStream = await navigator.mediaDevices.getUserMedia({audio:true});
-  audio.srcObject = micStream;
-  audio.muted=false;
-  audio.play();
-  micBtn.classList.add("mic-on");
+  micStream=await navigator.mediaDevices.getUserMedia({audio:true});
+  const src=ctx.createMediaStreamSource(micStream);
+  micGain=ctx.createGain();
+  analyser=ctx.createAnalyser();
+  src.connect(analyser);
+  analyser.connect(micGain).connect(master);
+  micBtn.textContent="⛔ ВЫКЛ";
+  drawVU();
 };
+
+/* ====== ИИ ГОЛОС ====== */
+sayNow.onclick=()=>speak(ttsText.value);
+
+function speak(text){
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="ru-RU";
+  u.rate=0.9;
+  speechSynthesis.speak(u);
+}
+
+/* ====== СООБЩЕНИЯ ПО ВРЕМЕНИ ====== */
+const msgs=[];
+addMsg.onclick=()=>{
+  msgs.push({t:ttsTime.value,txt:ttsText.value});
+};
+
+setInterval(()=>{
+  const d=new Date(Date.now()+3*3600000);
+  const now=d.toISOString().substring(11,16);
+  msgs.forEach(m=>{
+    if(m.t===now){
+      speak(m.txt);
+      m.t=null;
+    }
+  });
+},1000);
 </script>
 </body>
 </html>
