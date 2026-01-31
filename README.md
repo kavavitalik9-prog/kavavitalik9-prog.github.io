@@ -10,8 +10,9 @@ body{background:#020617;color:#e5e7eb;font-family:system-ui;display:flex;justify
 h1{text-align:center;margin:4px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
 .status{text-align:center;margin:8px 0;font-weight:600;}
-.meter{height:10px;background:#020617;border:1px solid #334155;border-radius:6px;overflow:hidden;margin-top:4px;}
-.meter>div{height:100%;width:0%;background:#22c55e;transition:.1s;}
+.meter{height:40px;background:#020617;border:1px solid #334155;border-radius:6px;overflow:hidden;position:relative;}
+.meter>div{height:100%;width:0%;background:#22c55e;transition:.05s;}
+.meter span{position:absolute;right:4px;top:0;color:#e5e7eb;font-size:12px;line-height:40px;}
 .admin-btn{text-align:center;opacity:.4;font-size:12px;margin-top:10px;cursor:pointer;}
 .admin{margin-top:10px;border-top:1px solid #334155;padding-top:10px;}
 .hidden{display:none;}
@@ -27,11 +28,9 @@ canvas{width:100%;height:100px;margin-top:10px;background:#020617;border:1px sol
 <div class="time" id="clock"></div>
 <div class="status" id="status">● НЕТ СИГНАЛА</div>
 
-<div class="section">
-<b>Уровни:</b>
-<div>Шум<div class="meter"><div id="levelNoise"></div></div></div>
-<div>Аудио<div class="meter"><div id="levelAudio"></div></div></div>
-<div>Сообщения<div class="meter"><div id="levelMsg"></div></div></div>
+<div class="meter">
+  <div id="level"></div>
+  <span id="percent">0%</span>
 </div>
 
 <canvas id="spectrum"></canvas>
@@ -44,22 +43,17 @@ canvas{width:100%;height:100px;margin-top:10px;background:#020617;border:1px sol
 <button id="save">💾 СОХРАНИТЬ СОСТОЯНИЕ</button>
 
 <hr>
-<b>🔊 Настройки шума</b>
-<label>Громкость шума:</label>
-<input type="range" id="noiseVolume" min="0" max="100" value="15">
+<label>Громкость (шум + аудио + сообщения):</label>
+<input type="range" id="masterVolume" min="0" max="100" value="100">
 
 <hr>
-<b>🔊 Аудио из файла</b>
+<b>Аудио из файла</b>
 <input type="file" id="audioFile" accept="audio/*">
-<label>Громкость аудио:</label>
-<input type="range" id="audioVolume" min="0" max="100" value="100">
 <button id="playAudio">▶ ПУСТИТЬ ЗВУК</button>
 
 <hr>
-<b>🗣 Сообщения</b>
+<b>Сообщение</b>
 <input id="msgText" placeholder="Текст сообщения">
-<label>Громкость сообщений:</label>
-<input type="range" id="msgVolume" min="0" max="100" value="100">
 <button id="say">📢 ПРОИЗНЕСТИ</button>
 </div>
 
@@ -79,10 +73,8 @@ let air = {
   on: false,
   currentAudio: null,
   messages: [],
-  noiseVolume: 15,
-  audioVolume: 100,
-  msgVolume: 100,
-  noisePaused: false
+  noisePaused: false,
+  volume: 100
 };
 
 /* ===== AudioContext ===== */
@@ -96,14 +88,14 @@ const noise = ctx.createBufferSource();
 noise.buffer=noiseBuf;
 noise.loop=true;
 const noiseGain=ctx.createGain();
-noiseGain.gain.value = air.noiseVolume/100;
+noiseGain.gain.value = air.volume/100;
 noise.connect(noiseGain).connect(ctx.destination);
 noise.start();
 
 /* ===== Аудио ===== */
 const player=document.getElementById("player");
 const playerGain = ctx.createGain();
-playerGain.gain.value = air.audioVolume/100;
+playerGain.gain.value = air.volume/100;
 const audioSource = ctx.createMediaElementSource(player);
 audioSource.connect(playerGain).connect(ctx.destination);
 
@@ -115,31 +107,27 @@ analyser.fftSize = 256;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Индикатор уровней ===== */
+/* ===== Индикатор ===== */
+const levelDiv=document.getElementById("level");
+const percentSpan=document.getElementById("percent");
+
 function updateLevels(){
-  const a = new Uint8Array(analyser.frequencyBinCount);
+  const a=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
-
-  let sumNoise=0,sumAudio=0;
-  for(let i=0;i<a.length;i++){
-    sumNoise += a[i]*air.noiseVolume/100;
-    sumAudio += a[i]*air.audioVolume/100;
-  }
-  const avgNoise=sumNoise/a.length;
-  const avgAudio=sumAudio/a.length;
-
-  document.getElementById("levelNoise").style.width=Math.min(100,avgNoise/2)+"%";
-  document.getElementById("levelAudio").style.width=Math.min(100,avgAudio/2)+"%";
+  const avg = a.reduce((s,x)=>s+x,0)/a.length;
+  const percent = Math.min(1000, Math.floor(avg*10)); // до 1000%
+  levelDiv.style.width = Math.min(100, avg/2)+"%";
+  percentSpan.textContent = percent+"%";
 
   ctx2.clearRect(0,0,canvas.width,canvas.height);
-  const barWidth = canvas.width/a.length;
+  const barWidth=canvas.width/a.length;
   for(let i=0;i<a.length;i++){
-    const barHeight = a[i];
+    const barHeight=a[i];
     ctx2.fillStyle="#22c55e";
     ctx2.fillRect(i*barWidth,canvas.height-barHeight,barWidth,barHeight);
   }
 }
-setInterval(updateLevels,100);
+setInterval(updateLevels,50);
 
 /* ===== Эфир ===== */
 const statusEl=document.getElementById("status");
@@ -148,11 +136,13 @@ const pauseNoiseBtn=document.getElementById("pauseNoise");
 
 function updateState(){
   if(air.on){
-    noiseGain.gain.value = air.noisePaused ? 0 : air.noiseVolume/100;
+    noiseGain.gain.value = air.noisePaused ? 0 : air.volume/100;
+    playerGain.gain.value = air.volume/100;
     statusEl.textContent="● В ЭФИРЕ";
     toggle.textContent="⏸ ВЫКЛЮЧИТЬ ЭФИР";
   }else{
     noiseGain.gain.value = 0;
+    playerGain.gain.value = 0;
     statusEl.textContent="● НЕТ СИГНАЛА";
     toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
   }
@@ -191,17 +181,11 @@ document.getElementById("save").onclick = ()=>{
   alert("Состояние сохранено");
 };
 
-/* ===== Настройка громкости ===== */
-document.getElementById("noiseVolume").oninput = e=>{
-  air.noiseVolume = e.target.value;
-  noiseGain.gain.value = air.on && !air.noisePaused ? air.noiseVolume/100 : 0;
-};
-document.getElementById("audioVolume").oninput = e=>{
-  air.audioVolume = e.target.value;
-  playerGain.gain.value = air.audioVolume/100;
-};
-document.getElementById("msgVolume").oninput = e=>{
-  air.msgVolume = e.target.value;
+/* ===== Ползунок громкости ===== */
+document.getElementById("masterVolume").oninput = e=>{
+  air.volume = e.target.value;
+  noiseGain.gain.value = air.on && !air.noisePaused ? air.volume/100 : 0;
+  playerGain.gain.value = air.volume/100;
 };
 
 /* ===== Аудио ===== */
@@ -221,7 +205,7 @@ document.getElementById("say").onclick = ()=>{
   const text = document.getElementById("msgText").value;
   if(!text) return;
   const msgUtter = new SpeechSynthesisUtterance(text);
-  msgUtter.volume = air.msgVolume/100;
+  msgUtter.volume = air.volume/100;
   speechSynthesis.speak(msgUtter);
   air.messages.push({text: text, time: Date.now()});
 };
@@ -231,9 +215,7 @@ const saved = localStorage.getItem("airState");
 if(saved){
   air = JSON.parse(saved);
   updateState();
-  document.getElementById("noiseVolume").value = air.noiseVolume;
-  document.getElementById("audioVolume").value = air.audioVolume;
-  document.getElementById("msgVolume").value = air.msgVolume;
+  document.getElementById("masterVolume").value = air.volume;
   pauseNoiseBtn.textContent = air.noisePaused ? "▶ Включить шум" : "⏸ Пауза шума";
 }
 </script>
