@@ -80,6 +80,7 @@ small{opacity:.6}
 <div class="admin hidden" id="admin">
 
 <button id="toggle">▶ ВКЛЮЧИТЬ ЭФИР</button>
+<button id="save">💾 СОХРАНИТЬ СОСТОЯНИЕ</button>
 
 <hr>
 
@@ -90,11 +91,11 @@ small{opacity:.6}
 <hr>
 
 <b>🗣 Сообщение</b>
-<input id="msgText" placeholder="Текст">
+<input id="msgText" placeholder="Текст сообщения">
 <button id="say">📢 ПРОИЗНЕСТИ</button>
 
 <small>
-Шум всегда работает, если эфир включён
+Шум работает всегда, если эфир включён и сохранён
 </small>
 </div>
 
@@ -109,88 +110,105 @@ function msk(){
 setInterval(()=>clock.textContent="МСК "+msk(),1000);
 
 /* ===== AUDIO CONTEXT ===== */
-const ctx=new AudioContext();
+const ctx = new (window.AudioContext||window.webkitAudioContext)();
 
-/* --- ШУМ --- */
-const noiseBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
-const data=noiseBuf.getChannelData(0);
-for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+/* ===== ШУМ ===== */
+const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
+const data = noiseBuf.getChannelData(0);
+for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
 
-const noise=ctx.createBufferSource();
-noise.buffer=noiseBuf;
-noise.loop=true;
+const noise = ctx.createBufferSource();
+noise.buffer = noiseBuf;
+noise.loop = true;
 
-const noiseGain=ctx.createGain();
-noiseGain.gain.value=0;
+const noiseGain = ctx.createGain();
+noiseGain.gain.value = 0; // тише
 
-const analyser=ctx.createAnalyser();
-analyser.fftSize=256;
+const analyser = ctx.createAnalyser();
+analyser.fftSize = 256;
 
 noise.connect(noiseGain).connect(analyser).connect(ctx.destination);
 
-/* --- УРОВЕНЬ --- */
+/* ===== УРОВЕНЬ ===== */
 setInterval(()=>{
-  const a=new Uint8Array(analyser.frequencyBinCount);
+  const a = new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
-  const v=a.reduce((s,x)=>s+x,0)/a.length;
-  level.style.width=Math.min(100,v/2)+"%";
+  const v = a.reduce((s,x)=>s+x,0)/a.length;
+  level.style.width = Math.min(100, v/2)+"%";
 },100);
 
 /* ===== СОСТОЯНИЕ ===== */
-let on=localStorage.getItem("on")==="1";
+let on = false;
+let saved = localStorage.getItem("air") === "on";
 
 /* ===== ВОССТАНОВЛЕНИЕ ===== */
 (async()=>{
   await ctx.resume();
   noise.start();
-  if(on) startAir(); else stopAir();
+  if(saved){
+    startAir(false);
+  }else{
+    stopAir(false);
+  }
 })();
 
 /* ===== ФУНКЦИИ ===== */
-function startAir(){
-  noiseGain.gain.value=0.3;
-  status.textContent="● В ЭФИРЕ";
-  toggle.textContent="⏸ ВЫКЛЮЧИТЬ ЭФИР";
-  on=true;
-  localStorage.setItem("on","1");
+function startAir(save=true){
+  noiseGain.gain.value = 0.15; // шум тише
+  status.textContent = "● В ЭФИРЕ";
+  toggle.textContent = "⏸ ВЫКЛЮЧИТЬ ЭФИР";
+  on = true;
+  if(save) localStorage.setItem("air","on");
 }
-function stopAir(){
-  noiseGain.gain.value=0;
-  status.textContent="● НЕТ СИГНАЛА";
-  toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
-  on=false;
-  localStorage.setItem("on","0");
+function stopAir(save=true){
+  noiseGain.gain.value = 0;
+  status.textContent = "● НЕТ СИГНАЛА";
+  toggle.textContent = "▶ ВКЛЮЧИТЬ ЭФИР";
+  on = false;
+  if(save) localStorage.setItem("air","off");
 }
 
 /* ===== ADMIN ===== */
-openAdmin.onclick=()=>{
+openAdmin.onclick = ()=>{
   if(prompt("Пароль")==="3709")
     admin.classList.toggle("hidden");
 };
 
-toggle.onclick=async()=>{
+toggle.onclick = async()=>{
   await ctx.resume();
-  on ? stopAir() : startAir();
+  on ? stopAir(false) : startAir(false);
+};
+
+save.onclick = ()=>{
+  if(on){
+    localStorage.setItem("air","on");
+    alert("Эфир сохранён");
+  }else{
+    localStorage.setItem("air","off");
+    alert("Состояние сохранено");
+  }
 };
 
 /* ===== ЗВУК ===== */
-playAudio.onclick=async()=>{
+playAudio.onclick = ()=>{
   if(!on) return alert("Эфир выключен");
   if(!audioFile.files[0]) return;
 
-  const reader=new FileReader();
-  reader.onload=()=>{
-    const a=new Audio(reader.result);
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const a = new Audio(reader.result);
+    a.volume = 1;
     a.play();
   };
   reader.readAsDataURL(audioFile.files[0]);
 };
 
 /* ===== TTS ===== */
-say.onclick=()=>{
+say.onclick = ()=>{
   if(!on) return alert("Эфир выключен");
-  const u=new SpeechSynthesisUtterance(msgText.value);
-  u.lang="ru-RU";
+  const u = new SpeechSynthesisUtterance(msgText.value);
+  u.lang = "ru-RU";
+  u.rate = 0.9;
   speechSynthesis.speak(u);
 };
 </script>
