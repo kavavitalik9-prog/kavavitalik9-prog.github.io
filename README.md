@@ -10,16 +10,12 @@ body{background:#020617;color:#e5e7eb;font-family:system-ui;display:flex;justify
 h1{text-align:center;margin:4px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
 .status{text-align:center;margin:8px 0;font-weight:600;}
-.meter{height:40px;background:#020617;border:1px solid #334155;border-radius:6px;overflow:hidden;position:relative;}
-.meter>div{height:100%;width:0%;background:#22c55e;transition:.05s;}
-.meter span{position:absolute;right:4px;top:0;color:#e5e7eb;font-size:12px;line-height:40px;}
 .admin-btn{text-align:center;opacity:.4;font-size:12px;margin-top:10px;cursor:pointer;}
 .admin{margin-top:10px;border-top:1px solid #334155;padding-top:10px;}
 .hidden{display:none;}
 button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:8px;padding:8px;}
 label{font-size:12px;margin-top:6px;display:block;}
-canvas{width:100%;height:100px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;}
-.section{margin-top:10px;}
+canvas{width:100%;height:120px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;display:block;}
 </style>
 </head>
 <body>
@@ -27,11 +23,6 @@ canvas{width:100%;height:100px;margin-top:10px;background:#020617;border:1px sol
 <h1>📻 YCB-89</h1>
 <div class="time" id="clock"></div>
 <div class="status" id="status">● НЕТ СИГНАЛА</div>
-
-<div class="meter">
-  <div id="level"></div>
-  <span id="percent">0%</span>
-</div>
 
 <canvas id="spectrum"></canvas>
 
@@ -103,31 +94,39 @@ audioSource.connect(playerGain).connect(ctx.destination);
 const analyser = ctx.createAnalyser();
 noiseGain.connect(analyser);
 playerGain.connect(analyser);
-analyser.fftSize = 256;
+analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Индикатор ===== */
-const levelDiv=document.getElementById("level");
-const percentSpan=document.getElementById("percent");
-
-function updateLevels(){
-  const a=new Uint8Array(analyser.frequencyBinCount);
+/* ===== Спектр с процентами слева ===== */
+function drawSpectrum(){
+  const a = new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
-  const avg = a.reduce((s,x)=>s+x,0)/a.length;
-  const percent = Math.min(1000, Math.floor(avg*10)); // до 1000%
-  levelDiv.style.width = Math.min(100, avg/2)+"%";
-  percentSpan.textContent = percent+"%";
 
   ctx2.clearRect(0,0,canvas.width,canvas.height);
-  const barWidth=canvas.width/a.length;
+
+  // Рисуем полоски
+  const barWidth = canvas.width/a.length;
   for(let i=0;i<a.length;i++){
-    const barHeight=a[i];
+    const barHeight = a[i]*2; // увеличиваем видимость
     ctx2.fillStyle="#22c55e";
     ctx2.fillRect(i*barWidth,canvas.height-barHeight,barWidth,barHeight);
   }
+
+  // Рисуем шкалу процентов слева
+  ctx2.fillStyle="#e5e7eb";
+  ctx2.font="10px system-ui";
+  for(let p=0;p<=1000;p+=100){
+    const y = canvas.height - p/1000*canvas.height;
+    ctx2.fillText(p+"%",2,y+10);
+    ctx2.beginPath();
+    ctx2.moveTo(20,y);
+    ctx2.lineTo(canvas.width,y);
+    ctx2.strokeStyle="#334155";
+    ctx2.stroke();
+  }
 }
-setInterval(updateLevels,50);
+setInterval(drawSpectrum,50);
 
 /* ===== Эфир ===== */
 const statusEl=document.getElementById("status");
