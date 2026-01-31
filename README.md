@@ -113,48 +113,43 @@ analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Плавный водопад с % и подписанными значениями ===== */
+/* ===== Показ реального % от настроек ===== */
 const barsCount = 64;
-let noiseHeights = new Array(barsCount).fill(0);
-let audioHeights = new Array(barsCount).fill(0);
-let msgHeights = new Array(barsCount).fill(0);
 
 function drawSpectrum(){
   ctx2.clearRect(0,0,canvas.width,canvas.height);
   const barWidth = canvas.width/barsCount;
 
   for(let i=0;i<barsCount;i++){
+    const nh = (air.on && !air.noisePaused) ? air.noiseVolume/1000*canvas.height : 0;
+    const ah = (air.on && air.currentAudio && !player.paused) ? air.audioVolume/1000*canvas.height : 0;
+    const mh = (air.on && speechSynthesis.speaking) ? air.msgVolume/1000*canvas.height : 0;
+
     // шум
-    let targetNoise = (air.on && !air.noisePaused) ? air.noiseVolume/1000 * canvas.height : 0;
-    noiseHeights[i] += (targetNoise - noiseHeights[i]) * 0.1;
-    if(noiseHeights[i]>0.5){
+    if(nh>0.5){
       ctx2.fillStyle="#22c55e";
-      ctx2.fillRect(i*barWidth,canvas.height-noiseHeights[i],barWidth/3,noiseHeights[i]);
+      ctx2.fillRect(i*barWidth,canvas.height-nh,barWidth/3,nh);
       ctx2.fillStyle="#e5e7eb";
       ctx2.font="8px system-ui";
-      ctx2.fillText(Math.round((noiseHeights[i]/canvas.height)*100)+"%",i*barWidth,canvas.height-noiseHeights[i]-2);
+      ctx2.fillText(Math.round((nh/canvas.height)*100)+"%",i*barWidth,canvas.height-nh-2);
     }
 
     // аудио
-    let targetAudio = (air.on && air.currentAudio && !player.paused) ? air.audioVolume/1000 * canvas.height : 0;
-    audioHeights[i] += (targetAudio - audioHeights[i]) * 0.1;
-    if(audioHeights[i]>0.5){
+    if(ah>0.5){
       ctx2.fillStyle="#3b82f6";
-      ctx2.fillRect(i*barWidth + barWidth/3, canvas.height-audioHeights[i], barWidth/3, audioHeights[i]);
+      ctx2.fillRect(i*barWidth + barWidth/3, canvas.height-ah, barWidth/3, ah);
       ctx2.fillStyle="#e5e7eb";
       ctx2.font="8px system-ui";
-      ctx2.fillText(Math.round((audioHeights[i]/canvas.height)*100)+"%",i*barWidth + barWidth/3, canvas.height-audioHeights[i]-2);
+      ctx2.fillText(Math.round((ah/canvas.height)*100)+"%",i*barWidth + barWidth/3, canvas.height-ah-2);
     }
 
     // сообщение
-    let targetMsg = (air.on && speechSynthesis.speaking) ? air.msgVolume/1000 * canvas.height : 0;
-    msgHeights[i] += (targetMsg - msgHeights[i]) * 0.1;
-    if(msgHeights[i]>0.5){
+    if(mh>0.5){
       ctx2.fillStyle="#facc15";
-      ctx2.fillRect(i*barWidth + 2*barWidth/3, canvas.height-msgHeights[i], barWidth/3, msgHeights[i]);
+      ctx2.fillRect(i*barWidth + 2*barWidth/3, canvas.height-mh, barWidth/3, mh);
       ctx2.fillStyle="#e5e7eb";
       ctx2.font="8px system-ui";
-      ctx2.fillText(Math.round((msgHeights[i]/canvas.height)*100)+"%",i*barWidth + 2*barWidth/3, canvas.height-msgHeights[i]-2);
+      ctx2.fillText(Math.round((mh/canvas.height)*100)+"%",i*barWidth + 2*barWidth/3, canvas.height-mh-2);
     }
   }
 
@@ -221,8 +216,8 @@ document.getElementById("save").onclick = ()=>{
 
 /* ===== Настройка громкости ===== */
 function syncVolume(input, range, key){
-  input.oninput = ()=>{ air[key] = parseInt(input.value); range.value = input.value; }
-  range.oninput = ()=>{ air[key] = parseInt(range.value); input.value = range.value; }
+  input.oninput = ()=>{ air[key] = parseInt(input.value); range.value = input.value; updateState(); }
+  range.oninput = ()=>{ air[key] = parseInt(range.value); input.value = range.value; updateState(); }
 }
 syncVolume(document.getElementById("noiseVolumeInput"),document.getElementById("noiseVolumeRange"),'noiseVolume');
 syncVolume(document.getElementById("audioVolumeInput"),document.getElementById("audioVolumeRange"),'audioVolume');
