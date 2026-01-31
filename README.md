@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YCB-89 Локальное Радио</title>
+<title>YCB-89 Радио УВЬ-76</title>
 <style>
 body{background:#020617;color:#e5e7eb;font-family:system-ui;display:flex;justify-content:center;padding:20px;}
-.radio{width:400px;border:1px solid #334155;border-radius:16px;padding:14px;}
+.radio{width:500px;border:1px solid #334155;border-radius:16px;padding:14px;}
 h1{text-align:center;margin:4px 0;}
 .time{text-align:center;font-size:12px;opacity:.7;}
 .status{text-align:center;margin:8px 0;font-weight:600;}
@@ -15,11 +15,7 @@ h1{text-align:center;margin:4px 0;}
 .hidden{display:none;}
 button,input{width:100%;margin-top:6px;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:8px;padding:8px;}
 label{font-size:12px;margin-top:6px;display:block;}
-canvas{width:100%;height:150px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;display:block;}
-.slider-container{display:flex;align-items:flex-end;margin-top:10px;}
-.slider-label{width:30px;text-align:right;margin-right:8px;font-size:12px;}
-.slider{flex:1;height:150px;position:relative;background:#334155;border-radius:4px;overflow:hidden;}
-.slider-fill{position:absolute;bottom:0;width:100%;background:#3b82f6;}
+canvas{width:100%;height:200px;margin-top:10px;background:#020617;border:1px solid #334155;border-radius:8px;display:block;}
 .legend{display:flex;justify-content:space-around;margin-top:4px;font-size:12px;}
 .legend div{display:flex;align-items:center;}
 .legend span{width:12px;height:12px;margin-right:4px;display:inline-block;}
@@ -27,18 +23,11 @@ canvas{width:100%;height:150px;margin-top:10px;background:#020617;border:1px sol
 </head>
 <body>
 <div class="radio">
-<h1>📻 YCB-89</h1>
+<h1>📻 YCB-89 УВЬ-76</h1>
 <div class="time" id="clock"></div>
 <div class="status" id="status">● НЕТ СИГНАЛА</div>
 
-<div class="slider-container">
-  <div class="slider-label">0%</div>
-  <div class="slider" id="volumeSlider">
-    <div class="slider-fill" id="sliderFill"></div>
-  </div>
-  <div class="slider-label">100%</div>
-</div>
-
+<canvas id="spectrum"></canvas>
 <div class="legend">
   <div><span style="background:#22c55e"></span>Шум</div>
   <div><span style="background:#3b82f6"></span>Аудио</div>
@@ -116,19 +105,60 @@ playerGain.gain.value = air.audioVolume/1000;
 const audioSource = ctx.createMediaElementSource(player);
 audioSource.connect(playerGain).connect(ctx.destination);
 
-/* ===== Ползунок громкости ===== */
-const sliderFill = document.getElementById("sliderFill");
-function updateSlider(){
-  let val = 0;
-  let color = "#3b82f6"; // дефолт
-  if(air.on && !air.noisePaused && air.noiseVolume>0){ val = air.noiseVolume/1000; color="#22c55e"; }
-  if(air.on && air.currentAudio && !player.paused){ val = air.audioVolume/1000; color="#3b82f6"; }
-  if(air.on && speechSynthesis.speaking){ val = air.msgVolume/1000; color="#facc15"; }
-  sliderFill.style.height = (val*100)+"%";
-  sliderFill.style.background=color;
-  requestAnimationFrame(updateSlider);
+/* ===== Анализатор ===== */
+const analyser = ctx.createAnalyser();
+noiseGain.connect(analyser);
+playerGain.connect(analyser);
+analyser.fftSize = 256;
+const canvas=document.getElementById("spectrum");
+const ctx2=canvas.getContext("2d");
+
+/* ===== УВЬ-76 визуализатор ===== */
+const barsCount = 64;
+function drawSpectrum(){
+  ctx2.clearRect(0,0,canvas.width,canvas.height);
+  const barWidth = canvas.width/barsCount;
+
+  for(let i=0;i<barsCount;i++){
+    const nh = (air.on && !air.noisePaused) ? air.noiseVolume/1000*canvas.height : 0;
+    const ah = (air.on && air.currentAudio && !player.paused) ? air.audioVolume/1000*canvas.height : 0;
+    const mh = (air.on && speechSynthesis.speaking) ? air.msgVolume/1000*canvas.height : 0;
+
+    // шум
+    if(nh>0.5){
+      ctx2.fillStyle="#22c55e";
+      ctx2.fillRect(i*barWidth,canvas.height-nh,barWidth-2,nh);
+    }
+
+    // аудио
+    if(ah>0.5){
+      ctx2.fillStyle="#3b82f6";
+      ctx2.fillRect(i*barWidth,canvas.height-ah,barWidth-2,ah);
+    }
+
+    // сообщение
+    if(mh>0.5){
+      ctx2.fillStyle="#facc15";
+      ctx2.fillRect(i*barWidth,canvas.height-mh,barWidth-2,mh);
+    }
+  }
+
+  // шкала слева 0-100%
+  ctx2.fillStyle="#e5e7eb";
+  ctx2.font="10px system-ui";
+  for(let p=0;p<=100;p+=10){
+    const y = canvas.height - (p/100)*canvas.height;
+    ctx2.fillText(p+"%",2,y+4);
+    ctx2.beginPath();
+    ctx2.moveTo(20,y);
+    ctx2.lineTo(canvas.width,y);
+    ctx2.strokeStyle="#334155";
+    ctx2.stroke();
+  }
+
+  requestAnimationFrame(drawSpectrum);
 }
-updateSlider();
+drawSpectrum();
 
 /* ===== Эфир ===== */
 const statusEl=document.getElementById("status");
