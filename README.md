@@ -113,26 +113,40 @@ analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Спектр с 3 источниками ===== */
+/* ===== Плавный водопад ===== */
+const barsCount = 64;
+let noiseHeights = new Array(barsCount).fill(0);
+let audioHeights = new Array(barsCount).fill(0);
+let msgHeights = new Array(barsCount).fill(0);
+
 function drawSpectrum(){
   ctx2.clearRect(0,0,canvas.width,canvas.height);
-  const barWidth = canvas.width/64; // 64 полоски для всех
+  const barWidth = canvas.width/barsCount;
 
-  for(let i=0;i<64;i++){
+  for(let i=0;i<barsCount;i++){
     // шум
-    let hNoise = air.noiseVolume/1000 * canvas.height + (Math.random()*20-10);
-    ctx2.fillStyle="#22c55e";
-    ctx2.fillRect(i*barWidth,canvas.height-hNoise,barWidth/3,hNoise);
+    let targetNoise = (air.on && !air.noisePaused) ? air.noiseVolume/1000 * canvas.height : 0;
+    noiseHeights[i] += (targetNoise - noiseHeights[i]) * 0.1;
+    if(noiseHeights[i] > 0.5){
+      ctx2.fillStyle="#22c55e";
+      ctx2.fillRect(i*barWidth,canvas.height-noiseHeights[i],barWidth/3,noiseHeights[i]);
+    }
 
     // аудио
-    let hAudio = air.audioVolume/1000 * canvas.height + (Math.random()*20-10);
-    ctx2.fillStyle="#3b82f6";
-    ctx2.fillRect(i*barWidth + barWidth/3,canvas.height-hAudio,barWidth/3,hAudio);
+    let targetAudio = (air.on && air.currentAudio && !player.paused) ? air.audioVolume/1000 * canvas.height : 0;
+    audioHeights[i] += (targetAudio - audioHeights[i]) * 0.1;
+    if(audioHeights[i] > 0.5){
+      ctx2.fillStyle="#3b82f6";
+      ctx2.fillRect(i*barWidth + barWidth/3, canvas.height-audioHeights[i], barWidth/3, audioHeights[i]);
+    }
 
     // сообщение
-    let hMsg = air.msgVolume/1000 * canvas.height + (Math.random()*20-10);
-    ctx2.fillStyle="#facc15";
-    ctx2.fillRect(i*barWidth + 2*barWidth/3,canvas.height-hMsg,barWidth/3,hMsg);
+    let targetMsg = (air.on && speechSynthesis.speaking) ? air.msgVolume/1000 * canvas.height : 0;
+    msgHeights[i] += (targetMsg - msgHeights[i]) * 0.1;
+    if(msgHeights[i] > 0.5){
+      ctx2.fillStyle="#facc15";
+      ctx2.fillRect(i*barWidth + 2*barWidth/3, canvas.height-msgHeights[i], barWidth/3, msgHeights[i]);
+    }
   }
 
   // шкала слева
@@ -147,12 +161,10 @@ function drawSpectrum(){
     ctx2.strokeStyle="#334155";
     ctx2.stroke();
   }
-  // 0% снизу
   ctx2.fillText("0%",2,canvas.height-2);
 }
-
-/* ===== Обновление спектра ===== */
-setInterval(drawSpectrum,50);
+function animate(){ drawSpectrum(); requestAnimationFrame(animate); }
+animate();
 
 /* ===== Эфир ===== */
 const statusEl=document.getElementById("status");
@@ -171,11 +183,7 @@ function updateState(){
     statusEl.textContent="● НЕТ СИГНАЛА";
     toggle.textContent="▶ ВКЛЮЧИТЬ ЭФИР";
   }
-
-  if(air.currentAudio){
-    player.src = URL.createObjectURL(air.currentAudio);
-    player.play();
-  }
+  if(air.currentAudio){ player.src = URL.createObjectURL(air.currentAudio); player.play(); }
 }
 
 /* ===== Admin ===== */
@@ -192,15 +200,11 @@ toggle.onclick = async ()=>{
   air.on = !air.on;
   updateState();
 };
-
-/* ===== Пауза шума ===== */
 pauseNoiseBtn.onclick = ()=>{
   air.noisePaused = !air.noisePaused;
   updateState();
   pauseNoiseBtn.textContent = air.noisePaused ? "▶ Включить шум" : "⏸ Пауза шума";
 };
-
-/* ===== Сохранение состояния ===== */
 document.getElementById("save").onclick = ()=>{
   localStorage.setItem("airState", JSON.stringify(air));
   alert("Состояние сохранено");
@@ -208,16 +212,9 @@ document.getElementById("save").onclick = ()=>{
 
 /* ===== Настройка громкости ===== */
 function syncVolume(input, range, key){
-  input.oninput = ()=>{ 
-    air[key] = parseInt(input.value); 
-    range.value = input.value;
-  }
-  range.oninput = ()=>{ 
-    air[key] = parseInt(range.value); 
-    input.value = range.value;
-  }
+  input.oninput = ()=>{ air[key] = parseInt(input.value); range.value = input.value; }
+  range.oninput = ()=>{ air[key] = parseInt(range.value); input.value = range.value; }
 }
-
 syncVolume(document.getElementById("noiseVolumeInput"),document.getElementById("noiseVolumeRange"),'noiseVolume');
 syncVolume(document.getElementById("audioVolumeInput"),document.getElementById("audioVolumeRange"),'audioVolume');
 syncVolume(document.getElementById("msgVolumeInput"),document.getElementById("msgVolumeRange"),'msgVolume');
