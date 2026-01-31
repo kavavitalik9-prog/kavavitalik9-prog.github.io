@@ -34,16 +34,21 @@ canvas{width:100%;height:120px;margin-top:10px;background:#020617;border:1px sol
 <button id="save">💾 СОХРАНИТЬ СОСТОЯНИЕ</button>
 
 <hr>
-<label>Громкость (шум + аудио + сообщения):</label>
-<input type="range" id="masterVolume" min="0" max="100" value="100">
+<label>Громкость шума (0-1000%)</label>
+<input type="number" id="noiseVolumeInput" min="0" max="1000" value="150">
+<input type="range" id="noiseVolumeRange" min="0" max="1000" value="150">
 
 <hr>
-<b>Аудио из файла</b>
+<label>Громкость аудио (0-1000%)</label>
+<input type="number" id="audioVolumeInput" min="0" max="1000" value="1000">
+<input type="range" id="audioVolumeRange" min="0" max="1000" value="1000">
 <input type="file" id="audioFile" accept="audio/*">
 <button id="playAudio">▶ ПУСТИТЬ ЗВУК</button>
 
 <hr>
-<b>Сообщение</b>
+<label>Громкость сообщений (0-1000%)</label>
+<input type="number" id="msgVolumeInput" min="0" max="1000" value="1000">
+<input type="range" id="msgVolumeRange" min="0" max="1000" value="1000">
 <input id="msgText" placeholder="Текст сообщения">
 <button id="say">📢 ПРОИЗНЕСТИ</button>
 </div>
@@ -65,7 +70,9 @@ let air = {
   currentAudio: null,
   messages: [],
   noisePaused: false,
-  volume: 100
+  noiseVolume:150,
+  audioVolume:1000,
+  msgVolume:1000
 };
 
 /* ===== AudioContext ===== */
@@ -79,14 +86,14 @@ const noise = ctx.createBufferSource();
 noise.buffer=noiseBuf;
 noise.loop=true;
 const noiseGain=ctx.createGain();
-noiseGain.gain.value = air.volume/100;
+noiseGain.gain.value = air.noiseVolume/1000;
 noise.connect(noiseGain).connect(ctx.destination);
 noise.start();
 
 /* ===== Аудио ===== */
 const player=document.getElementById("player");
 const playerGain = ctx.createGain();
-playerGain.gain.value = air.volume/100;
+playerGain.gain.value = air.audioVolume/1000;
 const audioSource = ctx.createMediaElementSource(player);
 audioSource.connect(playerGain).connect(ctx.destination);
 
@@ -98,22 +105,22 @@ analyser.fftSize = 512;
 const canvas=document.getElementById("spectrum");
 const ctx2=canvas.getContext("2d");
 
-/* ===== Спектр с процентами слева ===== */
+/* ===== Спектр с шкалой слева ===== */
 function drawSpectrum(){
   const a = new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(a);
 
   ctx2.clearRect(0,0,canvas.width,canvas.height);
 
-  // Рисуем полоски
+  // полоски
   const barWidth = canvas.width/a.length;
   for(let i=0;i<a.length;i++){
-    const barHeight = a[i]*2; // увеличиваем видимость
+    const barHeight = a[i]*2; 
     ctx2.fillStyle="#22c55e";
     ctx2.fillRect(i*barWidth,canvas.height-barHeight,barWidth,barHeight);
   }
 
-  // Рисуем шкалу процентов слева
+  // шкала слева
   ctx2.fillStyle="#e5e7eb";
   ctx2.font="10px system-ui";
   for(let p=0;p<=1000;p+=100){
@@ -135,8 +142,8 @@ const pauseNoiseBtn=document.getElementById("pauseNoise");
 
 function updateState(){
   if(air.on){
-    noiseGain.gain.value = air.noisePaused ? 0 : air.volume/100;
-    playerGain.gain.value = air.volume/100;
+    noiseGain.gain.value = air.noisePaused ? 0 : air.noiseVolume/1000;
+    playerGain.gain.value = air.audioVolume/1000;
     statusEl.textContent="● В ЭФИРЕ";
     toggle.textContent="⏸ ВЫКЛЮЧИТЬ ЭФИР";
   }else{
@@ -180,12 +187,27 @@ document.getElementById("save").onclick = ()=>{
   alert("Состояние сохранено");
 };
 
-/* ===== Ползунок громкости ===== */
-document.getElementById("masterVolume").oninput = e=>{
-  air.volume = e.target.value;
-  noiseGain.gain.value = air.on && !air.noisePaused ? air.volume/100 : 0;
-  playerGain.gain.value = air.volume/100;
-};
+/* ===== Настройка громкости ===== */
+function syncVolume(input, range, key){
+  input.oninput = ()=>{ 
+    air[key] = parseInt(input.value); 
+    range.value = input.value;
+    updateVolumes();
+  }
+  range.oninput = ()=>{ 
+    air[key] = parseInt(range.value); 
+    input.value = range.value;
+    updateVolumes();
+  }
+}
+function updateVolumes(){
+  noiseGain.gain.value = air.on && !air.noisePaused ? air.noiseVolume/1000 : 0;
+  playerGain.gain.value = air.audioVolume/1000;
+}
+
+syncVolume(document.getElementById("noiseVolumeInput"),document.getElementById("noiseVolumeRange"),'noiseVolume');
+syncVolume(document.getElementById("audioVolumeInput"),document.getElementById("audioVolumeRange"),'audioVolume');
+syncVolume(document.getElementById("msgVolumeInput"),document.getElementById("msgVolumeRange"),'msgVolume');
 
 /* ===== Аудио ===== */
 document.getElementById("playAudio").onclick = ()=>{
@@ -204,7 +226,7 @@ document.getElementById("say").onclick = ()=>{
   const text = document.getElementById("msgText").value;
   if(!text) return;
   const msgUtter = new SpeechSynthesisUtterance(text);
-  msgUtter.volume = air.volume/100;
+  msgUtter.volume = air.msgVolume/1000;
   speechSynthesis.speak(msgUtter);
   air.messages.push({text: text, time: Date.now()});
 };
@@ -214,7 +236,12 @@ const saved = localStorage.getItem("airState");
 if(saved){
   air = JSON.parse(saved);
   updateState();
-  document.getElementById("masterVolume").value = air.volume;
+  document.getElementById("noiseVolumeInput").value = air.noiseVolume;
+  document.getElementById("noiseVolumeRange").value = air.noiseVolume;
+  document.getElementById("audioVolumeInput").value = air.audioVolume;
+  document.getElementById("audioVolumeRange").value = air.audioVolume;
+  document.getElementById("msgVolumeInput").value = air.msgVolume;
+  document.getElementById("msgVolumeRange").value = air.msgVolume;
   pauseNoiseBtn.textContent = air.noisePaused ? "▶ Включить шум" : "⏸ Пауза шума";
 }
 </script>
