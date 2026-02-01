@@ -2,70 +2,79 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Карта воздушной тревоги</title>
+<title>Воздушная тревога — Украина</title>
 <style>
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #0b0b0b;
+  background: #0a0a0a;
   color: #fff;
 }
 header {
+  background: #111;
   padding: 10px;
   text-align: center;
-  background: #111;
   font-size: 20px;
-  font-weight: bold;
+}
+#time {
+  font-size: 14px;
+  margin-top: 5px;
+  color: #aaa;
 }
 #map {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 20px auto;
 }
 svg path {
-  fill: #2a2a2a;
+  fill: #2b2b2b;
   stroke: #555;
   stroke-width: 1;
   cursor: pointer;
   transition: 0.2s;
 }
-svg path.alarm {
-  fill: #b30000;
-}
-svg path.threat {
-  fill: #b38f00;
-}
-svg path:hover {
-  opacity: 0.8;
-}
-#regionInfo {
+svg path.alarm { fill: #b00000; }
+svg path.threat { fill: #b38b00; }
+svg path:hover { opacity: 0.85; }
+
+#info {
   text-align: center;
   margin-top: 10px;
-  font-size: 16px;
+  min-height: 24px;
 }
+
+.legend {
+  text-align: center;
+  margin-top: 10px;
+}
+.legend span {
+  margin: 0 10px;
+}
+
 #adminBtn {
   position: fixed;
   right: 15px;
   bottom: 15px;
-  padding: 10px 14px;
   background: #222;
-  border: 1px solid #555;
   color: #fff;
+  padding: 10px 14px;
+  border: 1px solid #555;
   cursor: pointer;
 }
+
 #adminPanel {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.85);
 }
 #adminBox {
+  width: 320px;
   background: #111;
-  width: 300px;
   margin: 80px auto;
   padding: 15px;
   border: 1px solid #444;
 }
-select, button, input {
+select, input, button {
   width: 100%;
   margin-top: 10px;
   padding: 6px;
@@ -73,111 +82,113 @@ select, button, input {
   color: #fff;
   border: 1px solid #444;
 }
-.legend {
-  text-align: center;
-  margin-top: 10px;
-}
 </style>
 </head>
 <body>
 
-<header>🛑 Карта воздушной тревоги</header>
+<header>
+  🛑 Воздушная тревога — Украина
+  <div id="time"></div>
+</header>
 
 <div class="legend">
-  🔴 Воздушная тревога &nbsp;&nbsp; 🟡 Угроза воздушной тревоги
+  <span>🔴 Тревога</span>
+  <span>🟡 Угроза</span>
+  <span>⚫ Нет сигнала</span>
 </div>
 
 <div id="map">
-<svg viewBox="0 0 600 400">
-  <path id="Kyiv" d="M280 120 L320 120 L330 160 L300 180 L260 160 Z"/>
-  <path id="Lviv" d="M120 140 L170 140 L180 180 L150 200 L110 180 Z"/>
-  <path id="Odessa" d="M260 260 L310 260 L330 300 L290 320 L250 300 Z"/>
-  <path id="Kharkiv" d="M400 140 L450 140 L470 180 L430 200 L390 180 Z"/>
-  <path id="Dnipro" d="M340 200 L390 200 L410 240 L370 260 L330 240 Z"/>
+<svg viewBox="0 0 900 600">
+  <!-- Упрощённые области -->
+  <path id="Lviv" d="M120 220 L180 200 L210 250 L170 300 L120 270 Z"/>
+  <path id="Volyn" d="M150 160 L210 150 L220 200 L180 220 L140 200 Z"/>
+  <path id="Kyiv" d="M360 220 L420 220 L440 260 L400 300 L350 260 Z"/>
+  <path id="Chernihiv" d="M360 160 L430 150 L450 200 L410 220 L360 200 Z"/>
+  <path id="Kharkiv" d="M560 220 L630 220 L650 260 L610 300 L560 260 Z"/>
+  <path id="Dnipro" d="M500 300 L560 300 L580 350 L540 380 L490 350 Z"/>
+  <path id="Odessa" d="M360 380 L420 380 L440 430 L400 460 L350 430 Z"/>
+  <path id="Zaporizhzhia" d="M520 360 L580 360 L600 410 L560 440 L510 410 Z"/>
 </svg>
 </div>
 
-<div id="regionInfo">Нажми на область</div>
+<div id="info">Нажми на область</div>
 
 <button id="adminBtn">👑 Админ</button>
 
 <div id="adminPanel">
   <div id="adminBox">
     <h3>Админ-панель</h3>
-    <input type="password" id="pass" placeholder="Пароль">
-    <select id="regionSelect">
+    <input id="pass" type="password" placeholder="Пароль">
+    <select id="region">
       <option value="">Выбери область</option>
-      <option value="Kyiv">Киевская</option>
       <option value="Lviv">Львовская</option>
-      <option value="Odessa">Одесская</option>
+      <option value="Volyn">Волынская</option>
+      <option value="Kyiv">Киевская</option>
+      <option value="Chernihiv">Черниговская</option>
       <option value="Kharkiv">Харьковская</option>
       <option value="Dnipro">Днепропетровская</option>
+      <option value="Zaporizhzhia">Запорожская</option>
+      <option value="Odessa">Одесская</option>
     </select>
-    <select id="statusSelect">
+    <select id="status">
       <option value="none">Нет сигнала</option>
       <option value="threat">🟡 Угроза</option>
       <option value="alarm">🔴 Тревога</option>
     </select>
-    <button onclick="saveStatus()">Сохранить</button>
+    <button onclick="save()">Сохранить</button>
     <button onclick="closeAdmin()">Закрыть</button>
   </div>
 </div>
 
 <script>
 const PASSWORD = "3709";
-let data = JSON.parse(localStorage.getItem("alarms") || "{}");
+let alarms = JSON.parse(localStorage.getItem("ua_alarms") || "{}");
 
-function updateMap() {
+function updateTime() {
+  const now = new Date(Date.now() + 3*60*60*1000);
+  time.textContent = "МСК: " + now.toLocaleTimeString();
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+function render() {
   document.querySelectorAll("svg path").forEach(p => {
     p.classList.remove("alarm","threat");
-    const info = data[p.id];
-    if (!info) return;
-    p.classList.add(info.status);
+    if (alarms[p.id]) p.classList.add(alarms[p.id].status);
+    p.onclick = () => showInfo(p.id);
   });
 }
-updateMap();
-
-document.querySelectorAll("svg path").forEach(p => {
-  p.onclick = () => showInfo(p.id);
-});
+render();
 
 function showInfo(id) {
-  const el = data[id];
-  if (!el) {
-    regionInfo.textContent = id + ": сигнала нет";
+  if (!alarms[id]) {
+    info.textContent = id + ": сигнала нет";
     return;
   }
-  const minutes = Math.floor((Date.now() - el.time)/60000);
-  const icon = el.status === "alarm" ? "🔴" : "🟡";
-  regionInfo.textContent = `${icon} ${id}: ${minutes} мин.`;
+  const a = alarms[id];
+  const min = Math.floor((Date.now() - a.time)/60000);
+  const icon = a.status === "alarm" ? "🔴" : "🟡";
+  info.textContent = `${icon} ${id}: ${min} мин.`;
 }
 
 adminBtn.onclick = () => adminPanel.style.display = "block";
+function closeAdmin() { adminPanel.style.display = "none"; }
 
-function closeAdmin() {
-  adminPanel.style.display = "none";
-}
-
-function saveStatus() {
-  if (pass.value !== PASSWORD) {
-    alert("Неверный пароль");
-    return;
-  }
-  const r = regionSelect.value;
-  const s = statusSelect.value;
-  if (!r) return;
-
-  if (s === "none") {
-    delete data[r];
+function save() {
+  if (pass.value !== PASSWORD) return alert("Неверный пароль");
+  if (!region.value) return;
+  if (status.value === "none") {
+    delete alarms[region.value];
   } else {
-    data[r] = { status: s, time: Date.now() };
+    alarms[region.value] = {
+      status: status.value,
+      time: Date.now()
+    };
   }
-  localStorage.setItem("alarms", JSON.stringify(data));
-  updateMap();
+  localStorage.setItem("ua_alarms", JSON.stringify(alarms));
+  render();
   alert("Сохранено");
 }
-
-setInterval(updateMap, 60000);
 </script>
 
 </body>
