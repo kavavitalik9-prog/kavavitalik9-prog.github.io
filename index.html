@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Карта тревог (симуляция)</title>
+<title>Карта воздушных тревог</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -10,33 +10,55 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #f2f2f2;
+  background: #e5e5e5;
 }
+
 #top {
-  padding: 10px;
   background: #111;
   color: #fff;
+  padding: 10px 14px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
-#mapWrap {
-  margin: 10px;
-  border: 3px solid #000;
-}
-#map {
-  height: 70vh;
-}
+
 #adminBtn {
   padding: 6px 12px;
+  cursor: pointer;
 }
+
+#mapBox {
+  width: 95%;
+  max-width: 900px;
+  margin: 15px auto;
+  border: 3px solid #000;
+  background: #000;
+}
+
+#map {
+  height: 420px;
+}
+
 #panel {
   display: none;
-  padding: 10px;
+  width: 95%;
+  max-width: 900px;
+  margin: 10px auto;
   background: #fff;
-  border-top: 2px solid #000;
+  border: 2px solid #000;
+  padding: 10px;
 }
-input, select, button {
-  margin: 4px 0;
+
+#statusText {
+  width: 95%;
+  max-width: 900px;
+  margin: 0 auto 10px;
+  font-size: 14px;
+}
+
+select, button {
+  padding: 6px;
+  margin-top: 6px;
 }
 </style>
 </head>
@@ -48,141 +70,134 @@ input, select, button {
   <button id="adminBtn">Админ</button>
 </div>
 
-<div id="mapWrap">
+<div id="mapBox">
   <div id="map"></div>
 </div>
 
-<div id="panel">
-  <h3>Админ-панель</h3>
+<div id="statusText"></div>
 
-  <b>Области</b><br>
-  Статус:
-  <select id="regionStatus">
+<div id="panel">
+  <b>Выбранная область:</b> <span id="regionName">—</span><br>
+
+  <select id="statusSelect">
     <option value="none">⚪ Отбой</option>
     <option value="warning">🟡 Угроза</option>
-    <option value="alert">🔴 Тревога</option>
+    <option value="alert">🔴 Воздушная тревога</option>
   </select>
-  <button onclick="saveRegion()">Сохранить область</button>
-
-  <hr>
-
-  <b>Маршрут (визуально)</b><br>
-  Название:
-  <input id="routeName" placeholder="Название"><br>
-  Старт (МСК):
-  <input type="datetime-local" id="startTime"><br>
-  Финиш (МСК):
-  <input type="datetime-local" id="endTime"><br>
-  <button onclick="startRoute()">Создать маршрут</button>
+  <br>
+  <button onclick="saveStatus()">Сохранить</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
 const PASSWORD = "3709";
-const map = L.map('map').setView([49, 32], 6);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const map = L.map("map", {
+  zoomControl: true
+}).setView([49, 32], 6);
 
-// время МСК
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  minZoom: 5,
+  maxZoom: 10
+}).addTo(map);
+
+// ===== ВРЕМЯ МСК =====
 function updateTime() {
-  const d = new Date(Date.now() + 3*3600*1000);
+  const d = new Date(Date.now() + 3 * 3600 * 1000);
   document.getElementById("time").textContent =
-    d.toISOString().slice(11,19);
+    d.toISOString().slice(11, 19);
 }
 setInterval(updateTime, 1000);
 updateTime();
 
-// данные
-let regions = JSON.parse(localStorage.getItem("regions") || "{}");
-let routes = JSON.parse(localStorage.getItem("routes") || "[]");
+// ===== ДАННЫЕ =====
+let regionsData = JSON.parse(localStorage.getItem("regions") || "{}");
+let selectedLayer = null;
+let selectedName = null;
 
-let selectedRegion = null;
-let clickPoints = [];
-
-// цвета
-function color(type) {
-  if (type === "alert") return "red";
-  if (type === "warning") return "yellow";
-  return "#ccc";
+// ===== ЦВЕТ =====
+function colorByStatus(s) {
+  if (s === "alert") return "#ff0000";
+  if (s === "warning") return "#ffcc00";
+  return "#cccccc";
 }
 
-// регионы
-fetch("https://raw.githubusercontent.com/datasets/geo-admin1-us/master/data/ukraine.geojson")
+// ===== КАРТА УКРАИНЫ =====
+fetch("https://raw.githubusercontent.com/deldersveld/topojson/master/countries/ukraine/ukraine-oblasts.json")
 .then(r => r.json())
-.then(g => {
-  L.geoJSON(g, {
-    style: f => ({
-      color:"#000",
-      weight:1,
-      fillOpacity:0.6,
-      fillColor: color(regions[f.properties.name])
-    }),
-    onEachFeature: (f, l) => {
-      l.on("click", () => selectedRegion = f.properties.name);
+.then(data => {
+  L.geoJSON(data, {
+    style: f => {
+      const name = f.properties.name;
+      const st = regionsData[name]?.status || "none";
+      return {
+        color: "#333",
+        weight: 1,
+        fillColor: colorByStatus(st),
+        fillOpacity: 0.6
+      };
+    },
+    onEachFeature: (f, layer) => {
+      layer.on("click", () => selectRegion(f.properties.name, layer));
     }
   }).addTo(map);
+  updateStatusText();
 });
 
-// админ
-document.getElementById("adminBtn").onclick = () => {
-  if (prompt("Пароль:") === PASSWORD)
-    document.getElementById("panel").style.display = "block";
-};
+// ===== ВЫБОР ОБЛАСТИ =====
+function selectRegion(name, layer) {
+  selectedLayer = layer;
+  selectedName = name;
+  document.getElementById("regionName").textContent = name;
+}
 
-// сохранить область
-function saveRegion() {
-  if (!selectedRegion) return alert("Кликни область");
-  const s = document.getElementById("regionStatus").value;
-  if (s === "none") delete regions[selectedRegion];
-  else regions[selectedRegion] = s;
-  localStorage.setItem("regions", JSON.stringify(regions));
+// ===== СОХРАНЕНИЕ =====
+function saveStatus() {
+  if (!selectedName) return;
+
+  const status = document.getElementById("statusSelect").value;
+
+  if (status === "alert") {
+    regionsData[selectedName] = {
+      status,
+      start: Date.now()
+    };
+  } else {
+    regionsData[selectedName] = { status };
+  }
+
+  localStorage.setItem("regions", JSON.stringify(regionsData));
   location.reload();
 }
 
-// маршруты
-map.on("click", e => {
-  if (document.getElementById("panel").style.display !== "block") return;
-  clickPoints.push(e.latlng);
-});
+// ===== ТЕКСТ СТАТУСА =====
+function updateStatusText() {
+  const box = document.getElementById("statusText");
+  box.innerHTML = "";
 
-function startRoute() {
-  if (clickPoints.length < 2) return alert("Кликни старт и финиш");
-  routes.push({
-    name: routeName.value,
-    from: clickPoints[0],
-    to: clickPoints[1],
-    start: new Date(startTime.value).getTime(),
-    end: new Date(endTime.value).getTime(),
-    done:false
-  });
-  localStorage.setItem("routes", JSON.stringify(routes));
-  location.reload();
-}
+  const now = Date.now();
 
-// анимация
-routes.forEach(r => {
-  const line = L.polyline([r.from, r.to]).addTo(map);
-  const marker = L.circleMarker(r.from, {radius:6}).addTo(map);
-
-  const interval = setInterval(() => {
-    const now = Date.now() + 3*3600*1000;
-    if (now < r.start) return;
-
-    const p = Math.min(1, (now - r.start) / (r.end - r.start));
-    const lat = r.from.lat + (r.to.lat - r.from.lat)*p;
-    const lng = r.from.lng + (r.to.lng - r.from.lng)*p;
-    marker.setLatLng([lat,lng]);
-
-    if (p >= 1) {
-      clearInterval(interval);
-      const boom = L.marker(r.to, {
-        icon: L.divIcon({html:"💥", className:""})
-      }).addTo(map);
-      setTimeout(()=>map.removeLayer(boom),60000);
+  for (const [name, d] of Object.entries(regionsData)) {
+    if (d.status === "alert") {
+      const minutes = Math.floor((now - d.start) / 60000);
+      box.innerHTML += `🔴 ${name}: тревога уже ${minutes} мин<br>`;
     }
-  },1000);
-});
+    if (d.status === "warning") {
+      box.innerHTML += `🟡 ${name}: угроза воздушной тревоги<br>`;
+    }
+  }
+}
+setInterval(updateStatusText, 60000);
+updateStatusText();
+
+// ===== АДМИН =====
+document.getElementById("adminBtn").onclick = () => {
+  const p = prompt("Пароль:");
+  if (p === PASSWORD) {
+    document.getElementById("panel").style.display = "block";
+  }
+};
 </script>
 
 </body>
