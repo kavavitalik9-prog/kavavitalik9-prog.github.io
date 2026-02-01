@@ -2,141 +2,156 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Карта тревог</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Air Alert Map</title>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
-html,body{margin:0;height:100%;background:#000;color:#fff;font-family:Arial}
+html,body{margin:0;height:100%;font-family:Arial}
 #map{height:100%}
-#login{
+
+#adminBtn{
   position:absolute;top:10px;right:10px;
-  background:#111;padding:10px;z-index:1000
+  z-index:1000;padding:8px 12px;
 }
-#admin{
+
+#adminPanel{
   position:absolute;bottom:0;left:0;right:0;
-  background:#111;padding:10px;display:none;z-index:1000
+  background:#111;color:#fff;
+  padding:10px;display:none;
+  z-index:1000;
 }
-button,select,input{
-  width:100%;margin:4px 0;padding:6px;
-  background:#222;color:#fff;border:1px solid #444
+
+select,button,input{
+  margin:5px;
 }
 </style>
 </head>
 
 <body>
 
+<button id="adminBtn">Админ</button>
+
 <div id="map"></div>
 
-<div id="login">
-  <input id="pass" type="password" placeholder="Пароль">
-  <button onclick="login()">Войти</button>
-</div>
-
-<div id="admin">
-  <b>Админ-панель</b><br>
-
-  <select id="alertType">
-    <option value="alarm">🔴 Тревога</option>
+<div id="adminPanel">
+  <b>Админ панель</b><br>
+  Статус:
+  <select id="statusSelect">
+    <option value="clear">Отбой</option>
     <option value="threat">🟡 Угроза</option>
-    <option value="clear">⚫ Отбой</option>
+    <option value="alert">🔴 Тревога</option>
   </select>
-  <button onclick="applyAlert()">Применить к области</button>
 
-  <hr>
+  <button onclick="saveState()">Сохранить</button>
+  <br><br>
 
-  <input id="objName" placeholder="Ракета / Шахед / БПЛА">
-  <input id="minutes" type="number" placeholder="Минут до прилёта">
-  <button onclick="startRoute()">Запустить маршрут</button>
+  <b>Маршрут (кликни 2 точки на карте)</b>
+  <button onclick="startRoute()">Начать</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const PASSWORD="3709";
-let selected=null;
-let alarms=JSON.parse(localStorage.getItem("alarms")||"{}");
-
-const map=L.map("map").setView([49,32],6);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-/* === РЕАЛЬНЫЕ ОБЛАСТИ УКРАИНЫ (упрощённый GeoJSON, но настоящие) === */
-const UA={
-"type":"FeatureCollection",
-"features":[
-{"type":"Feature","properties":{"name":"Львовская"},"geometry":{"type":"Polygon","coordinates":[[[22.6,49.4],[24.1,49.4],[24.1,50.1],[22.6,50.1],[22.6,49.4]]]}},
-{"type":"Feature","properties":{"name":"Волынская"},"geometry":{"type":"Polygon","coordinates":[[[24.0,50.4],[25.5,50.4],[25.5,51.0],[24.0,51.0],[24.0,50.4]]]}},
-{"type":"Feature","properties":{"name":"Ровенская"},"geometry":{"type":"Polygon","coordinates":[[[25.3,50.0],[26.6,50.0],[26.6,50.7],[25.3,50.7],[25.3,50.0]]]}},
-{"type":"Feature","properties":{"name":"Киевская"},"geometry":{"type":"Polygon","coordinates":[[[29.2,49.8],[31.2,49.8],[31.2,51.0],[29.2,51.0],[29.2,49.8]]]}},
-{"type":"Feature","properties":{"name":"Черниговская"},"geometry":{"type":"Polygon","coordinates":[[[30.5,51.0],[32.5,51.0],[32.5,52.2],[30.5,52.2],[30.5,51.0]]]}},
-{"type":"Feature","properties":{"name":"Харьковская"},"geometry":{"type":"Polygon","coordinates":[[[35.0,49.5],[37.5,49.5],[37.5,50.6],[35.0,50.6],[35.0,49.5]]]}},
-{"type":"Feature","properties":{"name":"Одесская"},"geometry":{"type":"Polygon","coordinates":[[[28.0,45.2],[30.5,45.2],[30.5,47.0],[28.0,47.0],[28.0,45.2]]]}},
-{"type":"Feature","properties":{"name":"Днепропетровская"},"geometry":{"type":"Polygon","coordinates":[[[33.5,47.5],[35.8,47.5],[35.8,49.0],[33.5,49.0],[33.5,47.5]]]}},
-{"type":"Feature","properties":{"name":"Запорожская"},"geometry":{"type":"Polygon","coordinates":[[[34.5,46.2],[36.3,46.2],[36.3,47.5],[34.5,47.5],[34.5,46.2]]]}},
-{"type":"Feature","properties":{"name":"Донецкая"},"geometry":{"type":"Polygon","coordinates":[[[36.8,47.3],[38.8,47.3],[38.8,48.6],[36.8,48.6],[36.8,47.3]]]}},
-{"type":"Feature","properties":{"name":"Луганская"},"geometry":{"type":"Polygon","coordinates":[[[38.3,48.5],[40.3,48.5],[40.3,49.8],[38.3,49.8],[38.3,48.5]]]}},
-{"type":"Feature","properties":{"name":"АР Крым"},"geometry":{"type":"Polygon","coordinates":[[[33.8,44.3],[36.5,44.3],[36.5,45.5],[33.8,45.5],[33.8,44.3]]]}}
-]};
-
-const uaLayer=L.geoJSON(UA,{
-style:f=>({
-  color:"#555",weight:1,
-  fillColor:
-    alarms[f.properties.name]==="alarm"?"#b00000":
-    alarms[f.properties.name]==="threat"?"#b38b00":"#222",
-  fillOpacity:0.6
-}),
-onEachFeature:(f,l)=>{
-  l.on("click",()=>{
-    selected=f.properties.name;
-    alert("Выбрана область: "+selected);
-  });
+/* ===== ВРЕМЯ МСК ===== */
+function mskTime(){
+  const d=new Date(Date.now()+3*3600*1000);
+  return d.toISOString().slice(11,19);
 }
+
+/* ===== КАРТА ===== */
+const map=L.map('map').setView([49,31],6);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© OpenStreetMap'
 }).addTo(map);
 
-function login(){
-  if(pass.value===PASSWORD){
-    admin.style.display="block";
-    login.style.display="none";
-  }else alert("Неверный пароль");
+/* ===== ОБЛАСТИ (центры) ===== */
+const regions={
+  "Киев":[50.45,30.52],
+  "Львов":[49.84,24.03],
+  "Одесса":[46.48,30.73],
+  "Харьков":[49.99,36.23],
+  "Днепр":[48.45,34.98],
+  "Запорожье":[47.84,35.14],
+  "Херсон":[46.64,32.61],
+  "Николаев":[46.97,31.99],
+  "Полтава":[49.59,34.55],
+  "Чернигов":[51.49,31.29],
+  "Сумы":[50.91,34.80]
+};
+
+let state=JSON.parse(localStorage.getItem("alertState")||"{}");
+let markers={};
+
+for(let r in regions){
+  const m=L.circleMarker(regions[r],{
+    radius:14,
+    color:'#555',
+    fillColor:'#ccc',
+    fillOpacity:0.8
+  }).addTo(map)
+   .bindPopup(r);
+
+  m.on('click',()=>{
+    if(admin){
+      state[r]={status:statusSelect.value,time:mskTime()};
+      updateMap();
+    }
+  });
+
+  markers[r]=m;
 }
 
-function applyAlert(){
-  if(!selected)return;
-  if(alertType.value==="clear") delete alarms[selected];
-  else alarms[selected]=alertType.value;
-  localStorage.setItem("alarms",JSON.stringify(alarms));
-  location.reload();
+/* ===== ОБНОВЛЕНИЕ ЦВЕТОВ ===== */
+function updateMap(){
+  for(let r in markers){
+    let s=state[r]?.status;
+    let color='#ccc';
+    if(s==='alert') color='red';
+    if(s==='threat') color='yellow';
+    markers[r].setStyle({fillColor:color});
+  }
+  localStorage.setItem("alertState",JSON.stringify(state));
 }
+updateMap();
+
+/* ===== АДМИН ===== */
+let admin=false;
+adminBtn.onclick=()=>{
+  const p=prompt("Пароль:");
+  if(p==="3709"){
+    admin=true;
+    adminPanel.style.display='block';
+  }
+};
+
+/* ===== СОХРАНЕНИЕ ===== */
+function saveState(){
+  alert("Сохранено ("+mskTime()+" МСК)");
+}
+
+/* ===== МАРШРУТЫ ===== */
+let routeMode=false;
+let routePts=[];
+let routeLine=null;
 
 function startRoute(){
-  if(!selected)return;
-  const min=Number(minutes.value);
-  if(!min)return;
-
-  const start=map.getCenter();
-  const end=uaLayer.getLayers().find(l=>l.feature.properties.name===selected)
-              .getBounds().getCenter();
-
-  const line=L.polyline([start,end],{color:"red"}).addTo(map);
-  const marker=L.marker(start).addTo(map).bindPopup(objName.value||"Объект");
-
-  const t0=Date.now(),t1=t0+min*60000;
-  const timer=setInterval(()=>{
-    const t=(Date.now()-t0)/(t1-t0);
-    if(t>=1){
-      clearInterval(timer);
-      map.removeLayer(marker);
-      L.marker(end,{icon:L.divIcon({html:"💥",iconSize:[30,30]})}).addTo(map);
-      setTimeout(()=>map.removeLayer(line),60000);
-      return;
-    }
-    marker.setLatLng([
-      start.lat+(end.lat-start.lat)*t,
-      start.lng+(end.lng-start.lng)*t
-    ]);
-  },1000);
+  routeMode=true;
+  routePts=[];
+  alert("Кликни 2 точки на карте");
 }
+
+map.on('click',e=>{
+  if(!admin||!routeMode)return;
+  routePts.push(e.latlng);
+  if(routePts.length===2){
+    if(routeLine) map.removeLayer(routeLine);
+    routeLine=L.polyline(routePts,{color:'orange'}).addTo(map);
+    routeMode=false;
+  }
+});
 </script>
+
 </body>
 </html>
