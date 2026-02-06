@@ -2,197 +2,155 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Карта тревог</title>
+<title>Карта</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
 body {
   margin: 0;
-  background: #e6e6e6;
-  font-family: Arial, sans-serif;
-}
-
-#top {
   background: #111;
-  color: #fff;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
+  font-family: Arial, sans-serif;
+  color: white;
 }
 
-#mapBox {
-  width: 90%;
-  max-width: 900px;
-  margin: 12px auto;
-  border: 3px solid #000;
-}
-
+/* КАРТА */
 #map {
-  height: 420px;
-}
-
-#panel {
-  display: none;
-  width: 90%;
+  width: 95vw;
   max-width: 900px;
+  height: 60vh;
   margin: 10px auto;
-  background: #fff;
-  border: 2px solid #000;
+  border: 2px solid #444;
+  border-radius: 10px;
+}
+
+/* КНОПКА АДМИНА */
+#adminBtn {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  padding: 8px 12px;
+  background: #222;
+  color: white;
+  border: 1px solid #555;
+}
+
+/* АДМИН-ПАНЕЛЬ */
+#adminPanel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #1a1a1a;
+  border-top: 2px solid #444;
   padding: 10px;
+  display: none;
+  z-index: 1000;
 }
 
-button, select, input {
+input, button {
+  width: 100%;
+  margin: 5px 0;
   padding: 6px;
-  margin-top: 6px;
+  background: #222;
+  color: white;
+  border: 1px solid #555;
 }
 
-#info {
-  width: 90%;
-  max-width: 900px;
-  margin: auto;
-  font-size: 14px;
+label {
+  font-size: 13px;
+  opacity: 0.8;
 }
 </style>
 </head>
 
 <body>
 
-<div id="top">
-  <div>🕒 МСК: <span id="time"></span></div>
-  <button id="adminBtn">Админ</button>
+<button id="adminBtn">Админ</button>
+<div id="map"></div>
+
+<div id="adminPanel">
+  <b>Спутниковый снимок</b><br>
+
+  <label>URL картинки</label>
+  <input id="imgUrl" placeholder="https://...">
+
+  <label>Размер (метры)</label>
+  <input id="imgSize" type="number" value="800">
+
+  <label>Прозрачность (0–1)</label>
+  <input id="imgOpacity" type="number" step="0.1" value="0.6">
+
+  <button id="saveBtn">СОХРАНИТЬ</button>
 </div>
-
-<div id="mapBox">
-  <div id="map"></div>
-</div>
-
-<div id="info"></div>
-
-<div id="panel">
-  <b>Область:</b> <span id="regionName">—</span><br>
-
-  <select id="status">
-    <option value="none">⚪ Отбой</option>
-    <option value="warning">🟡 Угроза</option>
-    <option value="alert">🔴 Тревога</option>
-  </select>
-  <br>
-  <button onclick="saveRegion()">Сохранить</button>
-
-  <hr>
-
-  <b>Визуальный объект</b><br>
-  Название: <input id="objName"><br>
-  Вылет (lat,lng): <input id="from"><br>
-  Прибытие (lat,lng): <input id="to"><br>
-  Время полёта (мин): <input type="number" id="flight" value="5"><br>
-  <button onclick="addObject()">Запустить</button>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-const PASSWORD = "3709";
-const map = L.map("map").setView([49,32],6);
+// ---------------- КАРТА ----------------
+const map = L.map('map').setView([49.0, 31.0], 6);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap'
+}).addTo(map);
 
-// ===== ВРЕМЯ МСК =====
-function tick(){
-  const d = new Date(Date.now()+3*3600000);
-  time.textContent=d.toISOString().slice(11,19);
-}
-setInterval(tick,1000); tick();
+// ---------------- АДМИН ----------------
+const ADMIN_PASSWORD = "3709";
+const adminBtn = document.getElementById("adminBtn");
+const adminPanel = document.getElementById("adminPanel");
 
-// ===== ДАННЫЕ =====
-let regions = JSON.parse(localStorage.getItem("regions")||"{}");
-let selectedName=null, selectedLayer=null;
+adminBtn.onclick = () => {
+  const p = prompt("Пароль:");
+  if (p === ADMIN_PASSWORD) {
+    adminPanel.style.display = "block";
+    alert("Кликни по карте, чтобы выбрать место");
+  }
+};
 
-function color(s){
-  return s==="alert"?"#f00":s==="warning"?"#ff0":"#ccc";
-}
+// ---------------- ВЫБОР МЕСТА ----------------
+let selectedPoint = null;
+let tempMarker = null;
 
-// ===== КАРТА =====
-fetch("https://raw.githubusercontent.com/deldersveld/topojson/master/countries/ukraine/ukraine-oblasts.json")
-.then(r=>r.json())
-.then(data=>{
-  L.geoJSON(data,{
-    style:f=>{
-      const n=f.properties.name;
-      return {
-        fillColor: color(regions[n]?.status),
-        fillOpacity:0.6,
-        color:"#333",
-        weight:1
-      }
-    },
-    onEachFeature:(f,l)=>{
-      l.on("click",()=>{
-        selectedName=f.properties.name;
-        selectedLayer=l;
-        regionName.textContent=selectedName;
-      });
-    }
+map.on("click", e => {
+  if (adminPanel.style.display !== "block") return;
+
+  selectedPoint = e.latlng;
+
+  if (tempMarker) map.removeLayer(tempMarker);
+  tempMarker = L.circleMarker(selectedPoint, {
+    radius: 6,
+    color: "cyan"
   }).addTo(map);
 });
 
-// ===== СОХРАНИТЬ ОБЛАСТЬ =====
-function saveRegion(){
-  if(!selectedName)return;
-  const s=status.value;
-  regions[selectedName]={status:s,start:s==="alert"?Date.now():null};
-  localStorage.setItem("regions",JSON.stringify(regions));
-  selectedLayer.setStyle({fillColor:color(s)});
-  updateInfo();
-}
-
-// ===== ИНФО =====
-function updateInfo(){
-  info.innerHTML="";
-  const now=Date.now();
-  for(const [n,d] of Object.entries(regions)){
-    if(d.status==="alert"){
-      info.innerHTML+=`🔴 ${n}: ${Math.floor((now-d.start)/60000)} мин<br>`;
-    }
-    if(d.status==="warning"){
-      info.innerHTML+=`🟡 ${n}: угроза<br>`;
-    }
+// ---------------- СОХРАНЕНИЕ ----------------
+document.getElementById("saveBtn").onclick = () => {
+  if (!selectedPoint) {
+    alert("Сначала кликни по карте");
+    return;
   }
-}
-setInterval(updateInfo,60000); updateInfo();
 
-// ===== ОБЪЕКТ =====
-function addObject(){
-  const f=from.value.split(",").map(Number);
-  const t=to.value.split(",").map(Number);
-  const mins=+flight.value;
-  const start=Date.now();
+  const url = document.getElementById("imgUrl").value;
+  const size = Number(document.getElementById("imgSize").value);
+  const opacity = Number(document.getElementById("imgOpacity").value);
 
-  const line=L.polyline([f,t],{color:"#000"}).addTo(map);
-  const m=L.marker(f).addTo(map);
-
-  const int=setInterval(()=>{
-    const p=(Date.now()-start)/(mins*60000);
-    if(p>=1){
-      m.setLatLng(t);
-      clearInterval(int);
-      const boom=L.marker(t,{icon:L.divIcon({html:"💥",iconSize:[30,30]})}).addTo(map);
-      setTimeout(()=>map.removeLayer(boom),60000);
-      return;
-    }
-    m.setLatLng([
-      f[0]+(t[0]-f[0])*p,
-      f[1]+(t[1]-f[1])*p
-    ]);
-  },1000);
-}
-
-// ===== АДМИН =====
-adminBtn.onclick=()=>{
-  if(prompt("Пароль:")===PASSWORD){
-    panel.style.display="block";
+  if (!url) {
+    alert("Вставь URL картинки");
+    return;
   }
+
+  const dLat = size / 111000;
+  const dLng = size / (111000 * Math.cos(selectedPoint.lat * Math.PI / 180));
+
+  const bounds = [
+    [selectedPoint.lat - dLat/2, selectedPoint.lng - dLng/2],
+    [selectedPoint.lat + dLat/2, selectedPoint.lng + dLng/2]
+  ];
+
+  L.imageOverlay(url, bounds, { opacity }).addTo(map);
+
+  alert("Сохранено");
 };
 </script>
 
