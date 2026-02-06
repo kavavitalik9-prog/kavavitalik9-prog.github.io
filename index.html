@@ -2,50 +2,84 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Карта</title>
+<title>YCB-89 TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
 body {
   margin: 0;
-  background: #111;
   font-family: Arial, sans-serif;
-  color: white;
+  background: #0f0f0f;
+  color: #fff;
 }
 
-/* КАРТА */
-#map {
-  width: 95vw;
+header {
+  padding: 10px;
+  background: #111;
+  text-align: center;
+  border-bottom: 1px solid #333;
+}
+
+#time {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+#playerBox {
   max-width: 900px;
-  height: 60vh;
   margin: 10px auto;
-  border: 2px solid #444;
-  border-radius: 10px;
+  background: #000;
+  aspect-ratio: 16/9;
+  position: relative;
 }
 
-/* КНОПКА АДМИНА */
+#playerBox iframe,
+#playerBox video {
+  width: 100%;
+  height: 100%;
+}
+
+#status {
+  text-align: center;
+  padding: 8px;
+  background: #111;
+}
+
+#schedule {
+  max-width: 900px;
+  margin: 10px auto;
+  padding: 10px;
+  background: #151515;
+  border: 1px solid #333;
+}
+
+.program {
+  border-bottom: 1px solid #333;
+  padding: 6px 0;
+}
+
+.program:last-child {
+  border-bottom: none;
+}
+
 #adminBtn {
   position: fixed;
   top: 10px;
   left: 10px;
   z-index: 1000;
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: #222;
-  color: white;
-  border: 1px solid #555;
+  color: #fff;
+  border: 1px solid #444;
 }
 
-/* АДМИН-ПАНЕЛЬ */
 #adminPanel {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: #1a1a1a;
-  border-top: 2px solid #444;
+  right: 10px;
+  top: 50px;
+  width: 280px;
+  background: #111;
+  border: 1px solid #444;
   padding: 10px;
   display: none;
   z-index: 1000;
@@ -53,49 +87,47 @@ body {
 
 input, button {
   width: 100%;
-  margin: 5px 0;
+  margin: 4px 0;
   padding: 6px;
   background: #222;
-  color: white;
-  border: 1px solid #555;
+  color: #fff;
+  border: 1px solid #444;
 }
 
-label {
-  font-size: 13px;
-  opacity: 0.8;
+button {
+  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
+<header>
+  <h2>📺 YCB-89 — выдуманный телеканал</h2>
+  <div id="time"></div>
+</header>
+
 <button id="adminBtn">Админ</button>
-<div id="map"></div>
+
+<div id="playerBox"></div>
+<div id="status">Сейчас нет эфира</div>
+
+<div id="schedule">
+  <b>📅 Расписание</b>
+  <div id="scheduleList"></div>
+</div>
 
 <div id="adminPanel">
-  <b>Спутниковый снимок</b><br>
+  <b>Админ-панель</b>
 
-  <label>URL картинки</label>
-  <input id="imgUrl" placeholder="https://...">
-
-  <label>Размер (метры)</label>
-  <input id="imgSize" type="number" value="800">
-
-  <label>Прозрачность (0–1)</label>
-  <input id="imgOpacity" type="number" step="0.1" value="0.6">
-
-  <button id="saveBtn">СОХРАНИТЬ</button>
+  <input id="startTime" type="datetime-local">
+  <input id="endTime" type="datetime-local">
+  <input id="title" placeholder="Название передачи">
+  <input id="url" placeholder="Ссылка (embed / mp4)">
+  <button id="add">Добавить</button>
 </div>
 
 <script>
-// ---------------- КАРТА ----------------
-const map = L.map('map').setView([49.0, 31.0], 6);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap'
-}).addTo(map);
-
-// ---------------- АДМИН ----------------
 const ADMIN_PASSWORD = "3709";
 const adminBtn = document.getElementById("adminBtn");
 const adminPanel = document.getElementById("adminPanel");
@@ -104,54 +136,72 @@ adminBtn.onclick = () => {
   const p = prompt("Пароль:");
   if (p === ADMIN_PASSWORD) {
     adminPanel.style.display = "block";
-    alert("Кликни по карте, чтобы выбрать место");
   }
 };
 
-// ---------------- ВЫБОР МЕСТА ----------------
-let selectedPoint = null;
-let tempMarker = null;
+// ----- ВРЕМЯ МСК -----
+function updateTime() {
+  const now = new Date();
+  const msk = new Date(now.getTime() + (3 - now.getTimezoneOffset()/60) * 3600000);
+  document.getElementById("time").textContent =
+    "🕒 МСК: " + msk.toLocaleString();
+}
+setInterval(updateTime, 1000);
+updateTime();
 
-map.on("click", e => {
-  if (adminPanel.style.display !== "block") return;
+// ----- РАСПИСАНИЕ -----
+let programs = JSON.parse(localStorage.getItem("programs") || "[]");
 
-  selectedPoint = e.latlng;
-
-  if (tempMarker) map.removeLayer(tempMarker);
-  tempMarker = L.circleMarker(selectedPoint, {
-    radius: 6,
-    color: "cyan"
-  }).addTo(map);
-});
-
-// ---------------- СОХРАНЕНИЕ ----------------
-document.getElementById("saveBtn").onclick = () => {
-  if (!selectedPoint) {
-    alert("Сначала кликни по карте");
-    return;
-  }
-
-  const url = document.getElementById("imgUrl").value;
-  const size = Number(document.getElementById("imgSize").value);
-  const opacity = Number(document.getElementById("imgOpacity").value);
-
-  if (!url) {
-    alert("Вставь URL картинки");
-    return;
-  }
-
-  const dLat = size / 111000;
-  const dLng = size / (111000 * Math.cos(selectedPoint.lat * Math.PI / 180));
-
-  const bounds = [
-    [selectedPoint.lat - dLat/2, selectedPoint.lng - dLng/2],
-    [selectedPoint.lat + dLat/2, selectedPoint.lng + dLng/2]
-  ];
-
-  L.imageOverlay(url, bounds, { opacity }).addTo(map);
-
-  alert("Сохранено");
+document.getElementById("add").onclick = () => {
+  programs.push({
+    start: document.getElementById("startTime").value,
+    end: document.getElementById("endTime").value,
+    title: document.getElementById("title").value,
+    url: document.getElementById("url").value
+  });
+  localStorage.setItem("programs", JSON.stringify(programs));
+  renderSchedule();
 };
+
+function renderSchedule() {
+  const list = document.getElementById("scheduleList");
+  list.innerHTML = "";
+  programs.forEach(p => {
+    const d = document.createElement("div");
+    d.className = "program";
+    d.textContent = `${p.start} – ${p.end} | ${p.title}`;
+    list.appendChild(d);
+  });
+}
+renderSchedule();
+
+// ----- ЭФИР -----
+function checkLive() {
+  const now = new Date();
+  const playerBox = document.getElementById("playerBox");
+  const status = document.getElementById("status");
+
+  const current = programs.find(p =>
+    new Date(p.start) <= now && now < new Date(p.end)
+  );
+
+  if (!current) {
+    playerBox.innerHTML = "";
+    status.textContent = "❌ Сейчас нет эфира";
+    return;
+  }
+
+  status.textContent = "🔴 В эфире: " + current.title;
+
+  if (current.url.includes("youtube") || current.url.includes("embed")) {
+    playerBox.innerHTML = `<iframe src="${current.url}" frameborder="0" allowfullscreen></iframe>`;
+  } else {
+    playerBox.innerHTML = `<video src="${current.url}" autoplay controls></video>`;
+  }
+}
+
+setInterval(checkLive, 5000);
+checkLive();
 </script>
 
 </body>
